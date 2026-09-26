@@ -37,7 +37,8 @@ export default async function handler(req, res) {
         body: JSON.stringify(body),
       });
       if (!r.ok) {
-        res.status(200).json({ error: 'notion_error', status: r.status });
+        const errBody = await r.text();
+        res.status(200).json({ error: 'notion_error', status: r.status, detail: errBody });
         return;
       }
       const data = await r.json();
