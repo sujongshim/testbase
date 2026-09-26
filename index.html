@@ -9,7 +9,6 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Do+Hyeon&family=IBM+Plex+Sans+KR:wght@400;500;600&family=Fraunces:opsz,wght@9..144,500;9..144,600&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <style>
 :root{
   --bg:#F6F3EC; --surface:#FFFFFF; --ink:#1F2421; --muted:#636B66; --line:#E3DED3;
@@ -87,21 +86,11 @@ header{margin-bottom:0}
 .soon{border:1.5px dashed var(--line);background:transparent}
 .soon .icon{background:var(--surface);font-size:1.6rem}
 
-.apps-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:2px 2px 2px}
-.selectall{display:flex;align-items:center;gap:6px;font-size:.85rem;color:var(--muted);cursor:pointer;user-select:none}
-.selectall input{width:17px;height:17px}
 .app-card{display:flex;align-items:stretch;gap:8px}
 .app-card .app{flex:1;min-width:0}
-.pick{display:flex;align-items:center;padding:0 2px;cursor:pointer}
-.pick input{width:19px;height:19px;accent-color:var(--green);cursor:pointer}
 .go,.dl{display:inline-flex;align-items:center;justify-content:center;white-space:nowrap;border-radius:12px;background:var(--surface);border:2px solid var(--focus);text-decoration:none;color:var(--focus);font-size:.85rem;font-weight:700;transition:background-color .15s;font-family:inherit;cursor:pointer;padding:8px 16px}
 .dl:disabled{opacity:.5;cursor:default}
 .go:hover,.dl:hover{background:var(--bg)}
-.bulkbar{position:sticky;bottom:12px;margin-top:14px;background:var(--ink);color:var(--bg);border-radius:16px;padding:10px 14px;display:none;align-items:center;justify-content:space-between;gap:10px;box-shadow:0 6px 20px rgba(0,0,0,.18);z-index:5}
-.bulkbar.show{display:flex}
-.bulkbar span{font-size:.9rem}
-.bulkbar button{border:0;border-radius:10px;padding:9px 14px;font-weight:600;font-size:.88rem;cursor:pointer;background:var(--bg);color:var(--ink)}
-.bulkbar button:disabled{opacity:.6;cursor:default}
 
 section.how{margin-top:30px}
 .how h2{font-size:1.25rem;margin:0 0 10px}
@@ -111,8 +100,6 @@ section.how{margin-top:30px}
 details{background:var(--surface);border-radius:14px;padding:11px 14px;margin-top:8px}
 details summary{cursor:pointer;font-weight:600;font-size:.92rem}
 details p{margin:8px 0 2px;font-size:.88rem;color:var(--muted)}
-details ul.addhome{margin:8px 0 2px;padding-left:18px;font-size:.88rem;color:var(--muted)}
-details ul.addhome li{margin-top:4px}
 footer{margin-top:30px;text-align:center;font-size:.8rem;color:var(--muted)}
 footer a{color:var(--muted)}
 footer .stats{margin-top:4px;font-size:.75rem}
@@ -147,14 +134,8 @@ footer .stats{margin-top:4px;font-size:.75rem}
     <li>무료</li><li>회원가입 없음</li><li>광고 없음</li><li>기록은 내 폰에만</li>
   </ul>
 
-  <div class="apps-head" id="apps">
-    <label class="selectall"><input type="checkbox" id="selAll"> 전체 선택</label>
-    <span class="small muted" style="font-size:.8rem">체크 후 아래에서 다운로드</span>
-  </div>
-
-  <div class="apps">
+  <div class="apps" id="apps">
     <div class="app-card">
-      <label class="pick"><input type="checkbox" class="pickbox" data-file="jar" data-name="소확앱-항아리가계부.html" aria-label="항아리 가계부 선택"></label>
       <div class="app jar">
         <div class="icon" aria-hidden="true">
           <svg viewBox="0 0 120 152"><rect x="30" y="14" width="60" height="15" rx="5" fill="currentColor" opacity=".25"/>
@@ -174,7 +155,6 @@ footer .stats{margin-top:4px;font-size:.75rem}
     </div>
 
     <div class="app-card">
-      <label class="pick"><input type="checkbox" class="pickbox" data-file="fasting" data-name="소확앱-공복타이머.html" aria-label="공복 타이머 선택"></label>
       <div class="app fast">
         <div class="icon" aria-hidden="true">
           <svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="38" fill="none" stroke="var(--ink)" stroke-opacity=".15" stroke-width="12"/>
@@ -192,7 +172,6 @@ footer .stats{margin-top:4px;font-size:.75rem}
     </div>
 
     <div class="app-card">
-      <label class="pick"><input type="checkbox" class="pickbox" data-file="move" data-name="소확앱-매일최소운동.html" aria-label="매일 최소 운동 선택"></label>
       <div class="app move">
         <div class="icon" aria-hidden="true">
           <svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="38" fill="none" stroke="#D9542B" stroke-width="12"/>
@@ -210,7 +189,6 @@ footer .stats{margin-top:4px;font-size:.75rem}
     </div>
 
     <div class="app-card">
-      <label class="pick"><input type="checkbox" class="pickbox" data-file="read" data-name="소확앱-한쪽독서.html" aria-label="한 쪽 독서 선택"></label>
       <div class="app read">
         <div class="icon" aria-hidden="true">
           <svg viewBox="0 0 100 100"><path d="M50 28 C38 20 22 20 14 24 L14 78 C22 74 38 74 50 82 C62 74 78 74 86 78 L86 24 C78 20 62 20 50 28 Z" fill="none" stroke="var(--ink)" stroke-width="6" stroke-linejoin="round"/>
@@ -228,7 +206,6 @@ footer .stats{margin-top:4px;font-size:.75rem}
     </div>
 
     <div class="app-card">
-      <label class="pick"><input type="checkbox" class="pickbox" data-file="sleep" data-name="소확앱-잘자요.html" aria-label="잘 자요 선택"></label>
       <div class="app sleep">
         <div class="icon" aria-hidden="true">
           <svg viewBox="0 0 100 100"><path d="M62 18 A34 34 0 1 0 82 70 A28 28 0 1 1 62 18 Z" fill="#4B4FA3"/><circle cx="74" cy="28" r="3" fill="#E3A83B"/><circle cx="84" cy="44" r="2" fill="#E3A83B"/></svg>
@@ -245,7 +222,6 @@ footer .stats{margin-top:4px;font-size:.75rem}
     </div>
 
     <div class="app-card">
-      <label class="pick"><input type="checkbox" class="pickbox" data-file="vocab" data-name="소확앱-수능단어장.html" aria-label="내 수능 단어장 선택"></label>
       <div class="app vocab">
         <div class="icon" aria-hidden="true">
           <svg viewBox="0 0 100 100"><path d="M50 28 C38 20 22 20 14 24 L14 78 C22 74 38 74 50 82 C62 74 78 74 86 78 L86 24 C78 20 62 20 50 28 Z" fill="none" stroke="#6B3FA0" stroke-width="6" stroke-linejoin="round"/><path d="M50 28 L50 82" stroke="#6B3FA0" stroke-width="6"/></svg>
@@ -262,7 +238,6 @@ footer .stats{margin-top:4px;font-size:.75rem}
     </div>
 
     <div class="app-card soon-row">
-      <span class="pick" aria-hidden="true"></span>
       <div class="app soon">
         <div class="icon" aria-hidden="true">＋</div>
         <div>
@@ -273,26 +248,13 @@ footer .stats{margin-top:4px;font-size:.75rem}
     </div>
   </div>
 
-  <div class="bulkbar" id="bulkbar">
-    <span id="bulkCount">0개 선택됨</span>
-    <button type="button" id="bulkDl">선택한 앱 zip으로 받기</button>
-  </div>
-
   <section class="how" id="how" aria-labelledby="howTitle">
     <h2 id="howTitle" class="d">이렇게 쓰세요</h2>
     <ol class="steps">
       <li><b>1. 휴대폰 크롬이나 사파리로 열기</b>앱을 누르면 바로 시작돼요. 설치나 가입은 없어요.</li>
-      <li><b>2. 홈 화면에 추가하기</b>아이폰은 사파리 공유 버튼 → '홈 화면에 추가', 안드로이드는 크롬 ⋮ → '홈 화면에 추가'. 앱처럼 아이콘이 생겨요.</li>
+      <li><b>2. 홈 화면에 추가하기</b>현재 페이지 추가 → 홈 화면에 추가 하여 사용하세요</li>
       <li><b>3. 가끔 백업하기</b>기록은 그 휴대폰 브라우저에만 저장돼요. 항아리 가계부, 매일 최소 운동, 한 쪽 독서, 잘 자요는 설정에서 백업 파일을 받아 둘 수 있어요.</li>
     </ol>
-    <details>
-      <summary>홈 화면에 추가하기</summary>
-      <p>휴대폰 브라우저에서 '홈 화면에 추가'를 하면 앱처럼 아이콘이 생겨요.</p>
-      <ul class="addhome">
-        <li>아이폰: 사파리 아래 공유 버튼 → '홈 화면에 추가'</li>
-        <li>안드로이드: 크롬 오른쪽 위 ⋮ → '홈 화면에 추가'</li>
-      </ul>
-    </details>
     <details>
       <summary>내 기록은 안전한가요?</summary>
       <p>모든 기록은 내 기기의 브라우저 안에만 저장되고, 어디로도 보내지지 않아요. 만든 사람도 볼 수 없어요. 대신 브라우저의 사이트 데이터를 지우거나 시크릿 모드로 쓰면 기록이 사라지니 주의해 주세요.</p>
@@ -339,23 +301,6 @@ footer .stats{margin-top:4px;font-size:.75rem}
   }
   bumpVisit();
 
-  const boxes = () => Array.from(document.querySelectorAll('.pickbox'));
-  const selAll = document.getElementById('selAll');
-  const bar = document.getElementById('bulkbar');
-  const count = document.getElementById('bulkCount');
-  const dlBtn = document.getElementById('bulkDl');
-
-  function refresh(){
-    const checked = boxes().filter(b => b.checked);
-    bar.classList.toggle('show', checked.length > 0);
-    count.textContent = checked.length + '개 선택됨';
-    selAll.checked = checked.length === boxes().length;
-    selAll.indeterminate = checked.length > 0 && checked.length < boxes().length;
-  }
-
-  boxes().forEach(b => b.addEventListener('change', refresh));
-  selAll.addEventListener('change', () => { boxes().forEach(b => b.checked = selAll.checked); refresh(); });
-
   async function downloadSingle(btn){
     const prev = btn.textContent;
     btn.disabled = true; btn.textContent = '…';
@@ -383,43 +328,6 @@ footer .stats{margin-top:4px;font-size:.75rem}
     setTimeout(() => URL.revokeObjectURL(url), 4000);
   }
 
-  dlBtn.addEventListener('click', async () => {
-    const checked = boxes().filter(b => b.checked);
-    if(!checked.length) return;
-
-    if(checked.length === 1){
-      const b = checked[0];
-      try{
-        const res = await fetch('./' + b.dataset.file + '/');
-        const blob = await res.blob();
-        downloadFile(blob, b.dataset.name);
-        bumpDownload();
-      }catch(e){ alert('다운로드 중 문제가 생겼어요. 잠시 후 다시 시도해 주세요.'); }
-      return;
-    }
-
-    dlBtn.disabled = true;
-    const prevLabel = dlBtn.textContent;
-    dlBtn.textContent = '묶는 중…';
-    try{
-      const zip = new JSZip();
-      for(const b of checked){
-        const res = await fetch('./' + b.dataset.file + '/');
-        const text = await res.text();
-        zip.file(b.dataset.name, text);
-      }
-      const blob = await zip.generateAsync({type:'blob'});
-      downloadFile(blob, '소확앱-선택한앱-' + checked.length + '개.zip');
-      bumpDownload();
-    }catch(e){
-      alert('다운로드 중 문제가 생겼어요. 잠시 후 다시 시도해 주세요.');
-    }finally{
-      dlBtn.disabled = false;
-      dlBtn.textContent = prevLabel;
-    }
-  });
-
-  refresh();
 })();
 </script>
 </body>
