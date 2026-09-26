@@ -1,0 +1,339 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>공복 타이머</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Do+Hyeon&family=IBM+Plex+Sans+KR:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#F3F1EC; --surface:#FFFFFF; --ink:#1E2320; --muted:#5F6862; --line:#DFDCD4;
+  --fast:#2E6B5B; --fast-soft:#D8E8E2; --eat:#C7792C; --eat-soft:#F5E4D1; --done:#3E7F3A; --warn:#B4541B; --focus:#2F5FD0;
+  box-sizing:border-box; padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){ :root:not([data-theme="light"]){
+  --bg:#111513; --surface:#1A201D; --ink:#E7ECE9; --muted:#9BA7A1; --line:#2B332F;
+  --fast:#6CC3AB; --fast-soft:#1D3530; --eat:#E9A45E; --eat-soft:#3A2B1C; --done:#8BD084; --warn:#F0A060; --focus:#8AA8FF; } }
+:root[data-theme="dark"]{
+  --bg:#111513; --surface:#1A201D; --ink:#E7ECE9; --muted:#9BA7A1; --line:#2B332F;
+  --fast:#6CC3AB; --fast-soft:#1D3530; --eat:#E9A45E; --eat-soft:#3A2B1C; --done:#8BD084; --warn:#F0A060; --focus:#8AA8FF; }
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*::before,*::after{box-sizing:inherit}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"IBM Plex Sans KR","Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;font-size:15px;line-height:1.5;-webkit-text-size-adjust:100%}
+.d{font-family:"Do Hyeon","IBM Plex Sans KR",sans-serif;font-weight:400}
+main{max-width:520px;margin:0 auto;padding:12px 12px 40px}
+h1{font-size:1rem;color:var(--muted);font-weight:500;margin:0 0 8px}
+h2{font-size:1.15rem;margin:0 0 8px}
+section{margin-top:20px}
+button,input,select{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+.muted{color:var(--muted)} .small{font-size:.82rem}
+.card{background:var(--surface);border-radius:16px;padding:14px}
+
+.timer{text-align:center;padding:16px 14px}
+.ringwrap{position:relative;width:min(240px,70vw);margin:4px auto 0}
+.ringwrap svg{width:100%;height:auto;display:block}
+.center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px}
+.center .state{font-size:.85rem;font-weight:600;padding:2px 10px;border-radius:99px}
+.state.fast{background:var(--fast-soft);color:var(--fast)} .state.eat{background:var(--eat-soft);color:var(--eat)}
+.center .clock{font-size:2.5rem;line-height:1.05;font-variant-numeric:tabular-nums}
+.center .sub{font-size:.8rem;color:var(--muted)}
+.info{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px;text-align:left}
+.info div{background:var(--bg);border-radius:10px;padding:8px 10px}
+.info b{display:block;font-size:.95rem}
+.goals{display:flex;gap:6px;justify-content:center;flex-wrap:wrap;margin-top:12px}
+.chip{border:1px solid var(--line);background:transparent;border-radius:99px;padding:4px 11px;font-size:.82rem;cursor:pointer}
+.chip[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.btn{border:0;border-radius:12px;padding:12px 16px;font-weight:600;cursor:pointer;font-size:.95rem}
+.btn.main{width:100%;margin-top:12px;font-size:1.05rem}
+.btn.start{background:var(--fast);color:#fff}
+.btn.stop{background:var(--eat);color:#fff}
+.btn.ghost{background:var(--bg)}
+.link{border:0;background:transparent;color:var(--muted);text-decoration:underline;cursor:pointer;font-size:.82rem;padding:6px}
+.editbox{margin-top:10px;display:flex;gap:6px;align-items:center;justify-content:center;flex-wrap:wrap}
+.field{border:1px solid var(--line);background:var(--bg);border-radius:10px;padding:8px 10px;font-size:.9rem;min-width:0}
+.cheer{margin:10px 0 0;font-size:.9rem}
+
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.stat{background:var(--surface);border-radius:12px;padding:10px}
+.stat .v{font-size:1.35rem;line-height:1.2}
+.chart{background:var(--surface);border-radius:14px;padding:12px 8px 6px}
+.chart svg{width:100%;height:auto;display:block}
+.list{list-style:none;margin:0;padding:0;background:var(--surface);border-radius:14px;overflow:hidden}
+.list li{display:grid;grid-template-columns:auto 1fr auto auto;gap:10px;align-items:center;padding:9px 12px;border-bottom:1px solid var(--line)}
+.list li:last-child{border-bottom:0}
+.badge{width:26px;height:26px;border-radius:50%;display:grid;place-items:center;font-size:.8rem;font-weight:700}
+.badge.ok{background:var(--fast-soft);color:var(--done)} .badge.no{background:var(--bg);color:var(--muted)}
+.list .dur{font-size:1.05rem}
+.del{border:0;background:transparent;color:var(--muted);cursor:pointer;font-size:1.1rem;padding:4px 6px}
+.empty{padding:18px;text-align:center;color:var(--muted);display:block !important}
+details.card summary{cursor:pointer;font-weight:600}
+.addgrid{display:grid;gap:8px;margin-top:10px}
+.addgrid label{display:grid;gap:3px;font-size:.82rem;color:var(--muted)}
+.mode{font-size:.78rem;color:var(--muted);text-align:center;margin-top:16px}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(18px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);padding:9px 14px;border-radius:12px;display:flex;gap:12px;align-items:center;max-width:calc(100% - 28px);font-size:.9rem}
+.toast[hidden]{display:none}
+.toast button{background:transparent;border:0;color:var(--bg);font-weight:700;text-decoration:underline;cursor:pointer}
+@media (prefers-reduced-motion:no-preference){ #arc{transition:stroke-dashoffset .8s ease} }
+</style>
+</head>
+<body>
+<main>
+  <h1>공복 타이머</h1>
+  <div class="card timer" id="timer"></div>
+
+  <section>
+    <h2 class="d">누적 기록</h2>
+    <div class="stats" id="stats"></div>
+  </section>
+
+  <section>
+    <h2 class="d">최근 7일</h2>
+    <div class="chart"><div id="chart"></div><p class="small muted" style="margin:4px 6px 0">점선은 목표 시간이에요. 하루에 끝난 공복을 기준으로 보여요.</p></div>
+  </section>
+
+  <section>
+    <h2 class="d">공복 일지</h2>
+    <ul class="list" id="list"></ul>
+  </section>
+
+  <section>
+    <details class="card">
+      <summary>지난 공복 직접 추가</summary>
+      <div class="addgrid">
+        <label>시작<input id="addStart" class="field" type="datetime-local"></label>
+        <label>끝<input id="addEnd" class="field" type="datetime-local"></label>
+        <button class="btn start" id="addBtn">기록 추가</button>
+      </div>
+    </details>
+  </section>
+
+  <p class="mode" id="mode"></p>
+<p style="text-align:center;margin:14px 0 0;font-size:.82rem"><a href="../" style="color:var(--muted)">← 소확앱 다른 앱 보기</a></p>
+</main>
+<div class="toast" id="toast" hidden><span id="toastMsg"></span><button id="toastUndo" hidden>되돌리기</button></div>
+
+<script>
+(function(){
+  const LS = 'fasting-timer-v1';
+  const GOALS = [12,14,16,18];
+  const H = 3600000;
+  const st = {mode:'loading', goalH:16, active:null, years:{}, editing:false};
+  let col = null, toastTimer = null, lastDeleted = null;
+  const queues = {};
+
+  const $ = id => document.getElementById(id);
+  const pad = n => String(n).padStart(2,'0');
+  const ymd = d => d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
+  const toLocalInput = ms => { const d = new Date(ms); return ymd(d)+'T'+pad(d.getHours())+':'+pad(d.getMinutes()); };
+  const fromLocalInput = s => s ? new Date(s).getTime() : NaN;
+  const clock = ms => { ms = Math.max(0,ms); const s = Math.floor(ms/1000); return pad(Math.floor(s/3600))+':'+pad(Math.floor(s%3600/60))+':'+pad(s%60); };
+  const hm = ms => { const m = Math.round(Math.max(0,ms)/60000); const h = Math.floor(m/60), r = m%60; return h ? (r ? `${h}시간 ${r}분` : `${h}시간`) : `${r}분`; };
+  const tstr = ms => new Date(ms).toLocaleTimeString('ko-KR',{hour:'numeric',minute:'2-digit'});
+  const dstr = ms => { const d = new Date(ms); return `${d.getMonth()+1}/${d.getDate()}(${'일월화수목금토'[d.getDay()]})`; };
+  const uid = () => Date.now().toString(36)+Math.random().toString(36).slice(2,7);
+  const fasts = () => Object.values(st.years).flat().sort((a,b)=>b.end-a.end);
+  const ok = f => (f.end-f.start) >= f.goalH*H;
+
+  // ---------- storage ----------
+  function saveLocal(){ try{ localStorage.setItem(LS, JSON.stringify({goalH:st.goalH, active:st.active, years:st.years})); }catch(e){ toast('이 기기에 저장하지 못했어요.'); } }
+  function loadLocal(){ try{ const d = JSON.parse(localStorage.getItem(LS)||'null'); if(d){ st.goalH = d.goalH||16; st.active = d.active||null; st.years = d.years||{}; } }catch(e){} }
+  function writeDoc(id, data){
+    const p = (queues[id]||Promise.resolve()).then(async () => {
+      if(st.mode==='cloud' && col){
+        try{ await col.doc(id).set(data); }
+        catch(e){ if(e && e.code==='unavailable'){ await new Promise(r=>setTimeout(r,500+Math.random()*700)); await col.doc(id).set(data); } else throw e; }
+      } else saveLocal();
+    }).catch(e => toast(e && e.code==='quota_exceeded' ? '저장 공간이 가득 찼어요.' : '저장하지 못했어요. 잠시 뒤 다시 해 주세요.'));
+    queues[id] = p; return p;
+  }
+  const saveState = () => writeDoc('state', {goalH:st.goalH, active:st.active});
+  const saveYear = y => writeDoc('y-'+y, {items: st.years[y]||[]});
+
+  async function init(){
+    renderAll();
+    const use = n => (window.claude && typeof window.claude.use==='function') ? window.claude.use(n).catch(()=>null) : Promise.resolve(null);
+    const [db, user] = await Promise.all([use('db'), use('user')]);
+    let id = null; if(user){ try{ id = await user.id(); }catch(e){} }
+    if(db && id){
+      st.mode = 'cloud'; col = db.collection('data/users/'+id);
+      col.onSnapshot(snap => {
+        const years = {}; let goalH = 16, active = null;
+        snap.docs.forEach(d => { const v = d.data()||{};
+          if(d.id==='state'){ goalH = v.goalH||16; active = v.active||null; }
+          else if(d.id.startsWith('y-')) years[d.id.slice(2)] = Array.isArray(v.items) ? v.items.map(x=>({...x})) : [];
+        });
+        st.goalH = goalH; st.active = active; st.years = years; renderAll();
+      }, () => { st.mode='local'; col=null; loadLocal(); renderAll(); });
+    } else { st.mode='local'; loadLocal(); }
+    renderAll();
+  }
+
+  // ---------- actions ----------
+  function start(){
+    st.active = {start: Date.now(), goalH: st.goalH};
+    saveState(); st.editing = false; renderAll(); toast('공복을 시작했어요. 물은 편하게 드세요.');
+  }
+  function finish(endMs){
+    if(!st.active) return;
+    const end = Math.min(endMs || Date.now(), Date.now());
+    if(end <= st.active.start){ toast('끝 시각이 시작보다 빨라요.'); return; }
+    const f = {id:uid(), start:st.active.start, end, goalH:st.active.goalH};
+    addFast(f); st.active = null; saveState(); st.editing = false; renderAll();
+    toast(ok(f) ? `${hm(f.end-f.start)}! 목표 달성이에요.` : `${hm(f.end-f.start)} 기록했어요. 오늘도 한 걸음이에요.`);
+  }
+  function addFast(f){ const y = String(new Date(f.end).getFullYear()); st.years[y] = [...(st.years[y]||[]), f]; saveYear(y); }
+  function del(id){
+    for(const y of Object.keys(st.years)){ const f = st.years[y].find(x=>x.id===id);
+      if(f){ lastDeleted = f; st.years[y] = st.years[y].filter(x=>x.id!==id); saveYear(y); renderAll(); toast('지웠어요.', true); return; } }
+  }
+  function undo(){ if(lastDeleted){ addFast(lastDeleted); lastDeleted=null; renderAll(); hideToast(); } }
+  function setGoal(h){
+    st.goalH = h; if(st.active) st.active = {...st.active, goalH:h}; saveState(); renderAll();
+  }
+  function toast(m, u){ $('toastMsg').textContent = m; $('toastUndo').hidden = !u; $('toast').hidden = false; clearTimeout(toastTimer); toastTimer = setTimeout(hideToast, u?5000:2600); }
+  function hideToast(){ $('toast').hidden = true; }
+
+  // ---------- render ----------
+  function renderTimer(){
+    const now = Date.now(), a = st.active;
+    const R = 100, C = 2*Math.PI*R;
+    let pct = 0, label, big, sub, color, info, cheer = '';
+    if(a){
+      const el = now - a.start, goal = a.goalH*H;
+      pct = Math.min(el/goal,1); color = el>=goal ? 'var(--done)' : 'var(--fast)';
+      label = '<span class="state fast">공복 중</span>';
+      big = clock(el);
+      sub = el>=goal ? `목표보다 ${hm(el-goal)} 더` : `${Math.floor(pct*100)}% · 목표 ${a.goalH}시간`;
+      info = `<div><span class="small muted">시작</span><b>${tstr(a.start)}</b></div>
+              <div><span class="small muted">${el>=goal?'달성 시각':'목표 시각'}</span><b>${tstr(a.start+goal)}</b></div>`;
+      if(el>=goal) cheer = '목표를 채웠어요. 준비되면 편하게 식사하세요.';
+      else if(pct>=0.75) cheer = '마지막 구간이에요. 거의 다 왔어요.';
+      else if(pct>=0.5) cheer = '절반을 넘었어요.';
+    } else {
+      const last = fasts()[0];
+      color = 'var(--eat)'; label = '<span class="state eat">식사 시간</span>';
+      if(last){
+        const since = now - last.end, nextAt = last.end + (24 - st.goalH)*H;
+        big = clock(since); sub = '마지막 공복이 끝난 뒤';
+        pct = Math.min(since/((24-st.goalH)*H),1);
+        info = `<div><span class="small muted">지난 공복</span><b>${hm(last.end-last.start)}</b></div>
+                <div><span class="small muted">다음 시작 추천</span><b>${tstr(nextAt)}</b></div>`;
+      } else {
+        big = '00:00:00'; sub = '시작 버튼을 눌러 보세요';
+        info = `<div><span class="small muted">목표</span><b>${st.goalH}시간 공복</b></div><div><span class="small muted">식사 시간</span><b>${24-st.goalH}시간</b></div>`;
+      }
+    }
+    const goalBtns = GOALS.map(g => `<button class="chip" data-goal="${g}" aria-pressed="${st.goalH===g}">${g}:${24-g}</button>`).join('');
+    const edit = st.editing && a ? `<div class="editbox"><span class="small muted">시작 시각</span>
+        <input id="editStart" class="field" type="datetime-local" value="${toLocalInput(a.start)}" max="${toLocalInput(now)}">
+        <button class="btn ghost" data-act="saveStart" style="padding:8px 12px">저장</button></div>`
+      : st.editing==='end' ? '' : '';
+    $('timer').innerHTML = `
+      <div class="ringwrap">
+        <svg viewBox="0 0 240 240" role="img" aria-label="${a?'공복 진행률 '+Math.floor(pct*100)+'퍼센트':'식사 시간'}">
+          <circle cx="120" cy="120" r="${R}" fill="none" stroke="var(--line)" stroke-width="16"/>
+          <circle id="arc" cx="120" cy="120" r="${R}" fill="none" stroke="${color}" stroke-width="16" stroke-linecap="round"
+            stroke-dasharray="${C}" stroke-dashoffset="${C*(1-pct)}" transform="rotate(-90 120 120)"/>
+        </svg>
+        <div class="center">${label}<div class="clock d" id="clock">${big}</div><div class="sub" id="sub">${sub}</div></div>
+      </div>
+      ${cheer ? `<p class="cheer">${cheer}</p>` : ''}
+      <div class="info">${info}</div>
+      <div class="goals" role="group" aria-label="공복 목표">${goalBtns}</div>
+      ${a ? `<button class="btn main stop" data-act="finish">공복 끝내기</button>
+             <div><button class="link" data-act="edit">시작 시각 고치기</button><button class="link" data-act="endAt">끝난 시각 지정해서 끝내기</button></div>`
+          : `<button class="btn main start" data-act="start">공복 시작</button>
+             <div><button class="link" data-act="startAt">이미 시작했어요 (시각 지정)</button></div>`}
+      ${edit}
+      ${st.editing==='end' && a ? `<div class="editbox"><span class="small muted">끝난 시각</span>
+        <input id="endAt" class="field" type="datetime-local" value="${toLocalInput(now)}" max="${toLocalInput(now)}">
+        <button class="btn ghost" data-act="saveEnd" style="padding:8px 12px">끝내기</button></div>` : ''}
+      ${st.editing==='startAt' && !a ? `<div class="editbox"><span class="small muted">시작한 시각</span>
+        <input id="startAt" class="field" type="datetime-local" value="${toLocalInput(now-H)}" max="${toLocalInput(now)}">
+        <button class="btn ghost" data-act="saveStartAt" style="padding:8px 12px">시작</button></div>` : ''}`;
+  }
+  function tick(){
+    if(st.editing) return; // 입력 중엔 화면을 다시 그리지 않아요
+    renderTimer();
+  }
+  function renderRest(){
+    const list = fasts(), now = Date.now();
+    const days = []; for(let i=6;i>=0;i--){ const d = new Date(); d.setHours(0,0,0,0); d.setDate(d.getDate()-i); days.push(ymd(d)); }
+    const byDay = {}; list.forEach(f => { const k = ymd(new Date(f.end)); (byDay[k] = byDay[k]||[]).push(f); });
+    // streak: consecutive days with a successful fast, counting from today (or yesterday if today not yet)
+    let streak = 0; const d = new Date(); d.setHours(0,0,0,0);
+    if(!(byDay[ymd(d)]||[]).some(ok)) d.setDate(d.getDate()-1);
+    while((byDay[ymd(d)]||[]).some(ok)){ streak++; d.setDate(d.getDate()-1); }
+    const weekOk = days.filter(k => (byDay[k]||[]).some(ok)).length;
+    const recent = list.filter(f => now - f.end <= 7*24*H);
+    const avg = recent.length ? recent.reduce((s,f)=>s+(f.end-f.start),0)/recent.length : 0;
+    const total = list.reduce((s,f)=>s+(f.end-f.start),0);
+    $('stats').innerHTML = `
+      <div class="stat"><div class="small muted">연속 달성</div><div class="v d">${streak}일</div></div>
+      <div class="stat"><div class="small muted">이번 7일</div><div class="v d">${weekOk}/7</div></div>
+      <div class="stat"><div class="small muted">7일 평균</div><div class="v d">${avg?(avg/H).toFixed(1)+'h':'-'}</div></div>
+      <div class="stat" style="grid-column:1/-1"><div class="small muted">지금까지 쌓은 공복</div><div class="v d">${list.length}번 · 총 ${Math.round(total/H)}시간</div></div>`;
+
+    const vals = days.map(k => Math.max(0, ...(byDay[k]||[]).map(f => (f.end-f.start)/H)));
+    const W=320, Hh=150, base=122, bw=30, gap=(W-20-bw*7)/6, maxV = Math.max(24, ...vals);
+    const y = v => base - (v/maxV)*100;
+    let bars = '';
+    vals.forEach((v,i) => { const x = 10+i*(bw+gap), good = v >= st.goalH, today = i===6;
+      bars += `<rect x="${x}" y="${y(v)}" width="${bw}" height="${base-y(v)}" rx="5" fill="${good?'var(--fast)':'var(--eat)'}" opacity="${v?1:0}"/>`;
+      if(v) bars += `<text x="${x+bw/2}" y="${y(v)-5}" text-anchor="middle" font-size="10" fill="var(--muted)">${v.toFixed(v%1?1:0)}</text>`;
+      const dd = new Date(days[i]+'T00:00');
+      bars += `<text x="${x+bw/2}" y="${base+17}" text-anchor="middle" font-size="11" fill="${today?'var(--ink)':'var(--muted)'}" font-weight="${today?600:400}">${today?'오늘':'일월화수목금토'[dd.getDay()]}</text>`; });
+    $('chart').innerHTML = `<svg viewBox="0 0 ${W} ${Hh}" role="img" aria-label="최근 7일 공복 시간 막대그래프">
+      <line x1="4" x2="${W-4}" y1="${base}" y2="${base}" stroke="var(--line)"/>
+      <line x1="4" x2="${W-4}" y1="${y(st.goalH)}" y2="${y(st.goalH)}" stroke="var(--ink)" stroke-dasharray="4 4" opacity=".5"/>
+      ${bars}</svg>`;
+
+    $('list').innerHTML = list.length ? list.slice(0,40).map(f => `<li>
+        <span class="badge ${ok(f)?'ok':'no'}">${ok(f)?'✓':'–'}</span>
+        <span><span class="dur d">${hm(f.end-f.start)}</span><br><span class="small muted">${dstr(f.start)} ${tstr(f.start)} → ${dstr(f.end)!==dstr(f.start)?dstr(f.end)+' ':''}${tstr(f.end)} · 목표 ${f.goalH}h</span></span>
+        <span></span>
+        <button class="del" data-del="${f.id}" aria-label="이 기록 지우기">×</button></li>`).join('')
+      : `<li class="empty">${st.mode==='loading'?'불러오는 중…':'아직 기록이 없어요. 첫 공복을 시작해 보세요.'}</li>`;
+    $('mode').textContent = st.mode==='cloud' ? '기록은 내 계정에만 보여요. 폰과 PC에서 이어져요.' : st.mode==='local' ? '지금은 이 기기에만 저장돼요.' : '';
+    const n = Date.now();
+    if(!$('addEnd').value){ $('addEnd').value = toLocalInput(n); $('addStart').value = toLocalInput(n - st.goalH*H); }
+  }
+  function renderAll(){ renderTimer(); renderRest(); }
+
+  // ---------- events ----------
+  $('timer').addEventListener('click', e => {
+    const g = e.target.closest('[data-goal]'); if(g){ setGoal(Number(g.dataset.goal)); return; }
+    const b = e.target.closest('[data-act]'); if(!b) return;
+    const act = b.dataset.act;
+    if(act==='start') start();
+    else if(act==='finish') finish();
+    else if(act==='edit'){ st.editing = st.editing===true ? false : true; renderTimer(); }
+    else if(act==='endAt'){ st.editing = st.editing==='end' ? false : 'end'; renderTimer(); }
+    else if(act==='startAt'){ st.editing = st.editing==='startAt' ? false : 'startAt'; renderTimer(); }
+    else if(act==='saveStart'){ const v = fromLocalInput($('editStart').value);
+      if(!v || v > Date.now()){ toast('지금보다 이전 시각으로 골라 주세요.'); return; }
+      st.active = {...st.active, start:v}; saveState(); st.editing=false; renderAll(); toast('시작 시각을 고쳤어요.'); }
+    else if(act==='saveEnd'){ const v = fromLocalInput($('endAt').value); if(!v){ return; } finish(v); }
+    else if(act==='saveStartAt'){ const v = fromLocalInput($('startAt').value);
+      if(!v || v > Date.now()){ toast('지금보다 이전 시각으로 골라 주세요.'); return; }
+      st.active = {start:v, goalH:st.goalH}; saveState(); st.editing=false; renderAll(); toast('공복 기록을 이어서 시작했어요.'); }
+  });
+  $('list').addEventListener('click', e => { const b = e.target.closest('[data-del]'); if(b) del(b.dataset.del); });
+  $('toastUndo').addEventListener('click', undo);
+  $('addBtn').addEventListener('click', () => {
+    const s = fromLocalInput($('addStart').value), en = fromLocalInput($('addEnd').value);
+    if(!s || !en || en <= s){ toast('끝 시각이 시작보다 늦어야 해요.'); return; }
+    if(en > Date.now()){ toast('끝 시각은 지금보다 이전이어야 해요.'); return; }
+    if(en - s > 72*H){ toast('72시간이 넘는 기록은 넣을 수 없어요.'); return; }
+    addFast({id:uid(), start:s, end:en, goalH:st.goalH}); $('addEnd').value=''; renderAll(); toast('지난 공복을 기록했어요.');
+  });
+  setInterval(tick, 1000);
+  document.addEventListener('visibilitychange', () => { if(document.visibilityState==='visible') renderAll(); });
+  init();
+})();
+</script>
+</body>
+</html>

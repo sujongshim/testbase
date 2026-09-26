@@ -1,0 +1,436 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>잘 자요 · 수면 기록</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌙</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Do+Hyeon&family=IBM+Plex+Sans+KR:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#EEF0F6; --surface:#FFFFFF; --ink:#1D2236; --muted:#636A80; --line:#DCE0EB;
+  --night:#4B4FA3; --night-soft:#E0E1F4; --band:#E6E8F7; --moon:#E3A83B; --done:#2F7D6B; --stamp:#D93A2B; --warn:#B4541B; --focus:#2F5FD0;
+  box-sizing:border-box; padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){ :root:not([data-theme="light"]){
+  --bg:#0F1220; --surface:#181C2E; --ink:#E6E8F2; --muted:#9AA0B8; --line:#2A2F46;
+  --night:#9EA3F0; --night-soft:#262A4A; --band:#20243C; --moon:#F2C366; --done:#6FD0B8; --stamp:#FF7A6B; --warn:#F0A060; --focus:#8AA8FF; } }
+:root[data-theme="dark"]{
+  --bg:#0F1220; --surface:#181C2E; --ink:#E6E8F2; --muted:#9AA0B8; --line:#2A2F46;
+  --night:#9EA3F0; --night-soft:#262A4A; --band:#20243C; --moon:#F2C366; --done:#6FD0B8; --stamp:#FF7A6B; --warn:#F0A060; --focus:#8AA8FF; }
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*::before,*::after{box-sizing:inherit}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"IBM Plex Sans KR","Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;font-size:15px;line-height:1.5;-webkit-text-size-adjust:100%}
+.d{font-family:"Do Hyeon","IBM Plex Sans KR",sans-serif;font-weight:400}
+main{max-width:520px;margin:0 auto;padding:12px 12px 40px}
+h1{font-size:1rem;color:var(--muted);font-weight:500;margin:0 0 8px}
+h2{font-size:1.15rem;margin:0 0 8px}
+section{margin-top:20px}
+button,input{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+.muted{color:var(--muted)} .small{font-size:.82rem}
+.panel{background:var(--surface);border-radius:14px;padding:12px}
+[hidden]{display:none !important}
+
+.timer{background:var(--surface);border-radius:18px;padding:16px 14px;text-align:center}
+.ringwrap{position:relative;width:min(230px,66vw);margin:0 auto}
+.ringwrap svg{width:100%;height:auto;display:block}
+.center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px}
+.state{font-size:.82rem;font-weight:600;padding:2px 10px;border-radius:99px;background:var(--night-soft);color:var(--night)}
+.clock{font-size:2.4rem;line-height:1.05;font-variant-numeric:tabular-nums}
+.sub{font-size:.8rem;color:var(--muted)}
+.info{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px;text-align:left}
+.info div{background:var(--bg);border-radius:10px;padding:8px 10px}
+.info b{display:block;font-size:.98rem}
+.btn{white-space:nowrap;border:0;border-radius:12px;padding:12px 16px;font-weight:600;cursor:pointer;font-size:.95rem}
+.btn.main{width:100%;margin-top:12px;font-size:1.05rem}
+.btn.sleep{background:var(--night);color:#fff}
+.btn.wake{background:var(--moon);color:#2A1E05}
+.btn.primary{background:var(--ink);color:var(--bg)} .btn.ghost{background:var(--bg)}
+.link{border:0;background:transparent;color:var(--muted);text-decoration:underline;cursor:pointer;font-size:.82rem;padding:6px}
+.editbox{margin-top:10px;display:flex;gap:6px;align-items:center;justify-content:center;flex-wrap:wrap}
+.field{border:1px solid var(--line);background:var(--bg);border-radius:10px;padding:8px 10px;font-size:.9rem;min-width:0}
+.cheer{display:flex;gap:10px;align-items:flex-start;background:var(--surface);border-radius:14px;padding:12px 14px;margin-top:10px}
+.cheer .em{font-size:1.4rem;line-height:1.2}
+.cheer p{margin:0;font-size:.93rem}
+.cheer .by{font-size:.75rem;color:var(--muted);margin-top:2px}
+.badges{display:flex;gap:6px;flex-wrap:wrap;justify-content:center;margin-top:10px}
+.badge{font-size:.8rem;padding:3px 10px;border-radius:99px;background:var(--bg);color:var(--muted)}
+.badge.ok{background:var(--night-soft);color:var(--night);font-weight:600}
+
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.stat{background:var(--surface);border-radius:12px;padding:10px}
+.stat .v{font-size:1.3rem;line-height:1.2}
+.chart{background:var(--surface);border-radius:14px;padding:12px 8px 8px}
+.chart svg{width:100%;height:auto;display:block}
+.cal{background:var(--surface);border-radius:14px;padding:12px}
+.calhead{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.calhead button{border:1px solid var(--line);background:transparent;border-radius:8px;width:30px;height:28px;cursor:pointer}
+.calhead button:disabled{opacity:.35}
+.grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:5px;text-align:center}
+.wd{font-size:.72rem;color:var(--muted)}
+.cell{position:relative;width:100%;min-width:0;aspect-ratio:1;border-radius:8px;display:grid;place-items:center;font-size:.78rem;background:var(--bg);color:var(--muted)}
+.cell.done{background:transparent;color:var(--stamp);font-weight:700}
+.cell.done::before{content:"";position:absolute;inset:9%;border:3px solid var(--stamp);border-radius:50%;transform:rotate(-8deg)}
+.cell.part{color:var(--ink)}
+.cell.part::after{content:"";position:absolute;left:50%;bottom:10%;width:5px;height:5px;margin-left:-2.5px;border-radius:50%;background:var(--night)}
+.cell.now{outline:2px solid var(--ink);outline-offset:-2px}
+.legend{display:flex;gap:10px;flex-wrap:wrap;margin-top:8px;font-size:.75rem;color:var(--muted)}
+.stampi{display:inline-block;width:11px;height:11px;border:2px solid var(--stamp);border-radius:50%;margin-right:4px;vertical-align:-2px}
+.doti{display:inline-block;width:5px;height:5px;border-radius:50%;background:var(--night);margin:0 4px 1px 3px}
+.list{list-style:none;margin:0;padding:0;background:var(--surface);border-radius:14px;overflow:hidden}
+.list li{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;padding:9px 12px;border-bottom:1px solid var(--line)}
+.list li:last-child{border-bottom:0}
+.mk{width:26px;height:26px;border-radius:50%;display:grid;place-items:center;font-size:.8rem;font-weight:700;background:var(--bg);color:var(--muted)}
+.mk.ok{background:transparent;border:2.5px solid var(--stamp);color:var(--stamp)}
+.dur{font-size:1.05rem}
+.del{border:0;background:transparent;color:var(--muted);cursor:pointer;font-size:1.1rem;padding:4px 6px}
+.empty{padding:18px;text-align:center;color:var(--muted);display:block !important}
+details.panel summary{cursor:pointer;font-weight:600}
+.form{display:grid;gap:8px;margin-top:10px}
+.form label{display:grid;gap:3px;font-size:.84rem;color:var(--muted)}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.btnrow{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.filepick{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
+.warnbox{background:var(--surface);border-left:4px solid var(--night);border-radius:12px;padding:10px 12px;margin-top:10px;font-size:.85rem}
+.setup{background:var(--surface);border-radius:18px;padding:16px}
+.mode{font-size:.78rem;color:var(--muted);text-align:center;margin-top:16px}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(18px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);padding:9px 14px;border-radius:12px;display:flex;gap:12px;align-items:center;max-width:calc(100% - 28px);font-size:.9rem;z-index:5}
+.toast[hidden]{display:none}
+.toast button{white-space:nowrap;background:transparent;border:0;color:var(--bg);font-weight:700;text-decoration:underline;cursor:pointer}
+@media (prefers-reduced-motion:no-preference){ #arc{transition:stroke-dashoffset .8s ease} }
+</style>
+</head>
+<body>
+<main>
+  <div class="setup" id="setup" hidden>
+    <h2 class="d">잘 자요 · 수면 목표 정하기</h2>
+    <p class="small muted" style="margin:0 0 4px">매일 같은 시간에 자고 일어나는 게 가장 중요해요. 나중에 바꿀 수 있어요.</p>
+    <div class="form">
+      <div class="two"><label>잠자리에 들 시각<input id="uBed" class="field" type="time" value="23:00"></label>
+        <label>일어날 시각<input id="uWake" class="field" type="time" value="06:00"></label></div>
+      <div class="two"><label>최소 수면 (시간)<input id="uMin" class="field" type="number" inputmode="decimal" step="0.5" min="4" max="12" value="7"></label>
+        <label>적정 최대 (시간)<input id="uMax" class="field" type="number" inputmode="decimal" step="0.5" min="4" max="12" value="8"></label></div>
+      <button class="btn primary" id="uStart">시작하기</button>
+    </div>
+  </div>
+
+  <div id="app" hidden>
+    <h1>잘 자요 · 수면 기록</h1>
+    <div class="timer" id="timer"></div>
+    <div class="cheer" id="cheer"></div>
+    <div id="notices"></div>
+
+    <section>
+      <h2 class="d">쌓인 기록</h2>
+      <div class="stats" id="stats"></div>
+    </section>
+
+    <section>
+      <h2 class="d">최근 7일 잠</h2>
+      <div class="chart"><div id="chart"></div><p class="small muted" style="margin:4px 6px 0">연한 띠가 목표 시간이에요. 막대가 띠 안에 들어올수록 좋아요.</p></div>
+    </section>
+
+    <section>
+      <div class="cal" id="cal"></div>
+    </section>
+
+    <section>
+      <h2 class="d">수면 일지</h2>
+      <ul class="list" id="list"></ul>
+    </section>
+
+    <section>
+      <details class="panel" id="setPanel">
+        <summary>목표 바꾸기 · 지난 잠 추가 · 백업</summary>
+        <div class="form">
+          <div class="two"><label>잠자리에 들 시각<input id="sBed" class="field" type="time"></label><label>일어날 시각<input id="sWake" class="field" type="time"></label></div>
+          <div class="two"><label>최소 수면 (시간)<input id="sMin" class="field" type="number" inputmode="decimal" step="0.5" min="4" max="12"></label><label>적정 최대 (시간)<input id="sMax" class="field" type="number" inputmode="decimal" step="0.5" min="4" max="12"></label></div>
+          <button class="btn primary" id="saveGoal">목표 저장</button>
+        </div>
+        <div style="margin-top:16px;font-weight:600">지난 잠 직접 추가</div>
+        <div class="form">
+          <label>잠든 시각<input id="aStart" class="field" type="datetime-local"></label>
+          <label>일어난 시각<input id="aEnd" class="field" type="datetime-local"></label>
+          <button class="btn sleep" id="addBtn">기록 추가</button>
+        </div>
+        <div style="margin-top:16px;font-weight:600">백업</div>
+        <p class="small muted" style="margin:2px 0 0">기록은 이 휴대폰 브라우저에만 있어요. 가끔 백업 파일을 받아 두세요.</p>
+        <div class="btnrow"><button class="btn primary" id="backupBtn">백업 파일 받기</button>
+          <label class="btn ghost" style="display:inline-block">백업 불러오기<input id="restoreInput" class="filepick" type="file" accept=".json,application/json"></label></div>
+      </details>
+    </section>
+    <p class="mode" id="mode"></p>
+    <p style="text-align:center;margin:14px 0 0;font-size:.82rem"><a href="../" style="color:var(--muted)">← 소확앱 다른 앱 보기</a></p>
+  </div>
+</main>
+<div class="toast" id="toast" hidden><span id="toastMsg"></span><button id="toastUndo" hidden>되돌리기</button></div>
+
+<script>
+(function(){
+  const KEY = 'sleep-well-v1';
+  const M = 60000, HR = 3600000, GRACE = 30;          // 취침 목표 허용 범위(분)
+  const st = {setup:false, goal:{bed:'23:00', wake:'06:00', min:7, max:8}, active:null, nights:[], lastBackup:0, editing:false, calMonth:null, storageOk:true};
+  let toastTimer = null, undoFn = null;
+
+  const $ = id => document.getElementById(id);
+  const pad = n => String(n).padStart(2,'0');
+  const ymd = d => d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
+  const parse = s => { const [y,m,d] = s.split('-').map(Number); return new Date(y,m-1,d); };
+  const today = () => ymd(new Date());
+  const addDays = (s,n) => { const d = parse(s); d.setDate(d.getDate()+n); return ymd(d); };
+  const toLocal = ms => { const d = new Date(ms); return ymd(d)+'T'+pad(d.getHours())+':'+pad(d.getMinutes()); };
+  const fromLocal = s => s ? new Date(s).getTime() : NaN;
+  const hm = ms => { const m = Math.round(Math.max(0,ms)/M), h = Math.floor(m/60), r = m%60; return h ? (r ? `${h}시간 ${r}분` : `${h}시간`) : `${r}분`; };
+  const clk = ms => { const m = Math.floor(Math.max(0,ms)/M); return Math.floor(m/60)+':'+pad(m%60); };
+  const tstr = ms => new Date(ms).toLocaleTimeString('ko-KR',{hour:'numeric',minute:'2-digit'});
+  const dstr = s => { const d = parse(s); return `${d.getMonth()+1}/${d.getDate()}(${'일월화수목금토'[d.getDay()]})`; };
+  const uid = () => Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+  const hhmm = s => { const [h,m] = s.split(':').map(Number); return h*60+m; };
+  const rel = mins => (mins - 720 + 1440) % 1440;             // 정오 기준 분 (밤 시각 비교용)
+  const relOf = ms => { const d = new Date(ms); return rel(d.getHours()*60+d.getMinutes()); };
+  const fmtMin = m => { m = ((m%1440)+1440)%1440; const h = Math.floor(m/60), mm = m%60; return `${h<12?'오전':'오후'} ${h%12||12}:${pad(mm)}`; };
+  const dayOf = n => ymd(new Date(n.end));                     // 잠은 '일어난 날'로 기록
+
+  // ---------- storage ----------
+  function save(){ try{ localStorage.setItem(KEY, JSON.stringify({v:1, setup:st.setup, goal:st.goal, active:st.active, nights:st.nights, lastBackup:st.lastBackup})); st.storageOk = true; }catch(e){ st.storageOk = false; toast('이 브라우저에 저장하지 못했어요. 백업 파일을 받아 두세요.'); } }
+  function load(){ try{ localStorage.setItem(KEY+'-t','1'); localStorage.removeItem(KEY+'-t'); const d = JSON.parse(localStorage.getItem(KEY)||'null');
+    if(d){ Object.assign(st, {setup:!!d.setup, goal:d.goal||st.goal, active:d.active||null, nights:d.nights||[], lastBackup:d.lastBackup||0}); } }catch(e){ st.storageOk = false; } }
+
+  // ---------- night evaluation ----------
+  function judge(n){
+    const dur = (n.end - n.start)/HR, g = st.goal;
+    const bedOk = relOf(n.start) <= rel(hhmm(g.bed)) + GRACE;
+    const wakeDiff = Math.abs(((new Date(n.end).getHours()*60 + new Date(n.end).getMinutes()) - hhmm(g.wake) + 720 + 1440) % 1440 - 720);
+    const wakeOk = wakeDiff <= GRACE;
+    const durOk = dur >= g.min;
+    return {dur, bedOk, wakeOk, durOk, ok: durOk && bedOk, over: dur > g.max + 1, nap: dur < 3};
+  }
+  const mainNights = () => st.nights.filter(n => (n.end-n.start) >= 3*HR).sort((a,b)=>b.end-a.end);
+  function status(day){
+    const ns = mainNights().filter(n => dayOf(n)===day); if(!ns.length) return 'none';
+    return ns.some(n => judge(n).ok) ? 'done' : 'part';
+  }
+  function streak(){
+    let s = 0, d = today();
+    if(status(d)!=='done') d = addDays(d,-1);
+    while(status(d)==='done'){ s++; d = addDays(d,-1); }
+    return s;
+  }
+
+  // ---------- actions ----------
+  function sleepNow(at){
+    st.active = {start: at || Date.now()}; st.editing = false; save(); render();
+    toast('잘 자요 🌙 휴대폰은 내려놓고 푹 쉬세요.');
+  }
+  function wakeUp(at){
+    if(!st.active) return;
+    const end = Math.min(at || Date.now(), Date.now());
+    if(end <= st.active.start){ toast('일어난 시각이 잠든 시각보다 빨라요.'); return; }
+    if(end - st.active.start > 20*HR && !confirm(`${hm(end-st.active.start)}로 기록돼요. '잠든 시각 고치기'를 먼저 하시겠어요? 확인을 누르면 그대로 저장해요.`)) return;
+    const n = {id:uid(), start:st.active.start, end};
+    st.nights.push(n); st.active = null; st.editing = false; save(); render();
+    const j = judge(n);
+    undoFn = () => { st.nights = st.nights.filter(x=>x.id!==n.id); st.active = {start:n.start}; save(); render(); };
+    toast(j.nap ? `${hm(n.end-n.start)} 짧은 잠으로 기록했어요.` : j.ok ? `${hm(n.end-n.start)} 잤어요. 목표 달성 ⭕` : `${hm(n.end-n.start)} 잤어요. 좋은 아침이에요!`, true);
+  }
+  function addPast(){
+    const s = fromLocal($('aStart').value), e = fromLocal($('aEnd').value);
+    if(!s || !e || e <= s){ toast('일어난 시각이 잠든 시각보다 늦어야 해요.'); return; }
+    if(e > Date.now()){ toast('일어난 시각은 지금보다 이전이어야 해요.'); return; }
+    if(e - s > 20*HR){ toast('20시간이 넘는 잠은 넣을 수 없어요.'); return; }
+    if(st.nights.some(n => s < n.end && e > n.start)){ toast('이미 기록된 잠과 시간이 겹쳐요.'); return; }
+    st.nights.push({id:uid(), start:s, end:e}); $('aEnd').value = ''; save(); render(); toast('지난 잠을 기록했어요.');
+  }
+  function del(id){ const n = st.nights.find(x=>x.id===id); st.nights = st.nights.filter(x=>x.id!==id); save(); render(); undoFn = () => { st.nights.push(n); save(); render(); }; toast('지웠어요.', true); }
+  function toast(m, u){ $('toastMsg').textContent = m; $('toastUndo').hidden = !u; $('toast').hidden = false; clearTimeout(toastTimer); toastTimer = setTimeout(()=>{$('toast').hidden = true;}, u?5000:2800); }
+
+  // ---------- backup ----------
+  function backup(){
+    try{ const url = URL.createObjectURL(new Blob([JSON.stringify({app:'sleep-well', v:1, goal:st.goal, nights:st.nights})],{type:'application/json'}));
+      const a = document.createElement('a'); a.href = url; a.download = '잘자요-백업-'+today()+'.json'; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(url),4000);
+      st.lastBackup = Date.now(); save(); render(); toast('백업 파일을 받았어요.'); }catch(e){ toast('파일을 받지 못했어요.'); }
+  }
+  function restore(file){
+    if(!file) return; const r = new FileReader();
+    r.onload = () => { try{ const d = JSON.parse(r.result); if(!d || d.app!=='sleep-well' || !Array.isArray(d.nights)) throw 0;
+      let added = 0; for(const n of d.nights) if(n && n.id && Number.isFinite(n.start) && Number.isFinite(n.end) && n.end>n.start && !st.nights.some(x=>x.id===n.id)){ st.nights.push({id:n.id, start:n.start, end:n.end}); added++; }
+      if(!st.setup && d.goal){ st.goal = d.goal; st.setup = true; }
+      save(); render(); toast(added ? `잠 기록 ${added}개를 되살렸어요.` : '새로 더할 기록이 없어요.'); }catch(e){ toast('잘 자요 백업 파일이 아니에요.'); } };
+    r.readAsText(file);
+  }
+
+  // ---------- cheer ----------
+  const TIPS = [
+    '매일 같은 시각에 일어나면 밤에 잠드는 시각도 자연스럽게 맞춰져요.',
+    '잠들기 1시간 전부터는 화면 밝기를 낮추고 조명을 어둡게 해 보세요.',
+    '오후 늦게 마신 커피는 밤잠을 방해할 수 있어요.',
+    '침실은 조금 서늘하고 어둡게, 조용하게.',
+    '아침에 일어나 햇빛을 쬐면 밤에 잠이 더 잘 와요.',
+    '잠이 안 오면 억지로 누워 있기보다 잠깐 일어나 조용한 일을 해 보세요.',
+    '주말에도 평소와 비슷한 시각에 일어나면 월요일이 덜 힘들어요.',
+    '잠들기 직전의 과식과 음주는 깊은 잠을 방해해요.'
+  ];
+  function cheer(now){
+    const g = st.goal, a = st.active, nowRel = relOf(now), bedRel = rel(hhmm(g.bed));
+    const tip = TIPS[[...today()].reduce((x,c)=>x*31+c.charCodeAt(0),7) % TIPS.length];
+    if(a){
+      const el = now - a.start;
+      if(el >= g.min*HR) return ['☀️', '목표만큼 잤어요. 일어나면 "일어났어요"를 눌러 주세요.'];
+      return ['🌙', '푹 자고 있는 중이에요. 내일의 나를 위한 가장 좋은 투자예요.'];
+    }
+    const s = streak(), td = status(today());
+    if(td==='done' && [7,14,30,50,100].includes(s)) return ['🏆', `${s}일 연속 목표 달성! 몸이 먼저 고마워하고 있을 거예요.`];
+    if(td==='done') return ['⭕', s>1 ? `어젯밤 목표 달성! ${s}일째 규칙적으로 자고 있어요. 오늘 밤도 ${fmtMin(hhmm(g.bed))}에 만나요.` : `어젯밤 목표 달성! 오늘 밤도 ${fmtMin(hhmm(g.bed))}에 만나요.`];
+    const mins = bedRel - nowRel;
+    if(mins > 0 && mins <= 60) return ['🕯️', `잠자리까지 ${mins}분. 화면을 내려놓고 씻고, 불을 조금씩 어둡게 해 볼까요?`];
+    if(mins <= 0 && mins > -240){
+      const wakeAt = hhmm(g.wake), left = ((wakeAt - (new Date(now).getHours()*60+new Date(now).getMinutes())) + 1440) % 1440;
+      return ['😴', `지금 자면 ${Math.floor(left/60)}시간 ${left%60}분 잘 수 있어요. 오늘 할 일은 내일의 나에게 맡겨요.`];
+    }
+    if(td==='part') return ['🌱', '어젯밤은 목표에 조금 못 미쳤어요. 괜찮아요, 오늘 밤 다시 맞추면 돼요.'];
+    return ['💡', tip];
+  }
+
+  // ---------- render ----------
+  function renderTimer(){
+    const now = Date.now(), g = st.goal, a = st.active, R = 100, C = 2*Math.PI*R;
+    let pct = 0, color = 'var(--night)', label, big, sub, info, buttons, badges = '';
+    if(a){
+      const el = now - a.start, target = g.min*HR;
+      pct = Math.min(el/target, 1); color = el >= target ? 'var(--done)' : 'var(--night)';
+      const wakeT = new Date(now); const [wh,wm] = g.wake.split(':').map(Number); wakeT.setHours(wh, wm, 0, 0); if(wakeT.getTime() <= a.start) wakeT.setDate(wakeT.getDate()+1);
+      label = '<span class="state">🌙 자는 중</span>'; big = clk(el); sub = `목표 ${g.min}시간 · ${Math.floor(pct*100)}%`;
+      info = `<div><span class="small muted">잠든 시각</span><b>${tstr(a.start)}</b></div><div><span class="small muted">목표 기상</span><b>${tstr(wakeT.getTime())}</b></div>`;
+      buttons = `<button class="btn main wake" data-act="wake">☀️ 일어났어요</button>
+        <div><button class="link" data-act="edit">잠든 시각 고치기</button><button class="link" data-act="endAt">일어난 시각 지정</button></div>`;
+    } else {
+      const bed = new Date(now); const [bh,bm] = g.bed.split(':').map(Number); bed.setHours(bh, bm, 0, 0);
+      if(bed.getTime() < now - 4*HR) bed.setDate(bed.getDate()+1);
+      const until = bed.getTime() - now, dayMin = 24*60 - (g.min*60);
+      pct = until > 0 ? Math.max(0, 1 - until/(dayMin*M)) : 1; color = until <= 0 ? 'var(--warn)' : 'var(--moon)';
+      label = '<span class="state" style="background:var(--band);color:var(--muted)">☀️ 깨어 있음</span>';
+      big = until > 0 ? clk(until) : '지금!'; sub = until > 0 ? `잠자리까지 (${fmtMin(hhmm(g.bed))})` : `목표 시각이 ${hm(-until)} 지났어요`;
+      const last = mainNights()[0];
+      info = `<div><span class="small muted">목표</span><b>${fmtMin(hhmm(g.bed))} → ${fmtMin(hhmm(g.wake))}</b></div><div><span class="small muted">지난 잠</span><b>${last ? hm(last.end-last.start) : '-'}</b></div>`;
+      if(last && dayOf(last)===today()){ const j = judge(last);
+        badges = `<div class="badges"><span class="badge ${j.durOk?'ok':''}">${j.durOk?'✓':'·'} ${g.min}시간 이상</span><span class="badge ${j.bedOk?'ok':''}">${j.bedOk?'✓':'·'} 제시간 취침</span><span class="badge ${j.wakeOk?'ok':''}">${j.wakeOk?'✓':'·'} 제시간 기상</span></div>`; }
+      buttons = `<button class="btn main sleep" data-act="sleep">🌙 잠자리에 들기</button>
+        <div><button class="link" data-act="startAt">이미 잠들었었어요 (시각 지정)</button></div>`;
+    }
+    let edit = '';
+    if(st.editing==='edit' && a) edit = `<div class="editbox"><span class="small muted">잠든 시각</span><input id="eStart" class="field" type="datetime-local" value="${toLocal(a.start)}" max="${toLocal(now)}"><button class="btn ghost" data-act="saveStart" style="padding:8px 12px">저장</button></div>`;
+    if(st.editing==='endAt' && a) edit = `<div class="editbox"><span class="small muted">일어난 시각</span><input id="eEnd" class="field" type="datetime-local" value="${toLocal(now)}" max="${toLocal(now)}"><button class="btn ghost" data-act="saveEnd" style="padding:8px 12px">기록</button></div>`;
+    if(st.editing==='startAt' && !a) edit = `<div class="editbox"><span class="small muted">잠든 시각</span><input id="eStartAt" class="field" type="datetime-local" value="${toLocal(now-HR)}" max="${toLocal(now)}"><button class="btn ghost" data-act="saveStartAt" style="padding:8px 12px">시작</button></div>`;
+    $('timer').innerHTML = `
+      <div class="ringwrap"><svg viewBox="0 0 240 240" role="img" aria-label="${a?'수면 진행':'취침까지 남은 시간'}">
+        <circle cx="120" cy="120" r="${R}" fill="none" stroke="var(--line)" stroke-width="16"/>
+        <circle id="arc" cx="120" cy="120" r="${R}" fill="none" stroke="${color}" stroke-width="16" stroke-linecap="round" stroke-dasharray="${C}" stroke-dashoffset="${C*(1-pct)}" transform="rotate(-90 120 120)"/></svg>
+        <div class="center">${label}<div class="clock d">${big}</div><div class="sub">${sub}</div></div></div>
+      ${badges}<div class="info">${info}</div>${buttons}${edit}`;
+    const [em, msg] = cheer(now); $('cheer').innerHTML = `<span class="em" aria-hidden="true">${em}</span><div><p>${msg}</p><div class="by">${a?'잘 자요':'오늘의 한마디'}</div></div>`;
+  }
+
+  function render(){
+    $('setup').hidden = st.setup; $('app').hidden = !st.setup;
+    if(!st.setup) return;
+    if(!st.editing) renderTimer();
+    const g = st.goal, t = today(), ns = mainNights();
+
+    // notices
+    const days = st.lastBackup ? Math.floor((Date.now()-st.lastBackup)/86400000) : null;
+    let notes = '';
+    if(!st.storageOk) notes += `<div class="warnbox">이 브라우저는 기록을 저장하지 못하고 있어요. 시크릿 모드라면 일반 창으로 열어 주세요.</div>`;
+    if(ns.length >= 7 && (days===null || days >= 14)) notes += `<div class="warnbox">${days===null?'아직 백업한 적이 없어요.':`마지막 백업이 ${days}일 전이에요.`} 기록이 이 폰에만 있어요.<div class="btnrow"><button class="btn primary" data-act="backup">지금 백업하기</button></div></div>`;
+    $('notices').innerHTML = notes;
+
+    // stats (last 7 wake-days)
+    const week = ns.filter(n => dayOf(n) > addDays(t,-7));
+    const avg = week.length ? week.reduce((a,n)=>a+(n.end-n.start),0)/week.length : 0;
+    const avgRel = arr => { const v = arr.map(relOf); return v.length ? Math.round(v.reduce((a,b)=>a+b,0)/v.length) : null; };
+    const bedAvg = avgRel(week.map(n=>n.start)), wakeAvg = avgRel(week.map(n=>n.end));
+    const debtDays = []; for(let i=0;i<7;i++){ const d = addDays(t,-i); const dn = ns.filter(n=>dayOf(n)===d); if(dn.length) debtDays.push(Math.max(0, g.min*HR - dn.reduce((a,n)=>a+(n.end-n.start),0))); }
+    const debt = debtDays.reduce((a,b)=>a+b,0);
+    const okWeek = [...Array(7)].map((_,i)=>addDays(t,-i)).filter(d=>status(d)==='done').length;
+    $('stats').innerHTML = `
+      <div class="stat"><div class="small muted">연속 달성</div><div class="v d">${streak()}일</div></div>
+      <div class="stat"><div class="small muted">7일 중 달성</div><div class="v d">${okWeek}일</div></div>
+      <div class="stat"><div class="small muted">7일 평균</div><div class="v d">${avg?(avg/HR).toFixed(1)+'h':'-'}</div></div>
+      <div class="stat"><div class="small muted">평균 취침</div><div class="v d" style="font-size:1.05rem">${bedAvg===null?'-':fmtMin(bedAvg+720)}</div></div>
+      <div class="stat"><div class="small muted">평균 기상</div><div class="v d" style="font-size:1.05rem">${wakeAvg===null?'-':fmtMin(wakeAvg+720)}</div></div>
+      <div class="stat"><div class="small muted">주간 부족 잠</div><div class="v d" style="font-size:1.05rem;${debt>3*HR?'color:var(--warn)':''}">${debtDays.length?(debt?hm(debt):'없음 👍'):'-'}</div></div>`;
+
+    // chart: last 7 wake-days as horizontal bars on a 20:00 → 10:00 axis
+    const W = 320, rowH = 24, top = 22, L = 50, Rr = 16, H = top + rowH*7 + 22;
+    const a0 = rel(20*60), a1 = rel(10*60), X = r => L + (Math.min(Math.max(r,a0),a1) - a0)/(a1 - a0)*(W-L-Rr);
+    const bandX1 = X(rel(hhmm(g.bed))), bandX2 = X(rel(hhmm(g.wake)));
+    let svg = `<rect x="${bandX1}" y="${top-4}" width="${Math.max(bandX2-bandX1,0)}" height="${rowH*7+4}" rx="6" fill="var(--band)"/>`;
+    for(const h of [20,22,0,2,4,6,8,10]){ const x = X(rel(h*60)); svg += `<line x1="${x}" x2="${x}" y1="${top-4}" y2="${top+rowH*7}" stroke="var(--line)" stroke-dasharray="${h%2?'':'2 3'}"/><text x="${x}" y="${top-8}" text-anchor="middle" font-size="9" fill="var(--muted)">${h}시</text>`; }
+    for(let i=0;i<7;i++){
+      const d = addDays(t, -6+i), y = top + i*rowH, dn = ns.filter(n=>dayOf(n)===d), isT = d===t;
+      svg += `<text x="${L-6}" y="${y+rowH/2+4}" text-anchor="end" font-size="10" fill="${isT?'var(--ink)':'var(--muted)'}" font-weight="${isT?600:400}">${isT?'오늘':dstr(d).replace(/\(.\)/,'')}</text>`;
+      for(const n of dn){ const x1 = X(relOf(n.start)), x2 = X(relOf(n.end) < relOf(n.start) ? a1 : relOf(n.end)); const ok = judge(n).ok;
+        svg += `<rect x="${x1}" y="${y+5}" width="${Math.max(x2-x1,3)}" height="${rowH-10}" rx="7" fill="${ok?'var(--night)':'var(--moon)'}"/>`;
+        if(x2-x1 > 34) svg += `<text x="${(x1+x2)/2}" y="${y+rowH/2+4}" text-anchor="middle" font-size="10" fill="#fff" font-weight="600">${((n.end-n.start)/HR).toFixed(1)}h</text>`; }
+    }
+    svg += `<rect x="${L}" y="${H-12}" width="10" height="8" rx="2" fill="var(--night)"/><text x="${L+14}" y="${H-5}" font-size="9" fill="var(--muted)">목표 달성</text>
+            <rect x="${L+70}" y="${H-12}" width="10" height="8" rx="2" fill="var(--moon)"/><text x="${L+84}" y="${H-5}" font-size="9" fill="var(--muted)">아쉬운 날</text>`;
+    $('chart').innerHTML = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="최근 7일 잠든 시각과 일어난 시각">${svg}</svg>`;
+
+    // calendar
+    const cm = st.calMonth || t.slice(0,7), [cy,cmo] = cm.split('-').map(Number);
+    const first = new Date(cy, cmo-1, 1), lastDay = new Date(cy, cmo, 0).getDate(), lead = (first.getDay()+6)%7;
+    let cells = ['월','화','수','목','금','토','일'].map(w=>`<div class="wd">${w}</div>`).join('') + '<div></div>'.repeat(lead);
+    for(let i=1;i<=lastDay;i++){ const k = `${cm}-${pad(i)}`, s2 = status(k); cells += `<div class="cell ${s2} ${k===t?'now':''}" aria-label="${i}일 ${({done:'목표 달성',part:'기록 있음',none:'기록 없음'})[s2]}">${i}</div>`; }
+    $('cal').innerHTML = `<div class="calhead"><button data-cal="-1" aria-label="이전 달">‹</button><b>${cy}년 ${cmo}월</b><button data-cal="1" aria-label="다음 달" ${cm>=t.slice(0,7)?'disabled':''}>›</button></div>
+      <div class="grid">${cells}</div>
+      <div class="legend"><span><span class="stampi"></span>목표 달성 (${g.min}시간 이상 + 제시간 취침)</span><span><span class="doti"></span>기록만 있음</span></div>`;
+
+    // list
+    const all = st.nights.slice().sort((a,b)=>b.end-a.end).slice(0,40);
+    $('list').innerHTML = all.length ? all.map(n => { const j = judge(n);
+      return `<li><span class="mk ${j.ok?'ok':''}">${j.ok?'○':j.nap?'z':'·'}</span>
+        <span><span class="dur d">${hm(n.end-n.start)}</span>${j.nap?' <span class="small muted">짧은 잠</span>':''}<br><span class="small muted">${dstr(ymd(new Date(n.start)))} ${tstr(n.start)} → ${tstr(n.end)}${j.over?' · 너무 길게 잤어요':''}</span></span>
+        <button class="del" data-del="${n.id}" aria-label="이 기록 지우기">×</button></li>`; }).join('')
+      : `<li class="empty">아직 기록이 없어요. 오늘 밤 '잠자리에 들기'를 눌러 보세요.</li>`;
+
+    const setv = (id,v) => { if(document.activeElement!==$(id)) $(id).value = v; };
+    if(!$('setPanel').open){ setv('sBed', g.bed); setv('sWake', g.wake); setv('sMin', g.min); setv('sMax', g.max); }
+    if(!$('aEnd').value){ const e = new Date(); e.setHours(...g.wake.split(':').map(Number),0,0); if(e.getTime()>Date.now()) e.setDate(e.getDate()-1); $('aEnd').value = toLocal(e.getTime()); $('aStart').value = toLocal(e.getTime() - g.min*HR); }
+    $('mode').textContent = st.storageOk ? '기록은 이 기기의 브라우저에만 저장돼요. 로그인은 필요 없어요.' : '지금은 저장이 되지 않는 상태예요.';
+  }
+
+  // ---------- events ----------
+  function readGoal(p){
+    const bed = $(p+'Bed').value, wake = $(p+'Wake').value, mn = Number($(p+'Min').value), mx = Number($(p+'Max').value);
+    if(!bed || !wake){ toast('시각을 모두 정해 주세요.'); return null; }
+    if(!(mn>=4 && mn<=12) || !(mx>=mn && mx<=12)){ toast('수면 시간은 4~12시간, 최대는 최소보다 크게 적어 주세요.'); return null; }
+    return {bed, wake, min:mn, max:mx};
+  }
+  $('uStart').addEventListener('click', () => { const g = readGoal('u'); if(!g) return; st.goal = g; st.setup = true; save(); render(); window.scrollTo(0,0); });
+  $('saveGoal').addEventListener('click', () => { const g = readGoal('s'); if(!g) return; st.goal = g; save(); $('setPanel').open = false; render(); toast('목표를 바꿨어요.'); });
+  $('timer').addEventListener('click', e => {
+    const b = e.target.closest('[data-act]'); if(!b) return; const a = b.dataset.act;
+    if(a==='sleep') sleepNow(); else if(a==='wake') wakeUp();
+    else if(['edit','endAt','startAt'].includes(a)){ st.editing = st.editing===a ? false : a; renderTimer(); }
+    else if(a==='saveStart'){ const v = fromLocal($('eStart').value); if(!v || v > Date.now()){ toast('지금보다 이전 시각으로 골라 주세요.'); return; } st.active.start = v; st.editing = false; save(); render(); toast('잠든 시각을 고쳤어요.'); }
+    else if(a==='saveEnd'){ const v = fromLocal($('eEnd').value); if(v) wakeUp(v); }
+    else if(a==='saveStartAt'){ const v = fromLocal($('eStartAt').value); if(!v || v > Date.now()){ toast('지금보다 이전 시각으로 골라 주세요.'); return; } sleepNow(v); }
+  });
+  $('notices').addEventListener('click', e => { if(e.target.closest('[data-act="backup"]')) backup(); });
+  $('cal').addEventListener('click', e => { const c = e.target.closest('[data-cal]'); if(!c) return; const [y,m] = (st.calMonth||today().slice(0,7)).split('-').map(Number); st.calMonth = ymd(new Date(y, m-1+Number(c.dataset.cal), 1)).slice(0,7); render(); });
+  $('list').addEventListener('click', e => { const b = e.target.closest('[data-del]'); if(b) del(b.dataset.del); });
+  $('addBtn').addEventListener('click', addPast);
+  $('backupBtn').addEventListener('click', backup);
+  $('restoreInput').addEventListener('change', e => { restore(e.target.files[0]); e.target.value = ''; });
+  $('toastUndo').addEventListener('click', () => { if(undoFn){ undoFn(); undoFn = null; } $('toast').hidden = true; });
+  setInterval(() => { if(st.setup && !st.editing) renderTimer(); }, 15000);
+  document.addEventListener('visibilitychange', () => { if(document.visibilityState==='visible') render(); });
+
+  load(); render();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,732 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#F1F3F6">
+<title>간식 항아리 가계부</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Do+Hyeon&family=IBM+Plex+Sans+KR:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#F1F3F6; --surface:#FFFFFF; --ink:#1B2230; --muted:#5E6878; --line:#DCE1E8;
+  --food:#1F6F6B; --snack:#C2386B; --snack-soft:#F7DCE6; --saved:#2F7D45; --saved-soft:#DCEFE1; --warn:#B4541B; --focus:#2F5FD0;
+  box-sizing:border-box; padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){ :root:not([data-theme="light"]){
+  --bg:#12161D; --surface:#1B212B; --ink:#E8ECF2; --muted:#9AA4B4; --line:#2C3441;
+  --food:#5FC2B9; --snack:#F07AA3; --snack-soft:#43222F; --saved:#6FCB8A; --saved-soft:#1F3A27; --warn:#F0A060; --focus:#8AA8FF; } }
+:root[data-theme="dark"]{
+  --bg:#12161D; --surface:#1B212B; --ink:#E8ECF2; --muted:#9AA4B4; --line:#2C3441;
+  --food:#5FC2B9; --snack:#F07AA3; --snack-soft:#43222F; --saved:#6FCB8A; --saved-soft:#1F3A27; --warn:#F0A060; --focus:#8AA8FF; }
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*::before,*::after{box-sizing:inherit}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"IBM Plex Sans KR","Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;font-size:15px;line-height:1.5;-webkit-text-size-adjust:100%}
+.display{font-family:"Do Hyeon","IBM Plex Sans KR",sans-serif;font-weight:400}
+main{max-width:520px;margin:0 auto;padding:12px 12px 40px}
+h1{font-size:1rem;margin:0 0 8px;color:var(--muted);font-weight:500}
+h2{font-size:1.15rem;margin:0 0 8px}
+section{margin-top:20px}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+.muted{color:var(--muted)} .small{font-size:.82rem}
+.panel{background:var(--surface);border-radius:14px;padding:12px}
+
+.hero{display:grid;grid-template-columns:78px 1fr;gap:14px;align-items:center;background:var(--surface);border-radius:18px;padding:14px}
+.hero svg{width:78px;height:auto;display:block}
+.hero .label{font-size:.82rem;color:var(--muted)}
+.hero .big{font-size:1.9rem;line-height:1.05;margin:0 0 4px}
+.hero .big.over{color:var(--warn)}
+.hero .msg{font-size:.85rem;margin:0}
+.hero .meta{margin-top:6px;font-size:.78rem;color:var(--muted)}
+.savedline{display:inline-block;margin-top:6px;background:var(--saved-soft);color:var(--saved);padding:2px 9px;border-radius:999px;font-size:.78rem;font-weight:600}
+
+.amount{display:flex;align-items:baseline;gap:6px;border-bottom:2px solid var(--line);padding-bottom:2px}
+.amount:focus-within{border-color:var(--ink)}
+.amount input{border:0;background:transparent;font-family:"Do Hyeon",sans-serif;font-size:1.7rem;width:100%;min-width:0;padding:0}
+.amount input:focus{outline:none}
+.amount span{font-size:1rem;color:var(--muted)}
+.seg{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:10px}
+.seg button{border:1.5px solid var(--line);background:transparent;border-radius:10px;padding:7px 0;cursor:pointer;font-weight:600;font-size:.9rem}
+.seg button[aria-pressed="true"][data-cat="food"]{background:var(--food);border-color:var(--food);color:#fff}
+.seg button[aria-pressed="true"][data-cat="snack"]{background:var(--snack);border-color:var(--snack);color:#fff}
+.seg button[aria-pressed="true"][data-cat="life"],.seg button[aria-pressed="true"][data-cat="fun"]{background:var(--ink);border-color:var(--ink);color:var(--bg)}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.chip{border:1px solid var(--line);background:transparent;border-radius:999px;padding:4px 10px;cursor:pointer;font-size:.82rem}
+.chip[aria-pressed="true"]{border-color:var(--ink);background:var(--bg);font-weight:600}
+.row{display:grid;grid-template-columns:1fr 128px;gap:6px;margin-top:10px}
+.field{border:1px solid var(--line);background:var(--bg);border-radius:10px;padding:8px 10px;width:100%;min-width:0;font-size:.9rem}
+.favs{margin-top:10px}
+.favs .chip{border-style:dashed}
+.actions{display:grid;grid-template-columns:1fr auto;gap:6px;margin-top:10px}
+.btn{border:0;border-radius:10px;padding:10px 14px;font-weight:600;cursor:pointer;font-size:.92rem}
+.btn.primary{background:var(--ink);color:var(--bg)}
+.btn.skip{background:var(--saved-soft);color:var(--saved)}
+.btn.ghost{background:var(--bg)}
+.btn[hidden]{display:none}
+
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.stat{background:var(--surface);border-radius:12px;padding:10px 12px}
+.stat .v{font-size:1.3rem;line-height:1.2;margin-top:2px}
+.stat.food .v{color:var(--food)} .stat.snack .v{color:var(--snack)} .stat.saved .v{color:var(--saved)}
+.bar{height:8px;border-radius:99px;background:var(--line);margin-top:8px;overflow:hidden}
+.bar i{display:block;height:100%;border-radius:99px;background:var(--food)}
+.bar i.over{background:var(--warn)}
+.chart{background:var(--surface);border-radius:14px;padding:12px 8px 6px}
+.chart svg{width:100%;height:auto;display:block}
+.top{list-style:none;margin:8px 0 0;padding:0}
+.top li{display:flex;justify-content:space-between;gap:10px;padding:7px 2px;border-bottom:1px solid var(--line)}
+.top li:last-child{border-bottom:0}
+
+.filters{display:flex;gap:6px;margin-bottom:8px}
+.list{list-style:none;margin:0;padding:0;background:var(--surface);border-radius:14px;overflow:hidden}
+.list li{display:grid;grid-template-columns:8px 1fr auto auto;gap:10px;align-items:center;padding:9px 10px;border-bottom:1px solid var(--line)}
+.list li:last-child{border-bottom:0}
+.dot{width:8px;height:8px;border-radius:50%}
+.dot.food{background:var(--food)} .dot.snack{background:var(--snack)} .dot.life,.dot.fun{background:var(--muted)} .dot.saved{background:var(--saved)}
+.list .t{min-width:0}
+.list .t b{display:block;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.list .amt{font-family:"Do Hyeon",sans-serif;font-size:1rem}
+.list .amt.saved{color:var(--saved)}
+.del{border:0;background:transparent;color:var(--muted);cursor:pointer;font-size:1.1rem;padding:4px 6px;border-radius:8px}
+.empty{padding:18px;text-align:center;color:var(--muted);display:block !important}
+.day{background:var(--bg);font-size:.78rem;color:var(--muted);padding:5px 12px !important;display:block !important}
+
+.toggle{display:grid;grid-template-columns:1fr 1fr;background:var(--bg);border-radius:12px;padding:3px;gap:3px}
+.toggle button{border:0;background:transparent;border-radius:10px;padding:8px 0;font-weight:600;cursor:pointer;font-size:.9rem;color:var(--muted)}
+.toggle button[aria-pressed="true"]{background:var(--surface);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.12)}
+.preview{white-space:pre-wrap;background:var(--bg);border-radius:10px;padding:10px 12px;font-size:.88rem;margin-top:10px}
+.check{display:flex;align-items:center;gap:8px;font-size:.88rem;margin-top:10px}
+.check input{width:18px;height:18px;accent-color:var(--snack)}
+.set{display:grid;gap:8px;margin-top:10px}
+.set label{display:grid;gap:3px;font-size:.85rem;color:var(--muted)}
+details.panel summary{cursor:pointer;font-weight:600}
+.warnbox{background:var(--surface);border-left:4px solid var(--warn);border-radius:12px;padding:10px 12px;margin-top:10px;font-size:.85rem}
+.btnrow{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.filepick{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
+.mode{font-size:.78rem;color:var(--muted);margin-top:16px;text-align:center}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(18px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);padding:9px 14px;border-radius:12px;display:flex;gap:12px;align-items:center;max-width:calc(100% - 28px);font-size:.9rem;z-index:5}
+.toast[hidden]{display:none}
+.toast button{background:transparent;border:0;color:var(--bg);font-weight:700;text-decoration:underline;cursor:pointer}
+@media (prefers-reduced-motion:no-preference){ #jarFill{transition:y .6s ease, height .6s ease} }
+@media (max-width:380px){ .hero{grid-template-columns:66px 1fr} .hero svg{width:66px} .hero .big{font-size:1.65rem} }
+
+.cardprev{display:grid;grid-template-columns:56px 1fr;gap:12px;align-items:center;background:var(--snack-soft);border-radius:14px;padding:12px;margin-top:10px}
+.cardprev svg{width:56px;height:auto}
+.cardprev .pp{font-size:1.8rem;line-height:1}
+.sharebtns{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:10px}
+.sharebtns .btn{padding:10px 4px;font-size:.85rem}
+.incoming{background:var(--surface);border:2px solid var(--snack);border-radius:16px;padding:14px;margin-bottom:12px}
+.board{list-style:none;margin:0;padding:0;background:var(--surface);border-radius:14px;overflow:hidden}
+.board li{display:grid;grid-template-columns:40px 1fr auto;gap:10px;align-items:center;padding:10px 12px;border-bottom:1px solid var(--line)}
+.board li:last-child{border-bottom:0}
+.board .pct{font-family:"Do Hyeon",sans-serif;font-size:1.25rem;text-align:center}
+.board .old{opacity:.55}
+.setup{background:var(--surface);border-radius:18px;padding:16px}
+.setup h2{margin-bottom:4px}
+[hidden]{display:none !important}
+</style>
+</head>
+<body>
+<main>
+  <div id="incoming"></div>
+
+  <div class="setup" id="setup" hidden>
+    <h2 class="display">항아리 가계부 시작하기</h2>
+    <p class="small muted" style="margin:0 0 12px">로그인 없이 이 휴대폰에만 저장돼요. 30초면 끝나요.</p>
+    <div class="set">
+      <label>내 이름 (친구에게 보낼 때 쓰여요)
+        <input id="uName" class="field" type="text" maxlength="12" placeholder="예: 지수">
+      </label>
+      <div class="small muted">특히 줄이고 싶은 지출은?</div>
+      <div class="chips" id="uFocus" style="margin-top:0"></div>
+      <input id="uFocusCustom" class="field" type="text" maxlength="8" placeholder="직접 입력 (예: 편의점)" hidden>
+      <label><span id="uLimitLabel">한 주 한도</span>
+        <input id="uLimit" class="field" type="text" inputmode="numeric" value="30,000">
+      </label>
+      <label>한 달 식비 예산 (위 항목 포함)
+        <input id="uFood" class="field" type="text" inputmode="numeric" value="600,000">
+      </label>
+      <button class="btn primary" id="uStart" style="margin-top:4px">시작하기</button>
+    </div>
+  </div>
+
+  <div id="app" hidden>
+    <h1 id="title">항아리 가계부</h1>
+    <div class="hero" id="hero" aria-live="polite"></div>
+    <div id="notices"></div>
+
+    <section aria-labelledby="addTitle">
+      <h2 id="addTitle" class="display">기록하기</h2>
+      <div class="panel">
+        <label class="amount">
+          <input id="amt" type="text" inputmode="numeric" placeholder="0" aria-label="금액" autocomplete="off">
+          <span>원</span>
+        </label>
+        <div class="seg" id="seg" role="group" aria-label="분류"></div>
+        <div class="chips" id="subs" role="group" aria-label="세부 분류"></div>
+        <div class="row">
+          <input id="memo" class="field" type="text" placeholder="무엇을? (예: 아이스 라떼)" maxlength="40">
+          <input id="date" class="field" type="date" aria-label="날짜">
+        </div>
+        <div class="favs" id="favs"></div>
+        <div class="actions">
+          <button class="btn primary" id="addBtn">지출 기록하기</button>
+          <button class="btn skip" id="skipBtn" title="사려다 참은 것을 저금으로 기록해요">참았어요</button>
+        </div>
+      </div>
+    </section>
+
+    <section aria-labelledby="monthTitle">
+      <h2 id="monthTitle" class="display">이번 달</h2>
+      <div class="stats" id="stats"></div>
+    </section>
+
+    <section aria-labelledby="weekTitle">
+      <h2 id="weekTitle" class="display">주별로 보기</h2>
+      <div class="toggle" id="chartTabs" role="group" aria-label="주별 그래프 종류" style="grid-template-columns:repeat(3,1fr);margin-bottom:8px"></div>
+      <div class="chart"><div id="chart"></div><p class="small muted" id="chartNote" style="margin:4px 6px 0"></p></div>
+      <div class="panel" style="margin-top:8px">
+        <div class="small muted" id="topTitle"></div>
+        <ul class="top" id="top"></ul>
+      </div>
+    </section>
+
+    <section aria-labelledby="shareTitle">
+      <h2 id="shareTitle" class="display">친구와 나누기</h2>
+      <div class="panel" id="share"></div>
+    </section>
+
+    <section aria-labelledby="boardTitle">
+      <h2 id="boardTitle" class="display">친구 보드</h2>
+      <div id="board"></div>
+    </section>
+
+    <section aria-labelledby="listTitle">
+      <h2 id="listTitle" class="display">이번 달 기록</h2>
+      <div class="filters" id="filters" role="group" aria-label="목록 필터"></div>
+      <ul class="list" id="list"></ul>
+    </section>
+
+    <section>
+      <details class="panel">
+        <summary>설정 · 백업</summary>
+        <div class="set">
+          <label>내 이름
+            <input id="sName" class="field" type="text" maxlength="12">
+          </label>
+          <label>줄이고 싶은 지출 이름
+            <input id="sFocus" class="field" type="text" maxlength="8">
+          </label>
+          <label>세부 분류 (쉼표로 구분)
+            <input id="sSubs" class="field" type="text" maxlength="80">
+          </label>
+          <label><span id="sSnackLabel">한 주 한도</span>
+            <input id="sSnack" class="field" type="text" inputmode="numeric">
+          </label>
+          <label>한 달 식비 예산
+            <input id="sFood" class="field" type="text" inputmode="numeric">
+          </label>
+          <button class="btn primary" id="saveSet">설정 저장하기</button>
+        </div>
+        <div style="margin-top:16px;font-weight:600">백업</div>
+        <p class="small muted" style="margin:2px 0 0">기록은 이 휴대폰 브라우저에만 있어요. 가끔 백업 파일을 받아 두면 폰을 바꿔도 되살릴 수 있어요.</p>
+        <div class="btnrow">
+          <button class="btn primary" id="backupBtn">백업 파일 받기</button>
+          <label class="btn ghost" style="display:inline-block">백업 불러오기<input id="restoreInput" class="filepick" type="file" accept=".json,application/json"></label>
+          <button class="btn ghost" id="csvBtn">엑셀용 CSV 받기</button>
+        </div>
+      </details>
+    </section>
+
+    <p class="mode" id="mode"></p>
+  </div>
+<p style="text-align:center;margin:14px 0 0;font-size:.82rem"><a href="../" style="color:var(--muted)">← 소확앱 다른 앱 보기</a></p>
+</main>
+
+<div class="toast" id="toast" hidden><span id="toastMsg"></span><button id="toastUndo" hidden>되돌리기</button></div>
+
+<script>
+(function(){
+  const PRESETS = {
+    '간식': ['카페·음료','빵·디저트','과자·편의점','아이스크림'],
+    '커피·카페': ['커피','음료','디저트'],
+    '배달': ['치킨','피자','분식','기타'],
+    '술': ['맥주','소주','와인','안주']
+  };
+  const newDevice = () => 'd' + Date.now().toString(36) + Math.random().toString(36).slice(2,8);
+  const DEFAULTS = {setup:false, name:'', focus:'간식', subs:PRESETS['간식'], foodBudget:600000, snackWeekly:30000,
+    share:'private', showMoney:false, lastBackup:0, device:''};
+  const KEY = 'jar-budget-v1';
+  const state = {months:{}, friends:{}, settings:{...DEFAULTS}, form:{cat:'snack', sub:''}, filter:'all', chartTab:'snack',
+    storageOk:true, incoming:null, setupFocus:'간식'};
+  let lastDeleted = null, toastTimer = null, downloads = null;
+
+  // ---------- helpers ----------
+  const $ = id => document.getElementById(id);
+  const pad = n => String(n).padStart(2,'0');
+  const ymd = d => d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
+  const parse = s => { const [y,m,d] = s.split('-').map(Number); return new Date(y,m-1,d); };
+  const today = () => ymd(new Date());
+  const monthKey = s => s.slice(0,7);
+  const won = n => Math.round(n).toLocaleString('ko-KR') + '원';
+  const toNum = s => Number(String(s||'').replace(/[^0-9]/g,'')) || 0;
+  const esc = s => String(s??'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,7);
+  const md = s => { const d = parse(s); return (d.getMonth()+1)+'/'+d.getDate(); };
+  function weekStart(s){ const d = parse(s); d.setDate(d.getDate()-((d.getDay()+6)%7)); return ymd(d); }
+  const allEntries = () => Object.values(state.months).flat();
+  const isFocusSpend = e => e.cat==='snack' && !e.skip;
+  const F = () => state.settings.focus || '간식';
+  function cats(){
+    const s = state.settings;
+    return {
+      food:  {label:'식비', subs:['장보기','외식','배달','구내식당']},
+      snack: {label:F(), subs:(s.subs && s.subs.length ? s.subs : ['기타'])},
+      life:  {label:'생활', subs:['생필품','쇼핑','교통','기타']},
+      fun:   {label:'여가', subs:['문화','취미','선물','기타']}
+    };
+  }
+  const JAR = 'M20 44 Q20 33 31 33 L89 33 Q100 33 100 44 L100 130 Q100 146 84 146 L36 146 Q20 146 20 130 Z';
+  function jarSvg(ratio, w, label){
+    const top = 145 - Math.min(ratio,1)*112, id = 'c'+Math.random().toString(36).slice(2,7);
+    return `<svg viewBox="0 0 120 152" style="width:${w}px;height:auto;display:block" role="img" aria-label="${label}">
+      <defs><clipPath id="${id}"><path d="${JAR}"/></clipPath></defs>
+      <rect x="30" y="14" width="60" height="15" rx="5" fill="var(--line)"/>
+      <g clip-path="url(#${id})"><rect x="0" y="0" width="120" height="152" fill="var(--snack-soft)"/>
+        <rect x="0" y="${top}" width="120" height="${152-top}" fill="${ratio>1?'var(--warn)':'var(--snack)'}"/></g>
+      <path d="${JAR}" fill="none" stroke="var(--ink)" stroke-width="2.5"/></svg>`;
+  }
+
+  // ---------- storage ----------
+  function save(){
+    try{ localStorage.setItem(KEY, JSON.stringify({v:1, months:state.months, friends:state.friends, settings:state.settings})); state.storageOk = true; }
+    catch(e){ state.storageOk = false; toast('이 브라우저에 저장하지 못했어요. 백업 파일을 받아 두세요.'); }
+  }
+  function load(){
+    try{
+      localStorage.setItem(KEY+'-t','1'); localStorage.removeItem(KEY+'-t');
+      const raw = localStorage.getItem(KEY);
+      if(raw){ const d = JSON.parse(raw); state.months = d.months||{}; state.friends = d.friends||{}; state.settings = {...DEFAULTS, ...(d.settings||{})}; }
+    }catch(e){ state.storageOk = false; }
+    if(!state.settings.device){ state.settings.device = newDevice(); save(); }
+  }
+
+  // ---------- snapshot & link codec ----------
+  function snapshot(){
+    const t = today(), ws = weekStart(t), mk = monthKey(t), s = state.settings;
+    const all = allEntries(), month = state.months[mk] || [];
+    const week = all.filter(e => isFocusSpend(e) && e.d>=ws && e.d<=t).reduce((a,e)=>a+e.amt,0);
+    const skips = month.filter(e=>e.skip), saved = skips.reduce((a,e)=>a+e.amt,0);
+    const spend = month.filter(e=>!e.skip);
+    const food = spend.filter(e=>e.cat==='food').reduce((a,e)=>a+e.amt,0), foc = spend.filter(e=>e.cat==='snack').reduce((a,e)=>a+e.amt,0);
+    const snap = {v:1, id:s.device, n:s.name||'친구', f:F(), w:ws,
+      p: s.snackWeekly ? Math.round(week/s.snackWeekly*100) : 0,
+      k: skips.length, r: (food+foc) ? Math.round(foc/(food+foc)*100) : 0};
+    if(s.showMoney) snap.m = {s:week, l:s.snackWeekly, v:saved};
+    return snap;
+  }
+  function enc(o){ const b = new TextEncoder().encode(JSON.stringify(o)); let x=''; b.forEach(c => x += String.fromCharCode(c)); return btoa(x).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,''); }
+  function dec(str){ str = str.replace(/-/g,'+').replace(/_/g,'/'); while(str.length%4) str += '='; const bin = atob(str); return JSON.parse(new TextDecoder().decode(Uint8Array.from(bin, c=>c.charCodeAt(0)))); }
+  function validSnap(o){
+    const int = (v,max) => Number.isInteger(v) && v>=0 && v<=max;
+    if(!o || o.v!==1 || typeof o.id!=='string' || o.id.length>40) return null;
+    if(typeof o.n!=='string' || o.n.length>12 || typeof o.f!=='string' || o.f.length>8) return null;
+    if(!/^\d{4}-\d{2}-\d{2}$/.test(o.w||'') || !int(o.p,9999) || !int(o.k,9999) || !int(o.r,100)) return null;
+    const out = {id:o.id, n:o.n, f:o.f, w:o.w, p:o.p, k:o.k, r:o.r};
+    if(o.m && int(o.m.s,1e9) && int(o.m.l,1e9) && int(o.m.v,1e9)) out.m = {s:o.m.s, l:o.m.l, v:o.m.v};
+    return out;
+  }
+  function shareUrl(){
+    if(!/^https?:$/.test(location.protocol)) return null;
+    return location.href.split('#')[0] + '#s=' + enc(snapshot());
+  }
+  function readIncoming(){
+    const m = location.hash.match(/[#&]s=([A-Za-z0-9_-]+)/);
+    if(!m) return;
+    try{ state.incoming = validSnap(dec(m[1])); }catch(e){ state.incoming = null; }
+    try{ history.replaceState(null, '', location.pathname + location.search); }catch(e){}
+    if(!state.incoming) toast('친구 카드를 읽지 못했어요. 링크가 잘렸는지 확인해 주세요.');
+  }
+  function cheer(p){ return p<=50 ? '이번 주 순항 중! 🙌' : p<=100 ? '한도 안에서 잘 버티는 중 💪' : '이번 주는 넘었지만 월요일에 새로 시작 🌱'; }
+  function shareText(){
+    const x = snapshot();
+    return [`🫙 ${x.n}의 ${x.f} 항아리 (${md(x.w)} 주)`,
+      `이번 주 ${x.f} 한도 ${x.p}% 사용${x.m ? ` (${won(x.m.s)} / ${won(x.m.l)})` : ''}`,
+      `이번 달 참은 ${x.f} ${x.k}번${x.m && x.m.v ? ` · ${won(x.m.v)} 모음` : ''}`,
+      `먹는 돈 중 ${x.f} 비율 ${x.r}%`, cheer(x.p)].join('\n');
+  }
+
+  // ---------- image card ----------
+  function rr(g,x,y,w,h,r){ g.beginPath(); g.moveTo(x+r,y); g.arcTo(x+w,y,x+w,y+h,r); g.arcTo(x+w,y+h,x,y+h,r); g.arcTo(x,y+h,x,y,r); g.arcTo(x,y,x+w,y,r); g.closePath(); }
+  async function makeImage(){
+    const x = snapshot();
+    try{ await document.fonts.ready; }catch(e){}
+    const c = document.createElement('canvas'); c.width = 1080; c.height = 1080;
+    const g = c.getContext('2d');
+    const ink = '#1B2230', muted = '#5E6878', pink = '#C2386B', soft = '#F7DCE6', warn = '#B4541B';
+    const D = '"Do Hyeon","IBM Plex Sans KR",sans-serif', P = '"IBM Plex Sans KR","Apple SD Gothic Neo",sans-serif';
+    g.fillStyle = soft; g.fillRect(0,0,1080,1080);
+    g.fillStyle = '#FFFFFF'; rr(g,60,60,960,960,48); g.fill();
+    // jar
+    const jar = new Path2D(JAR);
+    g.save(); g.translate(110,230); g.scale(3.1,3.1);
+    g.fillStyle = '#DCE1E8'; rr(g,30,14,60,15,5); g.fill();
+    g.fillStyle = soft; g.fill(jar);
+    g.save(); g.clip(jar); const top = 145 - Math.min(x.p/100,1)*112; g.fillStyle = x.p>100 ? warn : pink; g.fillRect(0,top,120,152-top); g.restore();
+    g.lineWidth = 2.5; g.strokeStyle = ink; g.stroke(jar);
+    g.restore();
+    // text
+    g.fillStyle = muted; g.font = `500 40px ${P}`; g.fillText(`${x.n}의 ${x.f} 항아리`, 520, 250, 460);
+    g.font = `400 34px ${P}`; g.fillText(`${md(x.w)} 주`, 520, 302);
+    g.fillStyle = x.p>100 ? warn : ink; g.font = `170px ${D}`; g.fillText(`${x.p}%`, 510, 480, 470);
+    g.fillStyle = muted; g.font = `400 36px ${P}`; g.fillText(`이번 주 ${x.f} 한도 사용`, 520, 540, 460);
+    g.strokeStyle = '#DCE1E8'; g.lineWidth = 2; g.beginPath(); g.moveTo(120,760); g.lineTo(960,760); g.stroke();
+    g.fillStyle = ink; g.font = `44px ${D}`;
+    g.fillText(`참은 ${x.f} ${x.k}번${x.m && x.m.v ? ` · ${won(x.m.v)} 모음` : ''}`, 120, 830, 840);
+    g.fillText(`먹는 돈 중 ${x.f} ${x.r}%${x.m ? ` · ${won(x.m.s)} / ${won(x.m.l)}` : ''}`, 120, 895, 840);
+    g.fillStyle = pink; g.font = `500 36px ${P}`; g.fillText(cheer(x.p), 120, 960, 840);
+    return await new Promise(res => c.toBlob(res, 'image/png'));
+  }
+
+  // ---------- files ----------
+  async function saveFile(filename, data, mime){
+    const blob = data instanceof Blob ? data : new Blob([data], {type:mime});
+    if(downloads){
+      try{ await downloads.save({filename, data:blob}); return true; }
+      catch(e){ if(e && e.code==='declined') return false; toast('파일을 받지 못했어요.'); return false; }
+    }
+    try{
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a'); a.href = url; a.download = filename;
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 4000); return true;
+    }catch(e){ toast('파일을 받지 못했어요.'); return false; }
+  }
+  async function backup(){
+    const text = JSON.stringify({app:'jar-budget', v:1, exportedAt:new Date().toISOString(), months:state.months, friends:state.friends, settings:state.settings}, null, 1);
+    if(await saveFile('항아리가계부-백업-'+today()+'.json', text, 'application/json')){ state.settings.lastBackup = Date.now(); save(); render(); toast('백업 파일을 받았어요.'); }
+  }
+  function restore(file){
+    if(!file) return;
+    const r = new FileReader();
+    r.onload = () => {
+      try{
+        const d = JSON.parse(r.result);
+        if(!d || !['jar-budget','snack-jar'].includes(d.app) || typeof d.months!=='object') throw 0;
+        let added = 0;
+        for(const [key, list] of Object.entries(d.months)){
+          if(!Array.isArray(list)) continue;
+          const have = new Set((state.months[key]||[]).map(e=>e.id));
+          const fresh = list.filter(e => e && e.id && !have.has(e.id) && typeof e.amt==='number' && /^\d{4}-\d{2}-\d{2}$/.test(e.d||''));
+          if(fresh.length){ state.months[key] = [...(state.months[key]||[]), ...fresh]; added += fresh.length; }
+        }
+        if(d.friends && typeof d.friends==='object') for(const [k,v] of Object.entries(d.friends)){ const ok = validSnap({...v, v:1}); if(ok && !state.friends[k]) state.friends[k] = {...ok, at:v.at||Date.now()}; }
+        if(d.settings && !state.settings.setup){ state.settings = {...state.settings, ...d.settings, device:state.settings.device, setup:true}; }
+        save(); render(); toast(added ? `기록 ${added}건을 되살렸어요.` : '새로 더할 기록이 없어요.');
+      }catch(e){ toast('항아리 가계부 백업 파일이 아니에요.'); }
+    };
+    r.onerror = () => toast('파일을 읽지 못했어요.');
+    r.readAsText(file);
+  }
+  async function exportCsv(){
+    const C = cats(), rows = [['날짜','분류','세부','내용','금액','참음']];
+    allEntries().sort((a,b)=>a.d.localeCompare(b.d)).forEach(e => rows.push([e.d, C[e.cat]?.label||e.cat, e.sub||'', e.memo||'', e.amt, e.skip?'Y':'']));
+    await saveFile('항아리가계부-'+today()+'.csv', '\uFEFF' + rows.map(r => r.map(v => '"'+String(v).replace(/"/g,'""')+'"').join(',')).join('\n'), 'text/csv');
+  }
+
+  // ---------- share actions ----------
+  async function copy(text, okMsg){
+    try{ await navigator.clipboard.writeText(text); toast(okMsg); }
+    catch(e){ toast('자동 복사가 안 돼요. 미리보기 글을 길게 눌러 복사해 주세요.'); }
+  }
+  async function sendText(){
+    const text = shareText();
+    if(navigator.share){ try{ await navigator.share({text}); return; }catch(e){ if(e && e.name==='AbortError') return; } }
+    copy(text, '복사했어요. 원하는 앱에 붙여넣어 보내세요.');
+  }
+  async function sendLink(){
+    const url = shareUrl();
+    if(!url){ toast('링크 보내기는 앱을 웹 주소로 열었을 때만 돼요. 이미지나 글로 보내 주세요.'); return; }
+    const text = `${state.settings.name||'친구'}의 이번 주 ${F()} 항아리예요. 눌러서 보고 친구 보드에 추가해 줘!`;
+    if(navigator.share){ try{ await navigator.share({title:'항아리 가계부', text, url}); return; }catch(e){ if(e && e.name==='AbortError') return; } }
+    copy(text + '\n' + url, '링크를 복사했어요. 원하는 곳에 붙여넣어 보내세요.');
+  }
+  async function sendImage(){
+    let blob;
+    try{ blob = await makeImage(); }catch(e){ blob = null; }
+    if(!blob){ toast('이미지를 만들지 못했어요.'); return; }
+    const name = '항아리-' + today() + '.png';
+    let file = null; try{ file = new File([blob], name, {type:'image/png'}); }catch(e){}
+    if(file && navigator.canShare && navigator.canShare({files:[file]})){
+      try{ await navigator.share({files:[file]}); return; }catch(e){ if(e && e.name==='AbortError') return; }
+    }
+    if(await saveFile(name, blob, 'image/png')) toast('이미지를 저장했어요. 사진첩에서 골라 보내세요.');
+  }
+
+  // ---------- actions ----------
+  function addEntry(skip){
+    const amt = toNum($('amt').value);
+    if(!amt){ toast('금액을 먼저 적어 주세요.'); $('amt').focus(); return; }
+    const d = $('date').value || today();
+    const e = {id:uid(), d, amt, cat:state.form.cat, sub:state.form.sub, memo:$('memo').value.trim(), skip:!!skip};
+    const key = monthKey(d);
+    state.months[key] = [...(state.months[key]||[]), e];
+    save(); $('amt').value=''; $('memo').value=''; render();
+    toast(skip ? won(amt)+'을 항아리 대신 저금했어요.' : '기록했어요.');
+  }
+  function removeEntry(id){
+    for(const key of Object.keys(state.months)){
+      const i = state.months[key].findIndex(x=>x.id===id);
+      if(i>-1){ lastDeleted = {key, entry:state.months[key][i]}; state.months[key] = state.months[key].filter(x=>x.id!==id); save(); render(); toast('지웠어요.', true); return; }
+    }
+  }
+  function undo(){ if(!lastDeleted) return; const {key, entry} = lastDeleted; lastDeleted = null; state.months[key] = [...(state.months[key]||[]), entry]; save(); render(); hideToast(); }
+  function saveSettings(){
+    const f = toNum($('sFood').value), s = toNum($('sSnack').value), focus = $('sFocus').value.trim() || '간식';
+    const subs = $('sSubs').value.split(',').map(x=>x.trim()).filter(Boolean).slice(0,6);
+    if(!f || !s){ toast('두 한도 모두 0보다 큰 금액으로 적어 주세요.'); return; }
+    state.settings = {...state.settings, foodBudget:f, snackWeekly:s, name:$('sName').value.trim(), focus, subs: subs.length ? subs : ['기타']};
+    if(state.form.cat==='snack') state.form.sub = state.settings.subs[0];
+    save(); render(); toast('설정을 저장했어요.');
+  }
+  function finishSetup(){
+    const focus = state.setupFocus==='직접' ? ($('uFocusCustom').value.trim() || '간식') : state.setupFocus;
+    const lim = toNum($('uLimit').value), food = toNum($('uFood').value);
+    if(!lim || !food){ toast('한도와 예산을 0보다 크게 적어 주세요.'); return; }
+    state.settings = {...state.settings, setup:true, name:$('uName').value.trim(), focus, subs: PRESETS[focus] || ['기타'], snackWeekly:lim, foodBudget:food};
+    state.form = {cat:'snack', sub:state.settings.subs[0]};
+    save(); render(); window.scrollTo(0,0);
+  }
+  function toast(msg, withUndo){ $('toastMsg').textContent = msg; $('toastUndo').hidden = !withUndo; $('toast').hidden = false; clearTimeout(toastTimer); toastTimer = setTimeout(hideToast, withUndo ? 5000 : 2800); }
+  function hideToast(){ $('toast').hidden = true; }
+
+  // ---------- render ----------
+  function renderIncoming(){
+    const x = state.incoming;
+    if(!x){ $('incoming').innerHTML = ''; return; }
+    const mine = x.id === state.settings.device;
+    $('incoming').innerHTML = `<div class="incoming">
+      <div class="small muted">${mine ? '내가 보낸 카드예요' : '친구가 보낸 항아리 카드'}</div>
+      <div class="cardprev" style="background:transparent;padding:6px 0 0">${jarSvg(x.p/100, 56, x.n+'의 항아리')}
+        <div><div style="font-weight:600">${esc(x.n)}의 ${esc(x.f)} 항아리 <span class="small muted">${md(x.w)} 주</span></div>
+        <div class="pp display">${x.p}%</div>
+        <div class="small muted">참은 ${esc(x.f)} ${x.k}번 · 먹는 돈 중 ${x.r}%${x.m ? ` · ${won(x.m.s)} / ${won(x.m.l)}` : ''}</div></div></div>
+      <div class="btnrow">
+        ${mine ? '' : `<button class="btn primary" data-inc="add">친구 보드에 추가</button>`}
+        <button class="btn ghost" data-inc="close">닫기</button>
+      </div>
+      ${!state.settings.setup && !mine ? `<p class="small muted" style="margin:8px 0 0">나도 해 보고 싶다면 아래에서 시작해 보세요.</p>` : ''}
+    </div>`;
+  }
+  function renderSetup(){
+    const opts = [...Object.keys(PRESETS), '직접'];
+    $('uFocus').innerHTML = opts.map(o => `<button type="button" class="chip" data-focus="${esc(o)}" aria-pressed="${state.setupFocus===o}">${o==='직접'?'직접 입력':esc(o)}</button>`).join('');
+    $('uFocusCustom').hidden = state.setupFocus !== '직접';
+    const f = state.setupFocus==='직접' ? ($('uFocusCustom').value.trim()||'이 항목') : state.setupFocus;
+    $('uLimitLabel').textContent = `한 주 ${f} 한도`;
+  }
+  function render(){
+    renderIncoming();
+    const ready = state.settings.setup;
+    $('setup').hidden = ready; $('app').hidden = !ready;
+    if(!ready){ renderSetup(); return; }
+
+    const C = cats(), f = F();
+    if(!C.snack.subs.includes(state.form.sub) && state.form.cat==='snack') state.form.sub = C.snack.subs[0];
+    if(!state.form.sub) state.form.sub = C[state.form.cat].subs[0];
+    const t = today(), mk = monthKey(t), ws = weekStart(t), s = state.settings;
+    const monthEntries = state.months[mk] || [];
+    const all = allEntries();
+    const weekFocus = all.filter(e => isFocusSpend(e) && e.d >= ws && e.d <= t).reduce((a,e)=>a+e.amt,0);
+    const limit = s.snackWeekly, ratio = limit ? weekFocus/limit : 0;
+    const savedMonth = monthEntries.filter(e=>e.skip).reduce((a,e)=>a+e.amt,0);
+    const daysLeft = 7 - ((parse(t).getDay()+6)%7);
+    $('title').textContent = s.name ? `${s.name}의 ${f} 항아리` : `${f} 항아리 가계부`;
+    document.title = `${f} 항아리 가계부`;
+
+    // hero
+    const left = limit - weekFocus;
+    let msg;
+    if(ratio===0) msg = '이번 주는 아직 비어 있어요.';
+    else if(ratio<0.5) msg = '여유 있어요. 즐길 건 즐겁게요.';
+    else if(ratio<0.85) msg = '절반을 넘었어요. 남은 날을 생각하며 골라 보세요.';
+    else if(ratio<=1) msg = '거의 찼어요. 오늘 하나쯤 참아 볼까요?';
+    else msg = '한도를 넘었어요. 괜찮아요, 월요일에 새 항아리로 시작해요.';
+    $('hero').innerHTML = `
+      <div style="position:relative">${jarSvg(ratio, 78, `이번 주 ${f} 한도 ${Math.round(ratio*100)}퍼센트 사용`)}
+        <div class="display" style="position:absolute;left:0;right:0;bottom:18%;text-align:center;font-size:.95rem">${Math.round(ratio*100)}%</div></div>
+      <div>
+        <div class="label">이번 주 ${esc(f)}, ${left>=0?'남은 한도':'한도 초과'}</div>
+        <div class="big display ${left<0?'over':''}">${won(Math.abs(left))}</div>
+        <p class="msg">${msg}</p>
+        <div class="meta">${won(weekFocus)} / ${won(limit)} · 이번 주 ${daysLeft}일 남음</div>
+        ${savedMonth ? `<span class="savedline">이번 달 참아서 모은 돈 ${won(savedMonth)}</span>` : ''}
+      </div>`;
+
+    // notices
+    let notes = '';
+    if(!state.storageOk) notes += `<div class="warnbox">이 브라우저는 기록을 저장하지 못하고 있어요. 시크릿 모드라면 일반 창으로 열어 주세요.</div>`;
+    const days = s.lastBackup ? Math.floor((Date.now()-s.lastBackup)/86400000) : null;
+    if(all.length >= 10 && (days===null || days >= 14)) notes += `<div class="warnbox">${days===null ? '아직 백업한 적이 없어요.' : `마지막 백업이 ${days}일 전이에요.`} 기록이 이 폰에만 있으니 한 번 받아 두면 안심이에요.
+      <div class="btnrow"><button class="btn primary" data-act="backup">지금 백업하기</button></div></div>`;
+    $('notices').innerHTML = notes;
+
+    // form
+    $('seg').innerHTML = Object.entries(C).map(([k,c]) => `<button type="button" data-cat="${k}" aria-pressed="${state.form.cat===k}">${esc(c.label)}</button>`).join('');
+    $('subs').innerHTML = C[state.form.cat].subs.map(x => `<button type="button" class="chip" data-sub="${esc(x)}" aria-pressed="${state.form.sub===x}">${esc(x)}</button>`).join('');
+    if(!$('date').value) $('date').value = t;
+    $('skipBtn').hidden = state.form.cat !== 'snack';
+    const freq = {};
+    all.filter(e => isFocusSpend(e) && e.memo).forEach(e => { const q = freq[e.memo] || (freq[e.memo] = {n:0,last:e}); q.n++; if(e.d >= q.last.d) q.last = e; });
+    const favs = Object.entries(freq).sort((a,b)=>b[1].n-a[1].n).slice(0,4);
+    $('favs').innerHTML = (state.form.cat==='snack' && favs.length)
+      ? `<div class="small muted" style="margin-bottom:4px">자주 쓰는 것</div><div class="chips" style="margin-top:0">` + favs.map(([m,q]) => `<button type="button" class="chip" data-fav="${esc(m)}">${esc(m)} ${won(q.last.amt)}</button>`).join('') + `</div>` : '';
+
+    // stats
+    const spend = monthEntries.filter(e=>!e.skip);
+    const sum = fn => spend.filter(fn).reduce((a,e)=>a+e.amt,0);
+    const total = sum(()=>true), food = sum(e=>e.cat==='food'), foc = sum(e=>e.cat==='snack');
+    const eat = food+foc, fb = s.foodBudget, eatPct = fb ? Math.min(eat/fb,1)*100 : 0, dom = parse(t).getDate();
+    $('stats').innerHTML = `
+      <div class="stat food" style="grid-column:1/-1"><div class="small muted">먹는 데 쓴 돈 (식비 + ${esc(f)})</div>
+        <div class="v display">${won(eat)} <span class="small muted" style="font-family:inherit">/ ${won(fb)}</span></div>
+        <div class="bar"><i class="${eat>fb?'over':''}" style="width:${eatPct}%"></i></div></div>
+      <div class="stat food"><div class="small muted">식비</div><div class="v display">${won(food)}</div></div>
+      <div class="stat snack"><div class="small muted">${esc(f)} ${eat?`(${Math.round(foc/eat*100)}%)`:''}</div><div class="v display">${won(foc)}</div></div>
+      <div class="stat"><div class="small muted">하루 평균 ${esc(f)}</div><div class="v display">${won(foc/dom)}</div></div>
+      <div class="stat saved"><div class="small muted">참아서 모은 돈</div><div class="v display">${won(savedMonth)}</div></div>
+      <div class="stat" style="grid-column:1/-1"><div class="small muted">이번 달 전체 지출</div><div class="v display">${won(total)}</div></div>`;
+
+    // weekly chart
+    const tab = state.chartTab;
+    const TABS = {snack:{label:f, color:'var(--snack)'}, food:{label:'식비', color:'var(--food)'}, both:{label:'합계', color:'var(--ink)'}};
+    const weeklyEat = fb * 7 / 30.4;
+    const guide = tab==='snack' ? limit : tab==='food' ? Math.max(weeklyEat - limit, 0) : weeklyEat;
+    $('chartTabs').innerHTML = Object.entries(TABS).map(([k,v]) => `<button type="button" data-tab="${k}" aria-pressed="${tab===k}">${esc(v.label)}</button>`).join('');
+    const weeks = []; for(let i=5;i>=0;i--){ const d = parse(ws); d.setDate(d.getDate()-7*i); weeks.push(ymd(d)); }
+    const wk = weeks.map(w => { const end = parse(w); end.setDate(end.getDate()+6); const e = ymd(end);
+      const inW = all.filter(x => !x.skip && x.d>=w && x.d<=e);
+      return {food: inW.filter(x=>x.cat==='food').reduce((a,x)=>a+x.amt,0), snack: inW.filter(x=>x.cat==='snack').reduce((a,x)=>a+x.amt,0)}; });
+    const vals = wk.map(v => tab==='snack' ? v.snack : tab==='food' ? v.food : v.food+v.snack);
+    const maxV = Math.max(guide*1.25, ...vals, 1), W=320, H=150, base=122, bw=34, gap=(W-20-bw*6)/5, y = v => base-(v/maxV)*100;
+    const short = v => v>=10000 ? (v/10000).toFixed(v%10000?1:0)+'만' : (v/1000).toFixed(v%1000?1:0)+'천';
+    let bars = '';
+    vals.forEach((v,i) => { const x = 10+i*(bw+gap), cur = i===5, over = guide && v>guide;
+      if(tab==='both'){
+        const hf = base-y(wk[i].food), hs = base-y(wk[i].snack);
+        bars += `<g opacity="${cur?1:.45}"><rect x="${x}" y="${base-hf}" width="${bw}" height="${Math.max(hf,0)}" fill="var(--food)"/><rect x="${x}" y="${base-hf-hs}" width="${bw}" height="${Math.max(hs,0)}" fill="var(--snack)"/></g>`;
+      } else bars += `<rect x="${x}" y="${y(v)}" width="${bw}" height="${Math.max(base-y(v),0)}" rx="5" fill="${over?'var(--warn)':TABS[tab].color}" opacity="${cur?1:.45}"/>`;
+      if(v) bars += `<text x="${x+bw/2}" y="${y(v)-5}" text-anchor="middle" font-size="10" fill="${over?'var(--warn)':'var(--muted)'}">${short(v)}</text>`;
+      bars += `<text x="${x+bw/2}" y="${base+17}" text-anchor="middle" font-size="11" fill="${cur?'var(--ink)':'var(--muted)'}" font-weight="${cur?600:400}">${cur?'이번 주':md(weeks[i])}</text>`; });
+    $('chart').innerHTML = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="최근 6주 ${esc(TABS[tab].label)} 막대그래프">
+      <line x1="4" x2="${W-4}" y1="${base}" y2="${base}" stroke="var(--line)"/>
+      ${guide ? `<line x1="4" x2="${W-4}" y1="${y(guide)}" y2="${y(guide)}" stroke="var(--ink)" stroke-dasharray="4 4" opacity=".5"/>` : ''}${bars}</svg>`;
+    $('chartNote').textContent = tab==='snack' ? `점선은 주간 ${f} 한도(${won(guide)})예요.`
+      : tab==='food' ? `점선은 한 주 식비 기준(${won(guide)})이에요. 월 예산을 주 단위로 나누고 ${f} 한도를 뺀 금액이에요.`
+      : `초록은 식비, 분홍은 ${f}이에요. 점선은 한 주 먹는 돈 기준(${won(guide)})이에요.`;
+    const by = {};
+    spend.filter(e => tab==='both' ? (e.cat==='food'||e.cat==='snack') : e.cat===tab).forEach(e => { const k = e.memo||e.sub; (by[k]=by[k]||{amt:0,n:0}); by[k].amt+=e.amt; by[k].n++; });
+    const tops = Object.entries(by).sort((a,b)=>b[1].amt-a[1].amt).slice(0,3);
+    $('topTitle').textContent = `이번 달 ${tab==='both'?'먹는 데':TABS[tab].label+'에'} 가장 많이 쓴 곳`;
+    $('top').innerHTML = tops.length ? tops.map(([k,v]) => `<li><span>${esc(k)} <span class="muted small">${v.n}번</span></span><span class="display">${won(v.amt)}</span></li>`).join('') : `<li class="muted small">기록하면 여기에 모여요.</li>`;
+
+    // share
+    const pub = s.share==='public', snap = snapshot(), canLink = /^https?:$/.test(location.protocol);
+    $('share').innerHTML = `
+      <div class="toggle" role="group" aria-label="친구 공개 설정">
+        <button type="button" data-share="private" aria-pressed="${!pub}">🔒 비공개</button>
+        <button type="button" data-share="public" aria-pressed="${pub}">🙌 친구에게 공개</button>
+      </div>
+      ${pub ? `
+        <div class="cardprev">${jarSvg(snap.p/100, 56, '내 카드 미리보기')}
+          <div><div style="font-weight:600">${esc(snap.n)}의 ${esc(f)} 항아리</div><div class="pp display">${snap.p}%</div>
+          <div class="small muted">참은 ${esc(f)} ${snap.k}번 · 먹는 돈 중 ${snap.r}%${snap.m ? ` · ${won(snap.m.s)} / ${won(snap.m.l)}` : ''}</div></div></div>
+        <label class="check"><input type="checkbox" id="showMoney" ${s.showMoney?'checked':''}> 금액도 함께 보여 주기</label>
+        <div class="sharebtns">
+          <button class="btn primary" data-act="img">🖼️ 이미지</button>
+          <button class="btn primary" data-act="link" ${canLink?'':'disabled'}>🔗 링크</button>
+          <button class="btn ghost" data-act="text">💬 글</button>
+        </div>
+        <p class="small muted" style="margin:8px 0 0">이미지는 인스타 스토리·카톡·문자 어디든, 링크는 받은 친구가 눌러서 자기 친구 보드에 추가할 수 있어요.${canLink?'':' (링크는 웹 주소로 열었을 때만 돼요)'}</p>`
+      : `<p class="small muted" style="margin:10px 0 0">지금은 아무것도 친구에게 보이지 않아요. 공개로 바꾸면 이번 주 요약만 골라서 보낼 수 있어요. 자세한 기록은 절대 나가지 않아요.</p>`}`;
+
+    // board
+    const fr = Object.values(state.friends).sort((a,b)=> (b.w.localeCompare(a.w)) || (a.p-b.p));
+    $('board').innerHTML = fr.length ? `<ul class="board">${fr.map(x => { const old = x.w < ws;
+        return `<li class="${old?'old':''}"><span class="pct">${x.p}%</span>
+          <span><b style="font-weight:600">${esc(x.n)}</b> <span class="small muted">${esc(x.f)} · ${md(x.w)} 주${old?' (지난 주)':''}</span><br>
+          <span class="small muted">참은 ${esc(x.f)} ${x.k}번 · 먹는 돈 중 ${x.r}%${x.m ? ' · '+won(x.m.v)+' 모음' : ''}</span></span>
+          <button class="del" data-fdel="${esc(x.id)}" aria-label="${esc(x.n)} 보드에서 빼기">×</button></li>`; }).join('')}</ul>
+        <p class="small muted" style="margin:6px 4px 0">친구가 새 링크를 보내 주면 최신 카드로 바뀌어요.</p>`
+      : `<div class="panel small muted">친구가 보낸 🔗 링크를 누르면 여기에 친구 카드가 모여요. 서로 링크를 주고받으면 같이 하는 느낌이 나요.</div>`;
+
+    // list
+    const FL = [['all','전체'],['food','식비'],['snack',f],['skip','참은 것']];
+    $('filters').innerHTML = FL.map(([k,l]) => `<button type="button" class="chip" data-filter="${k}" aria-pressed="${state.filter===k}">${esc(l)}</button>`).join('');
+    const shown = monthEntries.filter(e => state.filter==='all' ? true : state.filter==='skip' ? e.skip : (e.cat===state.filter && !e.skip)).sort((a,b)=>b.d.localeCompare(a.d));
+    if(!shown.length) $('list').innerHTML = `<li class="empty">아직 기록이 없어요. 위에서 첫 지출을 적어 보세요.</li>`;
+    else {
+      let html = '', lastDay = '';
+      shown.forEach(e => {
+        if(e.d!==lastDay){ lastDay = e.d; const d = parse(e.d); html += `<li class="day">${d.getMonth()+1}월 ${d.getDate()}일 ${'일월화수목금토'[d.getDay()]}요일</li>`; }
+        html += `<li><span class="dot ${e.skip?'saved':e.cat}"></span>
+          <span class="t"><b>${esc(e.memo||e.sub||C[e.cat]?.label)}</b><span class="small muted">${esc(C[e.cat]?.label||'')}${e.sub?' · '+esc(e.sub):''}${e.skip?' · 참음':''}</span></span>
+          <span class="amt ${e.skip?'saved':''}">${e.skip?'+':''}${won(e.amt)}</span>
+          <button class="del" data-del="${esc(e.id)}" aria-label="기록 지우기">×</button></li>`;
+      });
+      $('list').innerHTML = html;
+    }
+
+    // settings fields
+    const setv = (id,v) => { if(document.activeElement!==$(id)) $(id).value = v; };
+    setv('sName', s.name||''); setv('sFocus', f); setv('sSubs', C.snack.subs.join(', '));
+    setv('sSnack', s.snackWeekly.toLocaleString('ko-KR')); setv('sFood', s.foodBudget.toLocaleString('ko-KR'));
+    $('sSnackLabel').textContent = `한 주 ${f} 한도`;
+    $('mode').textContent = state.storageOk ? '기록은 이 기기의 브라우저에만 저장돼요. 로그인은 필요 없어요.' : '지금은 저장이 되지 않는 상태예요.';
+  }
+
+  // ---------- events ----------
+  $('incoming').addEventListener('click', e => { const b = e.target.closest('[data-inc]'); if(!b) return;
+    if(b.dataset.inc==='add' && state.incoming){ state.friends[state.incoming.id] = {...state.incoming, at:Date.now()}; save(); toast(`${state.incoming.n}님을 친구 보드에 추가했어요.`); }
+    state.incoming = null; render(); });
+  $('uFocus').addEventListener('click', e => { const b = e.target.closest('[data-focus]'); if(!b) return; state.setupFocus = b.dataset.focus; renderSetup(); if(state.setupFocus==='직접') $('uFocusCustom').focus(); });
+  $('uFocusCustom').addEventListener('input', renderSetup);
+  $('uStart').addEventListener('click', finishSetup);
+  $('seg').addEventListener('click', e => { const b = e.target.closest('[data-cat]'); if(!b) return; state.form.cat = b.dataset.cat; state.form.sub = cats()[b.dataset.cat].subs[0]; render(); });
+  $('subs').addEventListener('click', e => { const b = e.target.closest('[data-sub]'); if(!b) return; state.form.sub = b.dataset.sub; render(); });
+  $('favs').addEventListener('click', e => { const b = e.target.closest('[data-fav]'); if(!b) return;
+    const m = b.dataset.fav; const hits = allEntries().filter(x => isFocusSpend(x) && x.memo===m).sort((a,c)=>c.d.localeCompare(a.d));
+    if(hits[0]){ $('memo').value = m; $('amt').value = hits[0].amt.toLocaleString('ko-KR'); state.form.sub = hits[0].sub; render(); $('amt').focus(); } });
+  $('chartTabs').addEventListener('click', e => { const b = e.target.closest('[data-tab]'); if(!b) return; state.chartTab = b.dataset.tab; render(); });
+  $('filters').addEventListener('click', e => { const b = e.target.closest('[data-filter]'); if(!b) return; state.filter = b.dataset.filter; render(); });
+  $('list').addEventListener('click', e => { const b = e.target.closest('[data-del]'); if(b) removeEntry(b.dataset.del); });
+  $('board').addEventListener('click', e => { const b = e.target.closest('[data-fdel]'); if(!b) return; delete state.friends[b.dataset.fdel]; save(); render(); toast('친구 보드에서 뺐어요.'); });
+  $('share').addEventListener('click', e => {
+    const b = e.target.closest('[data-share]'); if(b){ state.settings.share = b.dataset.share; save(); render(); return; }
+    const a = e.target.closest('[data-act]'); if(!a || state.settings.share!=='public') return;
+    if(a.dataset.act==='img') sendImage(); else if(a.dataset.act==='link') sendLink(); else if(a.dataset.act==='text') sendText();
+  });
+  $('share').addEventListener('change', e => { if(e.target.id==='showMoney'){ state.settings.showMoney = e.target.checked; save(); render(); } });
+  $('notices').addEventListener('click', e => { if(e.target.closest('[data-act="backup"]')) backup(); });
+  $('addBtn').addEventListener('click', () => addEntry(false));
+  $('skipBtn').addEventListener('click', () => addEntry(true));
+  $('toastUndo').addEventListener('click', undo);
+  $('saveSet').addEventListener('click', saveSettings);
+  $('backupBtn').addEventListener('click', backup);
+  $('csvBtn').addEventListener('click', exportCsv);
+  $('restoreInput').addEventListener('change', e => { restore(e.target.files[0]); e.target.value = ''; });
+  ['amt','sFood','sSnack','uLimit','uFood'].forEach(id => $(id).addEventListener('input', e => { const n = toNum(e.target.value); e.target.value = n ? n.toLocaleString('ko-KR') : ''; }));
+  [$('amt'), $('memo')].forEach(el => el.addEventListener('keydown', e => { if(e.key==='Enter'){ e.preventDefault(); addEntry(false); } }));
+  window.addEventListener('hashchange', () => { readIncoming(); render(); });
+
+  load();
+  state.form.sub = cats().snack.subs[0];
+  readIncoming();
+  render();
+  if(window.claude && typeof window.claude.use==='function') window.claude.use('downloads').then(d => { downloads = d; }).catch(()=>{});
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,565 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>매일 최소 운동</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💪</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Do+Hyeon&family=IBM+Plex+Sans+KR:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#F5F2EE; --surface:#FFFFFF; --ink:#1F2224; --muted:#646B70; --line:#E2DDD6;
+  --accent:#D9542B; --accent-soft:#FBE3D8; --done:#2F7D45; --done-soft:#DCEFE1; --rest:#4A6FA5; --rest-soft:#DDE6F3; --focus:#2F5FD0; --stamp:#D93A2B; --weight:#4A6FA5;
+  box-sizing:border-box; padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){ :root:not([data-theme="light"]){
+  --bg:#131516; --surface:#1C1F21; --ink:#E9ECEE; --muted:#9EA6AB; --line:#2D3235;
+  --accent:#F2825C; --accent-soft:#40261C; --done:#74CF8C; --done-soft:#1E3A26; --rest:#8FB0E0; --rest-soft:#1F2C40; --focus:#8AA8FF; --stamp:#FF7A6B; --weight:#8FB0E0; } }
+:root[data-theme="dark"]{
+  --bg:#131516; --surface:#1C1F21; --ink:#E9ECEE; --muted:#9EA6AB; --line:#2D3235;
+  --accent:#F2825C; --accent-soft:#40261C; --done:#74CF8C; --done-soft:#1E3A26; --rest:#8FB0E0; --rest-soft:#1F2C40; --focus:#8AA8FF; --stamp:#FF7A6B; --weight:#8FB0E0; }
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*::before,*::after{box-sizing:inherit}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"IBM Plex Sans KR","Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;font-size:15px;line-height:1.5;-webkit-text-size-adjust:100%}
+.d{font-family:"Do Hyeon","IBM Plex Sans KR",sans-serif;font-weight:400}
+main{max-width:520px;margin:0 auto;padding:12px 12px 40px}
+h1{font-size:1rem;color:var(--muted);font-weight:500;margin:0 0 8px}
+h2{font-size:1.15rem;margin:0 0 8px}
+section{margin-top:20px}
+button,input,select{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+.muted{color:var(--muted)} .small{font-size:.82rem}
+.panel{background:var(--surface);border-radius:14px;padding:12px}
+[hidden]{display:none !important}
+
+.today{display:grid;grid-template-columns:96px 1fr;gap:14px;align-items:center;background:var(--surface);border-radius:18px;padding:14px}
+.today svg{width:96px;height:auto;display:block}
+.daynav{display:flex;align-items:center;gap:6px;font-size:.85rem;color:var(--muted)}
+.daynav button{border:1px solid var(--line);background:transparent;border-radius:8px;width:30px;height:28px;cursor:pointer}
+.daynav button:disabled{opacity:.35;cursor:default}
+.big{font-size:1.9rem;line-height:1.1;margin:2px 0}
+.msg{font-size:.86rem;margin:0}
+.streak{display:inline-flex;gap:6px;align-items:center;margin-top:6px;background:var(--accent-soft);color:var(--accent);border-radius:99px;padding:2px 10px;font-size:.8rem;font-weight:600}
+
+.items{display:grid;gap:8px}
+.item{background:var(--surface);border-radius:14px;padding:12px;border:1.5px solid transparent}
+.item.done{border-color:var(--done)}
+.itop{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.iname{font-weight:600}
+.ival{font-size:1.25rem}
+.item.done .ival{color:var(--done)}
+.bar{height:8px;border-radius:99px;background:var(--line);margin-top:8px;overflow:hidden}
+.bar i{display:block;height:100%;border-radius:99px;background:var(--accent)}
+.item.done .bar i{background:var(--done)}
+.ibtns{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
+.b{border:1px solid var(--line);background:var(--bg);border-radius:10px;padding:7px 11px;cursor:pointer;font-size:.88rem;font-weight:500}
+.b.fill{background:var(--ink);color:var(--bg);border-color:var(--ink);font-weight:600}
+.b.timer{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600}
+.b.ok{background:var(--done-soft);color:var(--done);border-color:transparent;font-weight:600}
+.run{margin-top:10px;display:flex;align-items:center;justify-content:space-between;gap:8px;background:var(--accent-soft);border-radius:10px;padding:8px 12px}
+.run .clock{font-size:1.5rem;font-variant-numeric:tabular-nums;color:var(--accent)}
+.restrow{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:10px;font-size:.85rem}
+.btn{white-space:nowrap;border:0;border-radius:10px;padding:10px 14px;font-weight:600;cursor:pointer;font-size:.92rem}
+.btn.primary{background:var(--ink);color:var(--bg)} .btn.ghost{background:var(--bg)} .btn.rest{background:var(--rest-soft);color:var(--rest)}
+
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.stat{background:var(--surface);border-radius:12px;padding:10px}
+.stat .v{font-size:1.35rem;line-height:1.2}
+.cal{background:var(--surface);border-radius:14px;padding:12px}
+.calhead{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.calhead button{border:1px solid var(--line);background:transparent;border-radius:8px;width:30px;height:28px;cursor:pointer}
+.grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:5px;text-align:center}
+.grid .wd{font-size:.72rem;color:var(--muted)}
+.cell{width:100%;min-width:0;height:auto;aspect-ratio:1;border-radius:8px;display:grid;place-items:center;font-size:.78rem;background:var(--bg);border:0;padding:0;cursor:default;color:var(--muted)}
+.cell{position:relative}
+.cell.done{background:transparent;color:var(--stamp);font-weight:700}
+.cell.done::before{content:"";position:absolute;inset:9%;border:3px solid var(--stamp);border-radius:50%;transform:rotate(-8deg)}
+.cell.part{color:var(--ink)}
+.cell.part::after{content:"";position:absolute;left:50%;bottom:10%;width:5px;height:5px;margin-left:-2.5px;border-radius:50%;background:var(--stamp);opacity:.6}
+.cell.rest{background:var(--rest-soft);color:var(--rest)}
+.stampi{display:inline-block;width:11px;height:11px;border:2px solid var(--stamp);border-radius:50%;margin-right:4px;vertical-align:-2px}
+.doti{display:inline-block;width:5px;height:5px;border-radius:50%;background:var(--stamp);opacity:.6;margin:0 4px 1px 3px}
+.cheer{display:flex;gap:10px;align-items:flex-start;background:var(--surface);border-radius:14px;padding:12px 14px;margin-top:10px}
+.cheer .em{font-size:1.4rem;line-height:1.2}
+.cheer p{margin:0;font-size:.95rem;line-height:1.5}
+.cheer .by{font-size:.75rem;color:var(--muted);margin-top:2px}
+.wrow{display:grid;grid-template-columns:1fr auto;gap:6px;align-items:center}
+.wnum{display:flex;align-items:baseline;gap:4px;border-bottom:2px solid var(--line);padding-bottom:2px}
+.wnum:focus-within{border-color:var(--ink)}
+.wnum input{border:0;background:transparent;font-family:"Do Hyeon",sans-serif;font-size:1.6rem;width:100%;min-width:0;padding:0}
+.wnum input:focus{outline:none}
+.wstats{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:10px}
+.wstats div{background:var(--bg);border-radius:10px;padding:7px 9px}
+.wstats b{display:block;font-family:"Do Hyeon",sans-serif;font-weight:400;font-size:1.1rem}
+.wchart svg{width:100%;height:auto;display:block;margin-top:10px}
+.rng{display:flex;gap:4px;margin-top:10px}
+.cell.now{outline:2px solid var(--ink);outline-offset:-2px}
+.cell.pick{cursor:pointer}
+.legend{display:flex;gap:10px;flex-wrap:wrap;margin-top:8px;font-size:.75rem;color:var(--muted)}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:4px;vertical-align:-1px}
+.totals{list-style:none;margin:0;padding:0}
+.totals li{display:flex;justify-content:space-between;padding:7px 2px;border-bottom:1px solid var(--line);font-size:.9rem}
+.totals li:last-child{border-bottom:0}
+
+.setup{background:var(--surface);border-radius:18px;padding:16px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{border:1px solid var(--line);background:transparent;border-radius:999px;padding:5px 11px;cursor:pointer;font-size:.85rem}
+.chip[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.field{border:1px solid var(--line);background:var(--bg);border-radius:10px;padding:8px 10px;font-size:.9rem;min-width:0;width:100%}
+.erow{display:grid;grid-template-columns:44px 1fr 70px 64px 30px;gap:6px;align-items:center;margin-top:6px}
+.erow .field{padding:7px 6px}
+.erow .x{border:0;background:transparent;color:var(--muted);font-size:1.1rem;cursor:pointer}
+.btnrow{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
+.filepick{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
+details.panel summary{cursor:pointer;font-weight:600}
+.warnbox{background:var(--surface);border-left:4px solid var(--accent);border-radius:12px;padding:10px 12px;margin-top:10px;font-size:.85rem}
+.mode{font-size:.78rem;color:var(--muted);text-align:center;margin-top:16px}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(18px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);padding:9px 14px;border-radius:12px;display:flex;gap:12px;align-items:center;max-width:calc(100% - 28px);font-size:.9rem;z-index:5}
+.toast[hidden]{display:none}
+.toast button{background:transparent;border:0;color:var(--bg);font-weight:700;text-decoration:underline;cursor:pointer}
+@media (prefers-reduced-motion:no-preference){ .bar i{transition:width .35s ease} #ring{transition:stroke-dashoffset .5s ease} }
+</style>
+</head>
+<body>
+<main>
+  <div class="setup" id="setup" hidden>
+    <h2 class="d">매일 최소 운동 정하기</h2>
+    <p class="small muted" style="margin:0 0 10px">몸이 피곤한 날에도 할 수 있을 만큼만 정하세요. 적을수록 오래가요. 나중에 언제든 바꿀 수 있어요.</p>
+    <div class="small muted" style="margin-bottom:6px">골라 보세요 (최대 6개)</div>
+    <div class="chips" id="presets"></div>
+    <div id="editor"></div>
+    <div class="btnrow"><button class="btn ghost" id="addRow">+ 직접 추가</button></div>
+    <button class="btn primary" id="startBtn" style="width:100%;margin-top:12px">이대로 시작하기</button>
+  </div>
+
+  <div id="app" hidden>
+    <h1>매일 최소 운동</h1>
+    <div class="today" id="today"></div>
+    <div class="cheer" id="cheer"></div>
+    <div id="notices"></div>
+
+    <section>
+      <div class="items" id="items"></div>
+      <div class="restrow" id="restrow"></div>
+    </section>
+
+    <section>
+      <h2 class="d">체중</h2>
+      <div class="panel" id="weight"></div>
+    </section>
+
+    <section>
+      <h2 class="d">쌓인 기록</h2>
+      <div class="stats" id="stats"></div>
+    </section>
+
+    <section>
+      <div class="cal" id="cal"></div>
+    </section>
+
+    <section>
+      <h2 class="d">지금까지 한 운동</h2>
+      <div class="panel"><ul class="totals" id="totals"></ul></div>
+    </section>
+
+    <section>
+      <details class="panel" id="setPanel">
+        <summary>운동 목록 바꾸기 · 백업</summary>
+        <p class="small muted" style="margin:8px 0 0">이모지 · 이름 · 목표 · 단위</p>
+        <div id="editor2"></div>
+        <div class="btnrow"><button class="btn ghost" id="addRow2">+ 추가</button><button class="btn primary" id="saveItems">저장하기</button></div>
+        <div style="margin-top:16px;font-weight:600">백업</div>
+        <p class="small muted" style="margin:2px 0 0">기록은 이 휴대폰 브라우저에만 있어요. 가끔 백업 파일을 받아 두세요.</p>
+        <div class="btnrow">
+          <button class="btn primary" id="backupBtn">백업 파일 받기</button>
+          <label class="btn ghost" style="display:inline-block">백업 불러오기<input id="restoreInput" class="filepick" type="file" accept=".json,application/json"></label>
+        </div>
+      </details>
+    </section>
+    <p class="mode" id="mode"></p>
+    <p style="text-align:center;margin:14px 0 0;font-size:.82rem"><a href="../" style="color:var(--muted)">← 소확앱 다른 앱 보기</a></p>
+  </div>
+</main>
+<div class="toast" id="toast" hidden><span id="toastMsg"></span><button id="toastUndo" hidden>되돌리기</button></div>
+
+<script>
+(function(){
+  const KEY = 'daily-move-v1';
+  const PASSES = 2;               // 한 달 쉬는 날 카드 수
+  const BACKDAYS = 7;             // 며칠 전까지 기록 보정 가능
+  const PRESETS = [
+    {e:'🙆', n:'팔 들기', t:50, u:'개'},
+    {e:'🏃', n:'러닝머신', t:20, u:'분'},
+    {e:'🏋️', n:'덤벨 컬', t:20, u:'개'},
+    {e:'🦵', n:'스쿼트', t:20, u:'개'},
+    {e:'🧘', n:'스트레칭', t:5, u:'분'},
+    {e:'🚶', n:'걷기', t:20, u:'분'},
+    {e:'🤸', n:'플랭크', t:1, u:'분'},
+    {e:'🪜', n:'계단 오르기', t:5, u:'층'}
+  ];
+  const st = {setup:false, items:[], log:{}, rest:{}, weight:{}, wRange:30, lastBackup:0, timer:null, day:null, calMonth:null, draft:[], storageOk:true};
+  let toastTimer = null, undoFn = null;
+
+  const $ = id => document.getElementById(id);
+  const pad = n => String(n).padStart(2,'0');
+  const ymd = d => d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
+  const parse = s => { const [y,m,d] = s.split('-').map(Number); return new Date(y,m-1,d); };
+  const today = () => ymd(new Date());
+  const addDays = (s,n) => { const d = parse(s); d.setDate(d.getDate()+n); return ymd(d); };
+  const esc = s => String(s??'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const uid = () => Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+  const num = v => Math.max(0, Math.round(Number(String(v).replace(/[^0-9.]/g,''))||0));
+  const isTime = it => it.u === '분';
+  const dayLabel = s => { const d = parse(s); return `${d.getMonth()+1}월 ${d.getDate()}일 ${'일월화수목금토'[d.getDay()]}요일`; };
+
+  // ---------- storage ----------
+  function save(){
+    try{ localStorage.setItem(KEY, JSON.stringify({v:1, setup:st.setup, items:st.items, log:st.log, rest:st.rest, weight:st.weight, wRange:st.wRange, lastBackup:st.lastBackup, timer:st.timer})); st.storageOk = true; }
+    catch(e){ st.storageOk = false; toast('이 브라우저에 저장하지 못했어요. 백업 파일을 받아 두세요.'); }
+  }
+  function load(){
+    try{
+      localStorage.setItem(KEY+'-t','1'); localStorage.removeItem(KEY+'-t');
+      const d = JSON.parse(localStorage.getItem(KEY)||'null');
+      if(d){ st.setup = !!d.setup; st.items = d.items||[]; st.log = d.log||{}; st.rest = d.rest||{}; st.weight = d.weight||{}; st.wRange = d.wRange||30; st.lastBackup = d.lastBackup||0; st.timer = d.timer||null; }
+    }catch(e){ st.storageOk = false; }
+  }
+
+  // ---------- day logic ----------
+  const dayLog = d => st.log[d] || (st.log[d] = {v:{}, done:false});
+  function recomputeDone(d){
+    const L = dayLog(d);
+    L.done = st.items.length > 0 && st.items.every(it => (L.v[it.id]||0) >= it.t);
+    L.part = !L.done && st.items.some(it => (L.v[it.id]||0) > 0);
+  }
+  function status(d){
+    if(st.rest[d]) return 'rest';
+    const L = st.log[d]; if(!L) return 'none';
+    return L.done ? 'done' : (L.part ? 'part' : 'none');
+  }
+  function streak(){
+    let n = 0, d = today();
+    if(!['done','rest'].includes(status(d))) d = addDays(d,-1);
+    while(['done','rest'].includes(status(d))){ if(status(d)==='done') n++; d = addDays(d,-1); }
+    return n;
+  }
+  const passesUsed = mk => Object.keys(st.rest).filter(k => k.startsWith(mk)).length;
+
+  // ---------- actions ----------
+  function setVal(id, val){
+    const d = st.day, L = dayLog(d), before = {...L.v}, wasDone = L.done;
+    L.v[id] = Math.max(0, val); recomputeDone(d);
+    if(L.done && st.rest[d]) delete st.rest[d];
+    save(); render();
+    undoFn = () => { L.v = before; recomputeDone(d); save(); render(); };
+    if(L.done && !wasDone) celebrate(d);
+  }
+  function celebrate(d){
+    const s = streak();
+    toast(d===today() ? (s>1 ? `오늘 최소 운동 완료! ${s}일째 이어가고 있어요 🔥` : '오늘 최소 운동 완료! 🎉') : `${dayLabel(d)} 기록을 채웠어요.`);
+    try{ navigator.vibrate && navigator.vibrate([60,40,60]); }catch(e){}
+  }
+  function useRest(){
+    const d = st.day, mk = d.slice(0,7);
+    if(st.rest[d]){ delete st.rest[d]; save(); render(); toast('쉬는 날을 취소했어요.'); return; }
+    if(passesUsed(mk) >= PASSES){ toast(`이번 달 쉬는 날 카드 ${PASSES}장을 다 썼어요.`); return; }
+    st.rest[d] = true; save(); render(); toast('오늘은 쉬어요. 연속 기록은 그대로 이어져요 🛌');
+  }
+  function startTimer(id){
+    const it = st.items.find(x=>x.id===id); if(!it) return;
+    const L = dayLog(st.day), left = Math.max(it.t - (L.v[id]||0), 1);
+    st.timer = {id, day:st.day, start:Date.now(), end:Date.now()+left*60000, mins:left};
+    save(); render();
+  }
+  function stopTimer(finish){
+    const T = st.timer; if(!T) return;
+    const it = st.items.find(x=>x.id===T.id);
+    const mins = finish ? T.mins : Math.floor((Date.now()-T.start)/60000);
+    st.timer = null;
+    if(it && mins > 0){ const prev = st.day; st.day = T.day; setVal(T.id, (dayLog(T.day).v[T.id]||0) + mins); st.day = prev; if(!finish) toast(`${mins}분 기록했어요.`); }
+    else { save(); render(); if(!finish) toast('1분이 안 돼서 기록하지 않았어요.'); }
+  }
+  function tick(){
+    const T = st.timer; if(!T) return;
+    const left = T.end - Date.now();
+    if(left <= 0){ stopTimer(true); try{ navigator.vibrate && navigator.vibrate([200,100,200]); }catch(e){} return; }
+    const el = $('runclock'); if(el){ const s = Math.ceil(left/1000); el.textContent = pad(Math.floor(s/60))+':'+pad(s%60); }
+  }
+
+  // ---------- items editor ----------
+  function editorHtml(list){
+    return list.map((it,i) => `<div class="erow">
+      <input class="field" data-i="${i}" data-f="e" value="${esc(it.e)}" maxlength="4" aria-label="이모지" style="text-align:center">
+      <input class="field" data-i="${i}" data-f="n" value="${esc(it.n)}" maxlength="14" aria-label="운동 이름">
+      <input class="field" data-i="${i}" data-f="t" value="${it.t}" inputmode="numeric" aria-label="목표">
+      <select class="field" data-i="${i}" data-f="u" aria-label="단위">${['개','분','층','회','km'].map(u=>`<option ${u===it.u?'selected':''}>${u}</option>`).join('')}</select>
+      <button class="x" data-rm="${i}" aria-label="빼기">×</button></div>`).join('');
+  }
+  function bindEditor(el){
+    el.addEventListener('input', e => { const i = Number(e.target.dataset.i), f = e.target.dataset.f; if(!f || !st.draft[i]) return; st.draft[i][f] = f==='t' ? num(e.target.value) : e.target.value; if(el.id==='editor') renderSetup(true); });
+    el.addEventListener('click', e => { const b = e.target.closest('[data-rm]'); if(!b) return; st.draft.splice(Number(b.dataset.rm),1); el.id==='editor' ? renderSetup() : renderEditor2(); });
+  }
+  function cleanDraft(){
+    return st.draft.map(x => ({id:x.id||uid(), e:(x.e||'💪').trim().slice(0,4), n:String(x.n||'').trim().slice(0,14), t:num(x.t), u:x.u||'개'}))
+      .filter(x => x.n && x.t > 0).slice(0,6);
+  }
+  function renderSetup(skipEditor){
+    $('presets').innerHTML = PRESETS.map(p => { const on = st.draft.some(x=>x.n===p.n);
+      return `<button class="chip" data-p="${esc(p.n)}" aria-pressed="${on}">${p.e} ${esc(p.n)} ${p.t}${p.u}</button>`; }).join('');
+    if(!skipEditor) $('editor').innerHTML = st.draft.length ? `<p class="small muted" style="margin:12px 0 0">목표를 내 몸에 맞게 고쳐 보세요 (이모지 · 이름 · 목표 · 단위)</p>` + editorHtml(st.draft) : '';
+    $('startBtn').disabled = !cleanDraft().length;
+  }
+  function renderEditor2(){ $('editor2').innerHTML = editorHtml(st.draft); }
+
+  // ---------- backup ----------
+  function saveFile(name, text){
+    try{ const url = URL.createObjectURL(new Blob([text],{type:'application/json'})); const a = document.createElement('a'); a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(url),4000); return true; }
+    catch(e){ toast('파일을 받지 못했어요.'); return false; }
+  }
+  function backup(){
+    if(saveFile('매일운동-백업-'+today()+'.json', JSON.stringify({app:'daily-move', v:1, items:st.items, log:st.log, rest:st.rest, weight:st.weight}, null, 1))){ st.lastBackup = Date.now(); save(); render(); toast('백업 파일을 받았어요.'); }
+  }
+  function restore(file){
+    if(!file) return; const r = new FileReader();
+    r.onload = () => { try{
+      const d = JSON.parse(r.result); if(!d || d.app!=='daily-move' || typeof d.log!=='object') throw 0;
+      let added = 0;
+      for(const [k,v] of Object.entries(d.log)){ if(!/^\d{4}-\d{2}-\d{2}$/.test(k) || !v || typeof v.v!=='object') continue;
+        const cur = st.log[k] || {v:{}, done:false};
+        for(const [id,val] of Object.entries(v.v)){ const n = num(val); if(n > (cur.v[id]||0)){ cur.v[id] = n; added++; } }
+        cur.done = cur.done || !!v.done; cur.part = !cur.done && Object.values(cur.v).some(x=>x>0); st.log[k] = cur; }
+      if(d.rest) for(const k of Object.keys(d.rest)) if(/^\d{4}-\d{2}-\d{2}$/.test(k)) st.rest[k] = true;
+      if(d.weight && typeof d.weight==='object') for(const [k,w] of Object.entries(d.weight)) if(/^\d{4}-\d{2}-\d{2}$/.test(k) && !st.weight[k] && Number(w)>=20 && Number(w)<=300){ st.weight[k] = Math.round(Number(w)*10)/10; added++; }
+      if(!st.items.length && Array.isArray(d.items)){ st.draft = d.items; st.items = cleanDraft(); st.setup = true; }
+      else if(Array.isArray(d.items)) for(const it of d.items) if(it && it.id && !st.items.some(x=>x.id===it.id) && st.items.length<6){ st.draft=[it]; st.items.push(...cleanDraft()); }
+      save(); render(); toast(added ? `기록 ${added}건을 되살렸어요.` : '새로 더할 기록이 없어요.');
+    }catch(e){ toast('매일 최소 운동 백업 파일이 아니에요.'); } };
+    r.readAsText(file);
+  }
+
+  function toast(m, u){ $('toastMsg').textContent = m; $('toastUndo').hidden = !u; $('toast').hidden = false; clearTimeout(toastTimer); toastTimer = setTimeout(()=>{$('toast').hidden = true;}, u?4500:2600); }
+
+  // ---------- cheer ----------
+  const CHEERS = [
+    '오늘의 최소가 내일의 기본이 돼요.','완벽한 운동보다 계속하는 운동이 이겨요.','시작하는 데는 1분이면 충분해요.',
+    '움직이면 기분이 따라와요. 먼저 몸을 움직여 봐요.','힘든 날 해낸 5분이 가장 값진 5분이에요.','동그라미 하나가 쌓여 달력이 바뀌어요.',
+    '느려도 괜찮아요. 멈추지만 않으면 돼요.','오늘도 나와의 약속을 지키러 가 볼까요?','숫자는 오르내려도 습관은 쌓여요.',
+    '땀 한 방울이 자신감 한 스푼이 돼요.','지금 여기까지 온 나를 먼저 칭찬해 주세요.','10개가 모이면 100개가 돼요.',
+    '어제의 나보다 딱 한 번만 더.','몸은 오늘 한 만큼을 기억해요.','쉬어 가도 괜찮아요. 다시 돌아오면 돼요.',
+    '작게 시작해서 오래 가는 사람이 결국 멀리 가요.','하기 싫은 날의 한 세트가 진짜 실력이에요.','오늘의 나에게 동그라미를 선물해요.',
+    '천천히, 꾸준히, 나답게.','가장 좋은 운동은 오늘 하는 운동이에요.'
+  ];
+  function cheer(){
+    const t = today(), s = streak(), stT = status(t), h = new Date().getHours();
+    const idx = [...t].reduce((a,c)=>a*31+c.charCodeAt(0),7) % CHEERS.length;
+    if(stT==='done'){
+      if([7,30,50,100,200,365].includes(s)) return ['🏆', `${s}일 연속 달성! 이건 정말 대단한 기록이에요. 오늘의 나를 마음껏 자랑하세요.`];
+      return ['🎉', s>1 ? `오늘 약속 지켰어요! ${s}일째 이어 가는 중이에요. 내일도 딱 이만큼만.` : '오늘 약속 지켰어요! 동그라미 하나 추가예요.'];
+    }
+    if(stT==='rest') return ['🛌', '오늘은 푹 쉬는 날. 회복도 운동의 일부예요.'];
+    const y = status(addDays(t,-1));
+    if(stT==='none' && y==='none' && Object.keys(st.log).length) return ['🌱', '어제는 쉬었으니 오늘 가볍게 다시 시작해요. 하나만 해도 동그라미 반은 그린 거예요.'];
+    if(stT==='part') return ['💪', '벌써 시작했네요! 남은 것만 채우면 오늘도 동그라미예요.'];
+    if(h >= 20) return ['🌙', '하루가 끝나기 전에 딱 하나만 해 볼까요? 가장 쉬운 것부터요.'];
+    const tr = weightTrend(); if(tr !== null && tr <= -0.3) return ['📉', '꾸준함이 숫자로도 보이기 시작했어요. 지금처럼만 가요.'];
+    return ['☀️', CHEERS[idx]];
+  }
+
+  // ---------- weight ----------
+  const wKeys = () => Object.keys(st.weight).sort();
+  function weightTrend(){ // 최근 7일 평균 - 그 전 7일 평균 (기록이 있을 때만)
+    const t = today(), avg = (a,b) => { const v = wKeys().filter(k => k>=a && k<=b).map(k=>st.weight[k]); return v.length ? v.reduce((x,y)=>x+y,0)/v.length : null; };
+    const r = avg(addDays(t,-6), t), p = avg(addDays(t,-13), addDays(t,-7));
+    return r!==null && p!==null ? r - p : null;
+  }
+  function saveWeight(){
+    const raw = String($('wIn').value).replace(',', '.'), w = Math.round(Number(raw)*10)/10;
+    if(!raw){ if(st.weight[st.day]){ delete st.weight[st.day]; save(); render(); toast('이날 체중 기록을 지웠어요.'); } return; }
+    if(!(w >= 20 && w <= 300)){ toast('체중을 kg 단위로 적어 주세요. (예: 62.4)'); return; }
+    st.weight[st.day] = w; save(); render(); toast(`${w}kg 기록했어요.`);
+  }
+  function renderWeight(){
+    const d = st.day, keys = wKeys(), cur = st.weight[d];
+    const last = keys.filter(k => k<=today()).slice(-1)[0], first = keys[0];
+    const range = st.wRange, from = range ? addDays(today(), -(range-1)) : (first||today());
+    const pts = keys.filter(k => k>=from && k<=today()).map(k => ({k, w:st.weight[k]}));
+    const a7 = k => { const v = keys.filter(x => x>addDays(k,-7) && x<=k).map(x=>st.weight[x]); return v.reduce((a,b)=>a+b,0)/v.length; };
+    let chart = '';
+    if(pts.length >= 2){
+      const W = 320, H = 150, L = 34, R = 8, Tp = 12, B = 24;
+      const x0 = parse(pts[0].k).getTime(), x1 = Math.max(parse(pts[pts.length-1].k).getTime(), x0+86400000);
+      const ws = pts.map(p=>p.w).concat(pts.map(p=>a7(p.k)));
+      let lo = Math.min(...ws), hi = Math.max(...ws); if(hi-lo < 1){ const m = (hi+lo)/2; lo = m-0.5; hi = m+0.5; }
+      lo -= (hi-lo)*0.12; hi += (hi-lo)*0.12;
+      const X = k => L + (parse(k).getTime()-x0)/(x1-x0)*(W-L-R), Y = w => Tp + (hi-w)/(hi-lo)*(H-Tp-B);
+      const avgPath = pts.map((p,i) => `${i?'L':'M'}${X(p.k).toFixed(1)} ${Y(a7(p.k)).toFixed(1)}`).join(' ');
+      const grid = [hi-(hi-lo)*0.12, (hi+lo)/2, lo+(hi-lo)*0.12].map(v => `<line x1="${L}" x2="${W-R}" y1="${Y(v)}" y2="${Y(v)}" stroke="var(--line)"/><text x="${L-4}" y="${Y(v)+3}" text-anchor="end" font-size="9" fill="var(--muted)">${v.toFixed(1)}</text>`).join('');
+      const md2 = k => { const x = parse(k); return (x.getMonth()+1)+'/'+x.getDate(); };
+      chart = `<div class="wchart"><svg viewBox="0 0 ${W} ${H}" role="img" aria-label="체중 추이 그래프, ${pts[0].w}kg에서 ${pts[pts.length-1].w}kg">
+        ${grid}
+        ${pts.map(p => `<circle cx="${X(p.k).toFixed(1)}" cy="${Y(p.w).toFixed(1)}" r="3" fill="var(--weight)" opacity=".45"/>`).join('')}
+        <path d="${avgPath}" fill="none" stroke="var(--weight)" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
+        <circle cx="${X(pts[pts.length-1].k).toFixed(1)}" cy="${Y(pts[pts.length-1].w).toFixed(1)}" r="4.5" fill="var(--weight)"/>
+        <text x="${L}" y="${H-6}" font-size="10" fill="var(--muted)">${md2(pts[0].k)}</text>
+        <text x="${W-R}" y="${H-6}" font-size="10" fill="var(--muted)" text-anchor="end">${md2(pts[pts.length-1].k)}</text>
+      </svg><p class="small muted" style="margin:2px 0 0">점은 그날 체중, 선은 7일 평균이에요.</p></div>`;
+    } else chart = `<p class="small muted" style="margin:10px 0 0">${pts.length ? '하루만 더 적으면 그래프가 그려져요.' : '체중을 적으면 여기에 추이 그래프가 생겨요.'}</p>`;
+    const diff = last && first && last!==first ? Math.round((st.weight[last]-st.weight[first])*10)/10 : null;
+    const tr = weightTrend();
+    $('weight').innerHTML = `
+      <div class="wrow">
+        <label class="wnum"><input id="wIn" type="text" inputmode="decimal" placeholder="${last?st.weight[last]:'0.0'}" value="${cur??''}" aria-label="${d===today()?'오늘':dayLabel(d)} 체중"><span class="muted">kg</span></label>
+        <button class="btn primary" data-act="wsave">${cur!=null?'고치기':'기록'}</button>
+      </div>
+      <p class="small muted" style="margin:6px 0 0">${d===today()?'오늘':dayLabel(d)} 체중 · 매일 같은 시간(아침 화장실 다녀온 뒤)에 재면 추이가 더 정확해요.</p>
+      ${keys.length ? `<div class="wstats">
+        <div><span class="small muted">최근</span><b>${last?st.weight[last]+'kg':'-'}</b></div>
+        <div><span class="small muted">처음과 비교</span><b>${diff===null?'-':(diff>0?'+':'')+diff+'kg'}</b></div>
+        <div><span class="small muted">지난주 대비</span><b>${tr===null?'-':(tr>0?'+':'')+(Math.round(tr*10)/10)+'kg'}</b></div></div>
+        <div class="rng">${[[30,'30일'],[90,'90일'],[0,'전체']].map(([v,l]) => `<button class="chip" data-wr="${v}" aria-pressed="${st.wRange===v}">${l}</button>`).join('')}</div>` : ''}
+      ${chart}
+      ${keys.length>=3 ? `<p class="small muted" style="margin:8px 0 0">체중은 하루에도 1~2kg씩 오르내려요. 하루 숫자보다 선의 방향을 봐 주세요.</p>` : ''}`;
+  }
+
+  // ---------- render ----------
+  function render(){
+    $('setup').hidden = st.setup; $('app').hidden = !st.setup;
+    if(!st.setup){ renderSetup(); return; }
+    const t = today(); if(!st.day || st.day > t) st.day = t;
+    const d = st.day, L = st.log[d] || {v:{}}, isToday = d===t;
+    const doneN = st.items.filter(it => (L.v[it.id]||0) >= it.t).length;
+    const frac = st.items.length ? st.items.reduce((a,it)=>a+Math.min((L.v[it.id]||0)/it.t,1),0)/st.items.length : 0;
+    const rested = !!st.rest[d], s = streak();
+    const R = 40, C = 2*Math.PI*R;
+    const col = rested ? 'var(--rest)' : doneN===st.items.length ? 'var(--done)' : 'var(--accent)';
+    let msg;
+    if(rested) msg = '쉬는 날이에요. 푹 쉬는 것도 운동의 일부예요.';
+    else if(doneN===st.items.length) msg = '다 했어요! 내일도 이만큼만 하면 돼요.';
+    else if(frac===0) msg = isToday ? '오늘의 최소만 하면 돼요. 가볍게 시작해 볼까요?' : '이날은 기록이 없어요. 했던 게 있으면 채워 주세요.';
+    else if(frac<0.5) msg = '시작했으면 절반은 한 거예요.';
+    else msg = '거의 다 왔어요. 조금만 더!';
+    $('today').innerHTML = `
+      <div style="position:relative">
+        <svg viewBox="0 0 100 100" role="img" aria-label="${dayLabel(d)} ${st.items.length}개 중 ${doneN}개 완료">
+          <circle cx="50" cy="50" r="${R}" fill="none" stroke="var(--line)" stroke-width="11"/>
+          <circle id="ring" cx="50" cy="50" r="${R}" fill="none" stroke="${col}" stroke-width="11" stroke-linecap="round" stroke-dasharray="${C}" stroke-dashoffset="${C*(1-(rested?1:frac))}" transform="rotate(-90 50 50)"/>
+        </svg>
+        <div class="d" style="position:absolute;inset:0;display:grid;place-items:center;font-size:1.35rem">${rested?'🛌':doneN+'/'+st.items.length}</div>
+      </div>
+      <div>
+        <div class="daynav"><button data-nav="-1" aria-label="전날" ${d<=addDays(t,-BACKDAYS)?'disabled':''}>‹</button>
+          <span>${isToday?'오늘':dayLabel(d)}</span>
+          <button data-nav="1" aria-label="다음날" ${isToday?'disabled':''}>›</button></div>
+        <div class="big d">${rested?'쉬는 날':doneN===st.items.length?'완료!':Math.round(frac*100)+'%'}</div>
+        <p class="msg">${msg}</p>
+        ${s ? `<span class="streak">🔥 ${s}일 연속</span>` : ''}
+      </div>`;
+
+    // notices
+    const cnt = Object.values(st.log).filter(x=>x.done).length, days = st.lastBackup ? Math.floor((Date.now()-st.lastBackup)/86400000) : null;
+    let notes = '';
+    if(!st.storageOk) notes += `<div class="warnbox">이 브라우저는 기록을 저장하지 못하고 있어요. 시크릿 모드라면 일반 창으로 열어 주세요.</div>`;
+    if(cnt >= 7 && (days===null || days >= 14)) notes += `<div class="warnbox">${days===null?'아직 백업한 적이 없어요.':`마지막 백업이 ${days}일 전이에요.`} 기록이 이 폰에만 있어요.<div class="btnrow"><button class="btn primary" data-act="backup">지금 백업하기</button></div></div>`;
+    $('notices').innerHTML = notes;
+
+    // items
+    const T = st.timer;
+    $('items').innerHTML = st.items.map(it => {
+      const v = L.v[it.id]||0, done = v >= it.t, pct = Math.min(v/it.t,1)*100;
+      const running = T && T.id===it.id && T.day===d;
+      const steps = isTime(it) ? [5] : it.t >= 30 ? [5,10] : it.t >= 5 ? [1,5] : [1];
+      return `<div class="item ${done?'done':''}">
+        <div class="itop"><span class="iname">${esc(it.e)} ${esc(it.n)}</span><span class="ival d">${v} / ${it.t}${esc(it.u)}${done?' ✓':''}</span></div>
+        <div class="bar"><i style="width:${pct}%"></i></div>
+        ${running ? `<div class="run"><span class="small">${esc(it.n)} 중</span><span class="clock d" id="runclock">--:--</span>
+            <span><button class="b" data-stop="${it.id}">멈추고 기록</button></span></div>`
+          : `<div class="ibtns">
+            ${v>0?`<button class="b" data-add="${it.id}" data-n="-${steps[0]}" aria-label="${steps[0]} 빼기">−${steps[0]}</button>`:''}
+            ${steps.map(n => `<button class="b" data-add="${it.id}" data-n="${n}">+${n}${esc(it.u)}</button>`).join('')}
+            ${isTime(it) && !done && isToday && !T ? `<button class="b timer" data-timer="${it.id}">⏱ 타이머</button>` : ''}
+            ${done ? `<button class="b ok" data-set="${it.id}" data-n="0" aria-label="처음으로">완료됨</button>` : `<button class="b fill" data-set="${it.id}" data-n="${it.t}">✓ 다 했어요</button>`}
+          </div>`}
+      </div>`; }).join('');
+    const mk = d.slice(0,7), left = PASSES - passesUsed(mk);
+    $('restrow').innerHTML = doneN===st.items.length && !rested ? '' :
+      `<span class="muted">아프거나 정말 힘든 날엔 쉬어도 돼요. 이번 달 쉬는 날 카드 ${Math.max(left,0)}장 남음</span>
+       <button class="btn rest" data-act="rest" ${!rested && left<=0?'disabled':''}>${rested?'쉬는 날 취소':'🛌 쉬는 날'}</button>`;
+    tick();
+    const [em, cm0] = cheer(); $('cheer').innerHTML = `<span class="em" aria-hidden="true">${em}</span><div><p>${cm0}</p><div class="by">오늘의 응원</div></div>`;
+    if(document.activeElement !== $('wIn')) renderWeight();
+
+    // stats
+    const monthDays = Object.keys(st.log).filter(k => k.startsWith(t.slice(0,7)) && st.log[k].done).length;
+    const allDone = Object.values(st.log).filter(x=>x.done).length;
+    let best = 0, run = 0; const keys = [...new Set([...Object.keys(st.log), ...Object.keys(st.rest)])].sort();
+    if(keys.length){ let k = keys[0]; while(k <= t){ const s2 = status(k); if(s2==='done'){ run++; best = Math.max(best, run); } else if(s2!=='rest') run = 0; k = addDays(k,1); } }
+    $('stats').innerHTML = `
+      <div class="stat"><div class="small muted">연속</div><div class="v d">${s}일</div></div>
+      <div class="stat"><div class="small muted">최고 연속</div><div class="v d">${best}일</div></div>
+      <div class="stat"><div class="small muted">이번 달</div><div class="v d">${monthDays}일</div></div>
+      <div class="stat" style="grid-column:1/-1"><div class="small muted">지금까지 최소 운동을 채운 날</div><div class="v d">총 ${allDone}일</div></div>`;
+
+    // calendar
+    const cm = st.calMonth || t.slice(0,7), [cy,cmo] = cm.split('-').map(Number);
+    const first = new Date(cy, cmo-1, 1), lastDay = new Date(cy, cmo, 0).getDate(), lead = (first.getDay()+6)%7;
+    let cells = ['월','화','수','목','금','토','일'].map(w=>`<div class="wd">${w}</div>`).join('') + '<div></div>'.repeat(lead);
+    for(let i=1;i<=lastDay;i++){ const k = `${cm}-${pad(i)}`, s2 = status(k), pick = k<=t && k>=addDays(t,-BACKDAYS);
+      cells += `<button class="cell ${s2} ${k===t?'now':''} ${pick?'pick':''}" ${pick?`data-day="${k}"`:'tabindex="-1"'} aria-label="${i}일 ${({done:'완료',part:'일부',rest:'쉬는 날',none:'기록 없음'})[s2]}">${i}</button>`; }
+    $('cal').innerHTML = `<div class="calhead"><button data-cal="-1" aria-label="이전 달">‹</button><b>${cy}년 ${cmo}월</b><button data-cal="1" aria-label="다음 달" ${cm>=t.slice(0,7)?'disabled':''}>›</button></div>
+      <div class="grid">${cells}</div>
+      <div class="legend"><span><span class="stampi"></span>미션 완료</span><span><span class="doti"></span>일부</span><span><i style="background:var(--rest-soft)"></i>쉬는 날</span><span class="muted">최근 ${BACKDAYS}일은 눌러서 고칠 수 있어요</span></div>`;
+
+    // totals
+    $('totals').innerHTML = st.items.map(it => { const sum = Object.values(st.log).reduce((a,x)=>a+(x.v[it.id]||0),0);
+      const txt = it.u==='분' && sum>=60 ? `${Math.floor(sum/60)}시간 ${sum%60}분` : `${sum.toLocaleString('ko-KR')}${it.u}`;
+      return `<li><span>${esc(it.e)} ${esc(it.n)}</span><b class="d" style="font-weight:400;font-size:1.05rem">${txt}</b></li>`; }).join('');
+
+    if(!$('setPanel').open) { st.draft = st.items.map(x=>({...x})); renderEditor2(); }
+    $('mode').textContent = st.storageOk ? '기록은 이 기기의 브라우저에만 저장돼요. 로그인은 필요 없어요.' : '지금은 저장이 되지 않는 상태예요.';
+  }
+
+  // ---------- events ----------
+  $('presets').addEventListener('click', e => { const b = e.target.closest('[data-p]'); if(!b) return;
+    const i = st.draft.findIndex(x=>x.n===b.dataset.p);
+    if(i>-1) st.draft.splice(i,1); else if(st.draft.length<6){ const p = PRESETS.find(x=>x.n===b.dataset.p); st.draft.push({id:uid(), e:p.e, n:p.n, t:p.t, u:p.u}); } else toast('최대 6개까지예요. 적을수록 오래가요.');
+    renderSetup(); });
+  $('addRow').addEventListener('click', () => { if(st.draft.length>=6){ toast('최대 6개까지예요.'); return; } st.draft.push({id:uid(), e:'💪', n:'', t:10, u:'개'}); renderSetup(); });
+  $('startBtn').addEventListener('click', () => { const items = cleanDraft(); if(!items.length){ toast('운동을 하나 이상 골라 주세요.'); return; } st.items = items; st.setup = true; save(); render(); window.scrollTo(0,0); });
+  bindEditor($('editor')); bindEditor($('editor2'));
+  $('addRow2').addEventListener('click', () => { if(st.draft.length>=6){ toast('최대 6개까지예요.'); return; } st.draft.push({id:uid(), e:'💪', n:'', t:10, u:'개'}); renderEditor2(); });
+  $('saveItems').addEventListener('click', () => { const items = cleanDraft(); if(!items.length){ toast('운동을 하나 이상 남겨 주세요.'); return; }
+    st.items = items; recomputeDone(today()); save(); $('setPanel').open = false; render(); toast('운동 목록을 바꿨어요. 지난 기록은 그대로예요.'); });
+  $('setPanel').addEventListener('toggle', () => { if($('setPanel').open){ st.draft = st.items.map(x=>({...x})); renderEditor2(); } });
+  $('today').addEventListener('click', e => { const b = e.target.closest('[data-nav]'); if(!b) return; st.day = addDays(st.day, Number(b.dataset.nav)); render(); });
+  $('items').addEventListener('click', e => {
+    const a = e.target.closest('[data-add]'); if(a){ const id = a.dataset.add; setVal(id, (dayLog(st.day).v[id]||0) + Number(a.dataset.n)); return; }
+    const s = e.target.closest('[data-set]'); if(s){ setVal(s.dataset.set, Number(s.dataset.n)); if(Number(s.dataset.n)===0) toast('처음으로 돌렸어요.', true); return; }
+    const tm = e.target.closest('[data-timer]'); if(tm){ startTimer(tm.dataset.timer); return; }
+    const sp = e.target.closest('[data-stop]'); if(sp) stopTimer(false);
+  });
+  $('weight').addEventListener('click', e => {
+    if(e.target.closest('[data-act="wsave"]')){ saveWeight(); return; }
+    const r = e.target.closest('[data-wr]'); if(r){ st.wRange = Number(r.dataset.wr); save(); renderWeight(); }
+  });
+  $('weight').addEventListener('keydown', e => { if(e.target.id==='wIn' && e.key==='Enter'){ e.preventDefault(); saveWeight(); } });
+  $('restrow').addEventListener('click', e => { if(e.target.closest('[data-act="rest"]')) useRest(); });
+  $('notices').addEventListener('click', e => { if(e.target.closest('[data-act="backup"]')) backup(); });
+  $('cal').addEventListener('click', e => {
+    const c = e.target.closest('[data-cal]'); if(c){ const [y,m] = (st.calMonth||today().slice(0,7)).split('-').map(Number); const nd = new Date(y, m-1+Number(c.dataset.cal), 1); st.calMonth = ymd(nd).slice(0,7); render(); return; }
+    const dd = e.target.closest('[data-day]'); if(dd){ st.day = dd.dataset.day; render(); window.scrollTo({top:0, behavior:'smooth'}); }
+  });
+  $('toastUndo').addEventListener('click', () => { if(undoFn){ undoFn(); undoFn = null; } $('toast').hidden = true; });
+  $('backupBtn').addEventListener('click', backup);
+  $('restoreInput').addEventListener('change', e => { restore(e.target.files[0]); e.target.value = ''; });
+  document.addEventListener('visibilitychange', () => { if(document.visibilityState==='visible'){ tick(); render(); } });
+  setInterval(tick, 1000);
+
+  load();
+  if(!st.setup && !st.draft.length) st.draft = [PRESETS[0], PRESETS[1]].map(p => ({id:uid(), e:p.e, n:p.n, t:p.t, u:p.u}));
+  render();
+})();
+</script>
+</body>
+</html>
