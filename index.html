@@ -97,6 +97,7 @@ details summary{cursor:pointer;font-weight:600;font-size:.92rem}
 details p{margin:8px 0 2px;font-size:.88rem;color:var(--muted)}
 footer{margin-top:30px;text-align:center;font-size:.8rem;color:var(--muted)}
 footer a{color:var(--muted)}
+footer .stats{margin-top:4px;font-size:.75rem}
 </style>
 </head>
 <body>
@@ -270,10 +271,40 @@ footer a{color:var(--muted)}
 
   <footer>
     <p>소확앱 · 내가 필요해서 만든 작은 앱들</p>
+    <p class="stats" id="siteStats" aria-live="polite"></p>
   </footer>
 </main>
 <script>
 (function(){
+  const SB_URL = 'https://wuqodlfpmuallhkbikeq.supabase.co';
+  const SB_KEY = 'sb_publishable_BzzphVVA7kwUDH3Jmu-XWg_ifsvZNYJ';
+  async function sbRpc(fn, params){
+    const res = await fetch(`${SB_URL}/rest/v1/rpc/${fn}`, {
+      method: 'POST',
+      headers: { apikey: SB_KEY, Authorization: 'Bearer ' + SB_KEY, 'Content-Type': 'application/json' },
+      body: JSON.stringify(params || {}),
+    });
+    if(!res.ok) throw new Error('rpc_failed');
+    return res.json();
+  }
+  const fmt = n => Number(n || 0).toLocaleString('ko-KR');
+  async function refreshStats(){
+    try{
+      const rows = await sbRpc('testbase_get_counters');
+      const byId = Object.fromEntries(rows.map(r => [r.id, r.count]));
+      document.getElementById('siteStats').textContent = `누적 방문 ${fmt(byId.visits)} · 누적 다운로드 ${fmt(byId.downloads)}`;
+    }catch(e){ document.getElementById('siteStats').textContent = ''; }
+  }
+  async function bumpVisit(){
+    try{ await sbRpc('testbase_increment_counter', {counter_id:'visits'}); }catch(e){}
+    refreshStats();
+  }
+  async function bumpDownload(){
+    try{ await sbRpc('testbase_increment_counter', {counter_id:'downloads'}); }catch(e){}
+    refreshStats();
+  }
+  bumpVisit();
+
   const boxes = () => Array.from(document.querySelectorAll('.pickbox'));
   const selAll = document.getElementById('selAll');
   const bar = document.getElementById('bulkbar');
@@ -298,6 +329,7 @@ footer a{color:var(--muted)}
       const res = await fetch('./' + btn.dataset.file + '/');
       const blob = await res.blob();
       downloadFile(new Blob([blob], {type:'text/html'}), btn.dataset.name);
+      bumpDownload();
     }catch(e){
       alert('다운로드 중 문제가 생겼어요. 잠시 후 다시 시도해 주세요.');
     }finally{
@@ -327,6 +359,7 @@ footer a{color:var(--muted)}
         const res = await fetch('./' + b.dataset.file + '/');
         const blob = await res.blob();
         downloadFile(blob, b.dataset.name);
+        bumpDownload();
       }catch(e){ alert('다운로드 중 문제가 생겼어요. 잠시 후 다시 시도해 주세요.'); }
       return;
     }
@@ -343,6 +376,7 @@ footer a{color:var(--muted)}
       }
       const blob = await zip.generateAsync({type:'blob'});
       downloadFile(blob, '소확앱-선택한앱-' + checked.length + '개.zip');
+      bumpDownload();
     }catch(e){
       alert('다운로드 중 문제가 생겼어요. 잠시 후 다시 시도해 주세요.');
     }finally{
