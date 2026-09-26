@@ -142,9 +142,8 @@ details.panel summary{cursor:pointer;font-weight:600}
       <label>내 이름 (친구에게 보낼 때 쓰여요)
         <input id="uName" class="field" type="text" maxlength="12" placeholder="예: 지수">
       </label>
-      <div class="small muted">특히 줄이고 싶은 지출은?</div>
+      <div class="small muted">항아리에 표시할 분류는?</div>
       <div class="chips" id="uFocus" style="margin-top:0"></div>
-      <input id="uFocusCustom" class="field" type="text" maxlength="8" placeholder="직접 입력 (예: 편의점)" hidden>
       <label><span id="uLimitLabel">한 주 한도</span>
         <input id="uLimit" class="field" type="text" inputmode="numeric" value="30,000">
       </label>
@@ -219,12 +218,8 @@ details.panel summary{cursor:pointer;font-weight:600}
           <label>내 이름
             <input id="sName" class="field" type="text" maxlength="12">
           </label>
-          <label>줄이고 싶은 지출 이름
-            <input id="sFocus" class="field" type="text" maxlength="8">
-          </label>
-          <label>세부 분류 (쉼표로 구분)
-            <input id="sSubs" class="field" type="text" maxlength="80">
-          </label>
+          <div class="small muted">항아리에 표시할 분류</div>
+          <div class="chips" id="sHeroCat" style="margin-top:0"></div>
           <label><span id="sSnackLabel">한 주 한도</span>
             <input id="sSnack" class="field" type="text" inputmode="numeric">
           </label>
@@ -252,18 +247,13 @@ details.panel summary{cursor:pointer;font-weight:600}
 
 <script>
 (function(){
-  const PRESETS = {
-    '간식': ['카페·음료','빵·디저트','과자·편의점','아이스크림'],
-    '커피·카페': ['커피','음료','디저트'],
-    '배달': ['치킨','피자','분식','기타'],
-    '술': ['맥주','소주','와인','안주']
-  };
+  const HERO_OPTS = [['food','식비'],['snack','간식'],['life','생활'],['fun','여가']];
   const newDevice = () => 'd' + Date.now().toString(36) + Math.random().toString(36).slice(2,8);
-  const DEFAULTS = {setup:false, name:'', focus:'간식', subs:PRESETS['간식'], foodBudget:600000, snackWeekly:30000,
+  const DEFAULTS = {setup:false, name:'', heroCat:'snack', foodBudget:600000, snackWeekly:30000,
     share:'private', showMoney:false, lastBackup:0, device:''};
   const KEY = 'jar-budget-v1';
   const state = {months:{}, friends:{}, settings:{...DEFAULTS}, form:{cat:'snack', sub:''}, filter:'all', chartTab:'snack',
-    storageOk:true, incoming:null, setupFocus:'간식'};
+    storageOk:true, incoming:null, setupHero:'snack'};
   let lastDeleted = null, toastTimer = null, downloads = null;
 
   // ---------- helpers ----------
@@ -280,17 +270,17 @@ details.panel summary{cursor:pointer;font-weight:600}
   const md = s => { const d = parse(s); return (d.getMonth()+1)+'/'+d.getDate(); };
   function weekStart(s){ const d = parse(s); d.setDate(d.getDate()-((d.getDay()+6)%7)); return ymd(d); }
   const allEntries = () => Object.values(state.months).flat();
-  const isFocusSpend = e => e.cat==='snack' && !e.skip;
-  const F = () => state.settings.focus || '간식';
+  const HERO = () => (['food','snack','life','fun'].includes(state.settings.heroCat) ? state.settings.heroCat : 'snack');
+  const isFocusSpend = e => e.cat===HERO() && !e.skip;
   function cats(){
-    const s = state.settings;
     return {
       food:  {label:'식비', subs:['장보기','외식','배달','구내식당']},
-      snack: {label:F(), subs:(s.subs && s.subs.length ? s.subs : ['기타'])},
+      snack: {label:'간식', subs:['카페·음료','빵·디저트','과자·편의점','아이스크림']},
       life:  {label:'생활', subs:['생필품','쇼핑','교통','기타']},
       fun:   {label:'여가', subs:['문화','취미','선물','기타']}
     };
   }
+  const F = () => cats()[HERO()].label;
   const JAR = 'M20 44 Q20 33 31 33 L89 33 Q100 33 100 44 L100 130 Q100 146 84 146 L36 146 Q20 146 20 130 Z';
   function jarSvg(ratio, w, label){
     const top = 145 - Math.min(ratio,1)*112, id = 'c'+Math.random().toString(36).slice(2,7);
@@ -487,19 +477,17 @@ details.panel summary{cursor:pointer;font-weight:600}
   }
   function undo(){ if(!lastDeleted) return; const {key, entry} = lastDeleted; lastDeleted = null; state.months[key] = [...(state.months[key]||[]), entry]; save(); render(); hideToast(); }
   function saveSettings(){
-    const f = toNum($('sFood').value), s = toNum($('sSnack').value), focus = $('sFocus').value.trim() || '간식';
-    const subs = $('sSubs').value.split(',').map(x=>x.trim()).filter(Boolean).slice(0,6);
+    const f = toNum($('sFood').value), s = toNum($('sSnack').value);
     if(!f || !s){ toast('두 한도 모두 0보다 큰 금액으로 적어 주세요.'); return; }
-    state.settings = {...state.settings, foodBudget:f, snackWeekly:s, name:$('sName').value.trim(), focus, subs: subs.length ? subs : ['기타']};
-    if(state.form.cat==='snack') state.form.sub = state.settings.subs[0];
+    state.settings = {...state.settings, foodBudget:f, snackWeekly:s, name:$('sName').value.trim()};
+    state.form.cat = HERO(); state.form.sub = cats()[HERO()].subs[0];
     save(); render(); toast('설정을 저장했어요.');
   }
   function finishSetup(){
-    const focus = state.setupFocus==='직접' ? ($('uFocusCustom').value.trim() || '간식') : state.setupFocus;
     const lim = toNum($('uLimit').value), food = toNum($('uFood').value);
     if(!lim || !food){ toast('한도와 예산을 0보다 크게 적어 주세요.'); return; }
-    state.settings = {...state.settings, setup:true, name:$('uName').value.trim(), focus, subs: PRESETS[focus] || ['기타'], snackWeekly:lim, foodBudget:food};
-    state.form = {cat:'snack', sub:state.settings.subs[0]};
+    state.settings = {...state.settings, setup:true, name:$('uName').value.trim(), heroCat:state.setupHero, snackWeekly:lim, foodBudget:food};
+    state.form = {cat:HERO(), sub:cats()[HERO()].subs[0]};
     save(); render(); window.scrollTo(0,0);
   }
   function toast(msg, withUndo){ $('toastMsg').textContent = msg; $('toastUndo').hidden = !withUndo; $('toast').hidden = false; clearTimeout(toastTimer); toastTimer = setTimeout(hideToast, withUndo ? 5000 : 2800); }
@@ -524,11 +512,12 @@ details.panel summary{cursor:pointer;font-weight:600}
     </div>`;
   }
   function renderSetup(){
-    const opts = [...Object.keys(PRESETS), '직접'];
-    $('uFocus').innerHTML = opts.map(o => `<button type="button" class="chip" data-focus="${esc(o)}" aria-pressed="${state.setupFocus===o}">${o==='직접'?'직접 입력':esc(o)}</button>`).join('');
-    $('uFocusCustom').hidden = state.setupFocus !== '직접';
-    const f = state.setupFocus==='직접' ? ($('uFocusCustom').value.trim()||'이 항목') : state.setupFocus;
+    $('uFocus').innerHTML = HERO_OPTS.map(([k,label]) => `<button type="button" class="chip" data-herocat="${k}" aria-pressed="${state.setupHero===k}">${esc(label)}</button>`).join('');
+    const f = HERO_OPTS.find(([k])=>k===state.setupHero)?.[1] || '간식';
     $('uLimitLabel').textContent = `한 주 ${f} 한도`;
+  }
+  function renderSettingsHero(){
+    $('sHeroCat').innerHTML = HERO_OPTS.map(([k,label]) => `<button type="button" class="chip" data-herocat="${k}" aria-pressed="${HERO()===k}">${esc(label)}</button>`).join('');
   }
   function render(){
     renderIncoming();
@@ -684,9 +673,10 @@ details.panel summary{cursor:pointer;font-weight:600}
 
     // settings fields
     const setv = (id,v) => { if(document.activeElement!==$(id)) $(id).value = v; };
-    setv('sName', s.name||''); setv('sFocus', f); setv('sSubs', C.snack.subs.join(', '));
+    setv('sName', s.name||'');
     setv('sSnack', s.snackWeekly.toLocaleString('ko-KR')); setv('sFood', s.foodBudget.toLocaleString('ko-KR'));
     $('sSnackLabel').textContent = `한 주 ${f} 한도`;
+    renderSettingsHero();
     $('mode').textContent = state.storageOk ? '기록은 이 기기의 브라우저에만 저장돼요. 로그인은 필요 없어요.' : '지금은 저장이 되지 않는 상태예요.';
   }
 
@@ -694,8 +684,8 @@ details.panel summary{cursor:pointer;font-weight:600}
   $('incoming').addEventListener('click', e => { const b = e.target.closest('[data-inc]'); if(!b) return;
     if(b.dataset.inc==='add' && state.incoming){ state.friends[state.incoming.id] = {...state.incoming, at:Date.now()}; save(); toast(`${state.incoming.n}님을 친구 보드에 추가했어요.`); }
     state.incoming = null; render(); });
-  $('uFocus').addEventListener('click', e => { const b = e.target.closest('[data-focus]'); if(!b) return; state.setupFocus = b.dataset.focus; renderSetup(); if(state.setupFocus==='직접') $('uFocusCustom').focus(); });
-  $('uFocusCustom').addEventListener('input', renderSetup);
+  $('uFocus').addEventListener('click', e => { const b = e.target.closest('[data-herocat]'); if(!b) return; state.setupHero = b.dataset.herocat; renderSetup(); });
+  $('sHeroCat').addEventListener('click', e => { const b = e.target.closest('[data-herocat]'); if(!b) return; state.settings.heroCat = b.dataset.herocat; renderSettingsHero(); });
   $('uStart').addEventListener('click', finishSetup);
   $('seg').addEventListener('click', e => { const b = e.target.closest('[data-cat]'); if(!b) return; state.form.cat = b.dataset.cat; state.form.sub = cats()[b.dataset.cat].subs[0]; render(); });
   $('subs').addEventListener('click', e => { const b = e.target.closest('[data-sub]'); if(!b) return; state.form.sub = b.dataset.sub; render(); });
