@@ -22,6 +22,7 @@
   --accent:#F2825C; --accent-soft:#40261C; --done:#74CF8C; --done-soft:#1E3A26; --rest:#8FB0E0; --rest-soft:#1F2C40; --focus:#8AA8FF; --stamp:#FF7A6B; --weight:#8FB0E0; }
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
 *,*::before,*::after{box-sizing:inherit}
+.copyright{text-align:center;font-size:.78rem;color:var(--muted);margin:0 0 14px}
 body{margin:0;background:var(--bg);color:var(--ink);font-family:"IBM Plex Sans KR","Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;font-size:15px;line-height:1.5;-webkit-text-size-adjust:100%}
 .d{font-family:"Do Hyeon","IBM Plex Sans KR",sans-serif;font-weight:400}
 main{max-width:520px;margin:0 auto;padding:12px 12px 40px}
@@ -135,6 +136,7 @@ details.panel summary{cursor:pointer;font-weight:600}
   </div>
 
   <div id="app" hidden>
+    <p class="copyright">© 2026 심수정 · All rights reserved.</p>
     <h1>매일 최소 운동</h1>
     <div class="today" id="today"></div>
     <div class="cheer" id="cheer"></div>

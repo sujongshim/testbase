@@ -22,6 +22,7 @@
   --accent:#8FAEDD; --accent-soft:#1F2A3B; --done:#74CF8C; --done-soft:#1E3A26; --rest:#D9B97A; --rest-soft:#3A2F1C; --focus:#8AA8FF; }
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
 *,*::before,*::after{box-sizing:inherit}
+.copyright{text-align:center;font-size:.78rem;color:var(--muted);margin:0 0 14px}
 body{margin:0;background:var(--bg);color:var(--ink);font-family:"IBM Plex Sans KR","Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;font-size:15px;line-height:1.5;-webkit-text-size-adjust:100%}
 .d{font-family:"Do Hyeon","IBM Plex Sans KR",sans-serif;font-weight:400}
 .serif{font-family:"Gowun Batang","Nanum Myeongjo","AppleMyungjo",serif}
@@ -166,6 +167,7 @@ textarea.field{resize:vertical;min-height:64px}
   </div>
 
   <div id="app" hidden>
+    <p class="copyright">© 2026 심수정 · All rights reserved.</p>
     <h1>한 쪽 독서</h1>
     <nav class="tabs" id="tabs" aria-label="화면"></nav>
     <div id="notices"></div>
