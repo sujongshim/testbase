@@ -20,6 +20,15 @@ export default async function handler(req, res) {
     res.status(200).json({ error: 'server_not_connected' });
     return;
   }
+  if (req.query.debug === '1') {
+    res.status(200).json({
+      len: token.length,
+      startsWith: token.slice(0, 4),
+      hasWhitespace: /\s/.test(token),
+      hasQuotes: /["']/.test(token),
+    });
+    return;
+  }
 
   try {
     const rows = [];
