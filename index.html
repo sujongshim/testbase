@@ -70,7 +70,8 @@ header{margin-bottom:22px}
 .move .icon{background:#FBE3D8} .move .go{color:#D9542B}
 .read .icon{background:#DDE5F1} .read .go{color:#3F5E8C}
 .sleep .icon{background:#E0E1F4} .sleep .go{color:#4B4FA3}
-@media (prefers-color-scheme:dark){ .move .icon{background:#40261C} .move .go{color:#F2825C} .read .icon{background:#1F2A3B} .read .go{color:#8FAEDD} .sleep .icon{background:#262A4A} .sleep .go{color:#9EA3F0} }
+.vocab .icon{background:#EDE4F7} .vocab .go{color:#6B3FA0}
+@media (prefers-color-scheme:dark){ .move .icon{background:#40261C} .move .go{color:#F2825C} .read .icon{background:#1F2A3B} .read .go{color:#8FAEDD} .sleep .icon{background:#262A4A} .sleep .go{color:#9EA3F0} .vocab .icon{background:#2C2240} .vocab .go{color:#B99AE6} }
 .soon{border:1.5px dashed var(--line);background:transparent}
 .soon .icon{background:var(--surface);font-size:1.6rem}
 
@@ -218,6 +219,21 @@ footer a{color:var(--muted)}
         </div>
       </a>
       <button type="button" class="dl" data-file="sleep" data-name="소확앱-잘자요.html" aria-label="잘 자요만 다운로드" title="이 앱만 HTML로 다운로드">다운로드</button>
+    </div>
+
+    <div class="app-card">
+      <label class="pick"><input type="checkbox" class="pickbox" data-file="vocab" data-name="소확앱-수능단어장.html" aria-label="내 수능 단어장 선택"></label>
+      <a class="app vocab" href="./vocab/">
+        <div class="icon" aria-hidden="true">
+          <svg viewBox="0 0 100 100"><path d="M50 28 C38 20 22 20 14 24 L14 78 C22 74 38 74 50 82 C62 74 78 74 86 78 L86 24 C78 20 62 20 50 28 Z" fill="none" stroke="#6B3FA0" stroke-width="6" stroke-linejoin="round"/><path d="M50 28 L50 82" stroke="#6B3FA0" stroke-width="6"/></svg>
+        </div>
+        <div>
+          <h2 class="d">내 수능 단어장</h2>
+          <p>노션에 정리해 둔 단어를 그날그날 복습해요. 상자별 간격 복습으로 아는 단어는 건너뛰어요.</p>
+          <div class="go">열기 →</div>
+        </div>
+      </a>
+      <button type="button" class="dl" data-file="vocab" data-name="소확앱-수능단어장.html" aria-label="내 수능 단어장만 다운로드" title="이 앱만 HTML로 다운로드">다운로드</button>
     </div>
 
     <div class="app-card soon-row">

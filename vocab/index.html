@@ -1,0 +1,428 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>💜 내 수능 단어장</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Do+Hyeon&family=IBM+Plex+Sans+KR:wght@400;500;600&family=Newsreader:opsz,wght@6..72,500;6..72,600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#F3F1F7; --surface:#FFFFFF; --ink:#211D2B; --muted:#665F75; --line:#E1DCEA;
+  --violet:#6B3FA0; --violet-soft:#EDE4F7; --ok:#2F7D5B; --ok-soft:#DDF0E6; --hard:#B7791F; --hard-soft:#F8EBD3; --again:#C0392B; --again-soft:#F7DEDA; --stamp:#D93A2B; --hl:#F6E27A; --focus:#2F5FD0;
+  box-sizing:border-box; padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){ :root:not([data-theme="light"]){
+  --bg:#131118; --surface:#1D1A24; --ink:#ECE8F3; --muted:#A39CB3; --line:#2E2A39;
+  --violet:#B99AE6; --violet-soft:#2C2240; --ok:#6FD0A2; --ok-soft:#1D3A2C; --hard:#E8B45E; --hard-soft:#3A2E1A; --again:#F08A7E; --again-soft:#40221E; --stamp:#FF7A6B; --hl:#6B5A12; --focus:#8AA8FF; } }
+:root[data-theme="dark"]{
+  --bg:#131118; --surface:#1D1A24; --ink:#ECE8F3; --muted:#A39CB3; --line:#2E2A39;
+  --violet:#B99AE6; --violet-soft:#2C2240; --ok:#6FD0A2; --ok-soft:#1D3A2C; --hard:#E8B45E; --hard-soft:#3A2E1A; --again:#F08A7E; --again-soft:#40221E; --stamp:#FF7A6B; --hl:#6B5A12; --focus:#8AA8FF; }
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*::before,*::after{box-sizing:inherit}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"IBM Plex Sans KR","Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;font-size:15px;line-height:1.5;-webkit-text-size-adjust:100%}
+.d{font-family:"Do Hyeon","IBM Plex Sans KR",sans-serif;font-weight:400}
+.en{font-family:"Newsreader",Georgia,"Times New Roman",serif}
+main{max-width:520px;margin:0 auto;padding:12px 12px 40px}
+h2{font-size:1.15rem;margin:0 0 8px}
+section{margin-top:18px}
+button,input{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+.muted{color:var(--muted)} .small{font-size:.82rem}
+.panel{background:var(--surface);border-radius:14px;padding:12px}
+[hidden]{display:none !important}
+
+.top{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px}
+.top h1{font-size:1rem;margin:0;font-weight:600;white-space:nowrap}
+.status{min-width:0;justify-content:flex-end;text-align:right}
+.status{font-size:.78rem;color:var(--muted);display:flex;gap:6px;align-items:center}
+.status.err{color:var(--again)}
+.iconbtn{border:1px solid var(--line);background:var(--surface);border-radius:99px;padding:3px 10px;font-size:.78rem;cursor:pointer;white-space:nowrap}
+.tabs{display:grid;grid-template-columns:repeat(3,1fr);background:var(--surface);border-radius:12px;padding:3px;gap:3px}
+.tabs button{border:0;background:transparent;border-radius:10px;padding:8px 0;font-weight:600;font-size:.88rem;color:var(--muted);cursor:pointer}
+.tabs button[aria-pressed="true"]{background:var(--violet);color:#fff}
+
+.hero{background:var(--surface);border-radius:18px;padding:16px;margin-top:12px}
+.nums{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;text-align:center}
+.nums div{background:var(--bg);border-radius:12px;padding:8px 4px}
+.nums b{display:block;font-family:"Do Hyeon",sans-serif;font-weight:400;font-size:1.7rem;line-height:1.1}
+.nums .due b{color:var(--violet)}
+.modes{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:12px}
+.chip{border:1px solid var(--line);background:transparent;border-radius:999px;padding:5px 11px;cursor:pointer;font-size:.84rem;white-space:nowrap}
+.chip[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.modes .chip{border-radius:10px;padding:8px}
+.btn{white-space:nowrap;border:0;border-radius:12px;padding:12px 16px;font-weight:600;cursor:pointer;font-size:.95rem}
+.btn.main{width:100%;margin-top:12px;background:var(--violet);color:#fff;font-size:1.05rem}
+.btn.ghost{background:var(--bg)}
+.btn:disabled{opacity:.5;cursor:default}
+.streak{display:inline-block;margin-top:10px;background:var(--violet-soft);color:var(--violet);border-radius:99px;padding:2px 10px;font-size:.8rem;font-weight:600}
+
+/* session */
+.sess{margin-top:12px}
+.prog{height:6px;border-radius:99px;background:var(--line);overflow:hidden}
+.prog i{display:block;height:100%;background:var(--violet)}
+.sesshead{display:flex;justify-content:space-between;align-items:center;font-size:.8rem;color:var(--muted);margin:6px 2px}
+.card{background:var(--surface);border-radius:20px;padding:22px 18px;min-height:300px;display:flex;flex-direction:column;gap:12px;cursor:pointer;border:2px solid transparent}
+.card.new{border-color:var(--violet-soft)}
+.tagrow{display:flex;gap:6px;flex-wrap:wrap}
+.tag{font-size:.72rem;border-radius:6px;padding:1px 7px;background:var(--bg);color:var(--muted)}
+.tag.new{background:var(--violet-soft);color:var(--violet);font-weight:600}
+.word{font-size:2rem;line-height:1.15;font-weight:600;word-break:break-word}
+.say{border:0;background:var(--violet-soft);color:var(--violet);border-radius:50%;width:36px;height:36px;cursor:pointer;font-size:1rem;flex:none}
+.wordrow{display:flex;align-items:center;gap:10px;justify-content:space-between}
+.hint{margin-top:auto;text-align:center;font-size:.82rem;color:var(--muted)}
+.mean{font-size:1.15rem;font-weight:600;white-space:pre-line}
+.ex{font-size:1.02rem;line-height:1.6;background:var(--bg);border-radius:12px;padding:10px 12px}
+.ex mark{background:var(--hl);color:inherit;border-radius:3px;padding:0 2px}
+.answers{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:10px}
+.answers button{border:0;border-radius:12px;padding:12px 4px;font-weight:700;cursor:pointer;font-size:.95rem}
+.a-again{background:var(--again-soft);color:var(--again)} .a-hard{background:var(--hard-soft);color:var(--hard)} .a-good{background:var(--ok-soft);color:var(--ok)}
+.answers small{display:block;font-weight:500;font-size:.72rem;opacity:.8}
+.opts{display:grid;gap:8px;margin-top:4px}
+.opts button{border:1.5px solid var(--line);background:var(--surface);border-radius:12px;padding:12px;text-align:left;cursor:pointer;font-size:.95rem}
+.opts button.right{border-color:var(--ok);background:var(--ok-soft)}
+.opts button.wrong{border-color:var(--again);background:var(--again-soft)}
+.done{background:var(--surface);border-radius:20px;padding:24px 18px;text-align:center}
+.stampbig{width:110px;height:110px;margin:0 auto 10px;border:6px solid var(--stamp);border-radius:50%;display:grid;place-items:center;color:var(--stamp);font-family:"Do Hyeon",sans-serif;font-size:1.6rem;transform:rotate(-10deg)}
+
+/* list */
+.search{width:100%;border:1px solid var(--line);background:var(--surface);border-radius:12px;padding:10px 12px;font-size:.95rem}
+.filters{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0}
+.wl{list-style:none;margin:0;padding:0;background:var(--surface);border-radius:14px;overflow:hidden}
+.wl li{border-bottom:1px solid var(--line)}
+.wl li:last-child{border-bottom:0}
+.wrow{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;padding:10px 12px;cursor:pointer}
+.wrow .w{font-weight:600;font-size:1.05rem}
+.wrow .m{font-size:.84rem;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dots{display:flex;gap:3px}
+.dots i{width:7px;height:7px;border-radius:50%;background:var(--line)}
+.dots i.on{background:var(--violet)}
+.wdetail{padding:0 12px 12px;display:grid;gap:8px}
+.wdetail .row{display:flex;gap:6px;flex-wrap:wrap}
+.star{border:0;background:transparent;font-size:1.1rem;cursor:pointer;color:var(--line);padding:2px 4px}
+.star.on{color:#E0A526}
+.empty{padding:18px;text-align:center;color:var(--muted)}
+
+/* record */
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.stat{background:var(--surface);border-radius:12px;padding:10px}
+.stat .v{font-size:1.35rem;line-height:1.2}
+.cal{background:var(--surface);border-radius:14px;padding:12px}
+.calhead{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.calhead button{border:1px solid var(--line);background:transparent;border-radius:8px;width:30px;height:28px;cursor:pointer}
+.calhead button:disabled{opacity:.35}
+.grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:5px;text-align:center}
+.wd{font-size:.72rem;color:var(--muted)}
+.cell{position:relative;width:100%;min-width:0;aspect-ratio:1;border-radius:8px;display:grid;place-items:center;font-size:.78rem;background:var(--bg);color:var(--muted)}
+.cell.done{background:transparent;color:var(--stamp);font-weight:700}
+.cell.done::before{content:"";position:absolute;inset:9%;border:3px solid var(--stamp);border-radius:50%;transform:rotate(-8deg)}
+.cell.part{color:var(--ink)}
+.cell.part::after{content:"";position:absolute;left:50%;bottom:10%;width:5px;height:5px;margin-left:-2.5px;border-radius:50%;background:var(--violet)}
+.cell.now{outline:2px solid var(--ink);outline-offset:-2px}
+.legend{display:flex;gap:10px;flex-wrap:wrap;margin-top:8px;font-size:.75rem;color:var(--muted)}
+.stampi{display:inline-block;width:11px;height:11px;border:2px solid var(--stamp);border-radius:50%;margin-right:4px;vertical-align:-2px}
+.boxes{display:flex;height:14px;border-radius:99px;overflow:hidden;margin-top:8px;background:var(--line)}
+.boxes i{display:block;height:100%}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(18px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);padding:9px 14px;border-radius:12px;max-width:calc(100% - 28px);font-size:.9rem;z-index:5}
+.toast[hidden]{display:none}
+@media (prefers-reduced-motion:no-preference){ .prog i{transition:width .3s ease} }
+</style>
+</head>
+<body>
+<div class="owner-line" style="text-align:center;font-size:11px;line-height:1.4;color:#8a8f98;padding:6px 12px 2px;letter-spacing:.02em">© 2026 파리로 · All rights reserved.</div>
+<main>
+  <div class="top">
+    <h1>💜 내 수능 단어장</h1>
+    <div class="status" id="status"><span id="statusMsg">노션 불러오는 중…</span><button class="iconbtn" id="syncBtn" type="button">↻ 동기화</button></div>
+  </div>
+  <nav class="tabs" id="tabs" aria-label="화면"></nav>
+  <div id="v-today"></div>
+  <div id="v-words" hidden></div>
+  <div id="v-record" hidden></div>
+  <p style="text-align:center;margin:14px 0 0;font-size:.82rem"><a href="../" style="color:var(--muted)">← 소확앱 다른 앱 보기</a></p>
+</main>
+<div class="toast" id="toast" hidden></div>
+
+<script>
+(function(){
+  const INT = [0,1,3,7,14,30,60];                                // 상자별 다음 복습 간격(일)
+  const LS = 'my-csat-vocab-v1';
+  const st = {tab:'today', words:[], prog:{cards:{}, log:{}, stars:{}, settings:{newPerDay:10, mode:'card'}}, sync:{status:'loading', msg:'', at:0},
+    sess:null, filter:'all', q:'', open:null, calMonth:null, dbMode:'local'};
+  let saveTimer = null, toastTimer = null;
+
+  const $ = id => document.getElementById(id);
+  const pad = n => String(n).padStart(2,'0');
+  const ymd = d => d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
+  const parse = s => { const [y,m,d] = s.split('-').map(Number); return new Date(y,m-1,d); };
+  const today = () => ymd(new Date());
+  const addDays = (s,n) => { const d = parse(s); d.setDate(d.getDate()+n); return ymd(d); };
+  const esc = s => String(s??'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const shuffle = a => { for(let i=a.length-1;i>0;i--){ const j = Math.floor(Math.random()*(i+1)); [a[i],a[j]] = [a[j],a[i]]; } return a; };
+  function toast(m){ $('toast').textContent = m; $('toast').hidden = false; clearTimeout(toastTimer); toastTimer = setTimeout(()=>{$('toast').hidden = true;}, 2600); }
+
+  // ---------- words ----------
+  const card = id => st.prog.cards[id];
+  const isNew = w => !card(w.id);
+  const known = w => card(w.id) && card(w.id).b >= 4;
+
+  // ---------- storage ----------
+  function saveProg(){
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(() => {
+      const data = {cards:st.prog.cards, log:st.prog.log, stars:st.prog.stars, settings:st.prog.settings};
+      try{ localStorage.setItem(LS, JSON.stringify(data)); }catch(e){ toast('학습 기록을 저장하지 못했어요.'); }
+    }, 600);
+  }
+  function cacheWords(){
+    try{ localStorage.setItem(LS+'-words', JSON.stringify({at:Date.now(), list:st.words})); }catch(e){}
+  }
+
+  // ---------- Notion sync (via server API) ----------
+  function notionMsg(e){
+    const c = e && e.code;
+    if(c==='server_not_connected') return '노션 연동이 아직 설정되지 않았어요. 저장된 단어로 공부할 수 있어요.';
+    if(c==='notion_error') return '노션이 요청을 거절했어요. 잠시 뒤 다시 해 주세요.';
+    return '노션과 연결하지 못했어요. 저장된 단어로 공부할 수 있어요.';
+  }
+  async function sync(){
+    st.sync.status = 'loading'; renderStatus();
+    try{
+      const res = await fetch('/api/vocab');
+      const data = await res.json().catch(() => null);
+      if(!res.ok || !data || data.error){ throw {code:(data && data.error) || 'http_'+res.status}; }
+      const before = new Set(st.words.map(w=>w.id));
+      const list = Array.isArray(data.words) ? data.words : [];
+      if(!list.length && st.words.length){ throw {code:'empty'}; }
+      st.words = list;
+      const added = list.filter(w => !before.has(w.id)).length;
+      st.sync = {status:'ok', msg:'', at:Date.now()};
+      cacheWords(); render();
+      if(before.size && added) toast(`노션에서 새 단어 ${added}개를 가져왔어요.`);
+    }catch(e){ st.sync = {status:'error', msg: e && e.code==='empty' ? '노션에서 단어를 못 읽어서 저장된 단어를 써요.' : notionMsg(e), at:st.sync.at}; renderStatus(); }
+  }
+
+  // ---------- SRS ----------
+  function dueList(){ const t = today(); return st.words.filter(w => card(w.id) && card(w.id).due <= t).sort((a,b)=> card(a.id).due.localeCompare(card(b.id).due)); }
+  function newToday(){ return Object.values(st.prog.cards).filter(c => c.first===today()).length; }
+  function newList(){ const left = Math.max(0, st.prog.settings.newPerDay - newToday()); return st.words.filter(isNew).sort((a,b)=> (b.d||'').localeCompare(a.d||'')).slice(0, left); }
+  function logDay(){ const t = today(); return st.prog.log[t] || (st.prog.log[t] = {r:0, ok:0, done:false}); }
+  function startSession(list, label){
+    if(!list.length){ toast('지금 공부할 단어가 없어요.'); return; }
+    stopSpeech();
+    st.sess = {queue:list.map(w=>w.id), total:list.length, pos:0, flipped:false, answered:null, label, finished:0, opts:null};
+    render(); window.scrollTo(0,0);
+  }
+  function grade(id, g){
+    const t = today(), c = card(id) || {b:0, due:t, n:0, w:0, first:t};
+    c.n++;
+    if(g==='again'){ c.b = 0; c.due = t; c.w++; }
+    else if(g==='hard'){ c.b = Math.max(1, c.b); c.due = addDays(t, 1); }
+    else { c.b = Math.min(c.b+1, INT.length-1); c.due = addDays(t, INT[c.b]); }
+    st.prog.cards[id] = c;
+    const L = logDay(); L.r++; if(g==='good') L.ok++;
+    const S = st.sess;
+    S.queue.shift();
+    if(g==='again') S.queue.splice(Math.min(3, S.queue.length), 0, id); else S.finished++;
+    S.flipped = false; S.answered = null; S.opts = null;
+    if(!S.queue.length){ if(!dueList().length){ L.done = true; } }
+    saveProg(); render();
+  }
+
+  // ---------- speech ----------
+  const TTS = 'speechSynthesis' in window;
+  function speak(text){
+    if(!TTS){ toast('이 화면에서는 소리 듣기가 안 돼요.'); return; }
+    try{ speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(text.replace(/~|\.{3}|…/g,' ')); u.lang = 'en-US'; u.rate = 0.9;
+      const v = speechSynthesis.getVoices().find(v => /^en(-|_)US/i.test(v.lang)) || speechSynthesis.getVoices().find(v => /^en/i.test(v.lang)); if(v) u.voice = v;
+      speechSynthesis.speak(u); }catch(e){ toast('소리를 재생하지 못했어요.'); }
+  }
+  function stopSpeech(){ try{ TTS && speechSynthesis.cancel(); }catch(e){} }
+
+  // ---------- highlight ----------
+  function highlight(ex, word){
+    let html = esc(ex);
+    const parts = word.replace(/\(.*?\)|[~+\/]|\.{3}|…|that|A /g,' ').split(/\s+/).filter(p => p.length >= 3 && /[a-z]/i.test(p));
+    const phrase = word.replace(/\(.*?\)/g,'').replace(/[~…]|\.{3}/g,'').trim();
+    const tryRe = src => { try{ const re = new RegExp(src, 'gi'); if(re.test(html)){ html = html.replace(re, m => `<mark>${m}</mark>`); return true; } }catch(e){} return false; };
+    const escRe = s => s.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+    if(phrase.length >= 3 && tryRe(escRe(esc(phrase)))) return html;
+    for(const p of parts){ const stem = p.length > 5 ? p.slice(0, p.length-2) : p; tryRe('\\b' + escRe(esc(stem)) + '[a-z]*'); }
+    return html;
+  }
+
+  // ---------- render ----------
+  function renderStatus(){
+    const s = st.sync, el = $('status');
+    el.className = 'status' + (s.status==='error' ? ' err' : '');
+    $('statusMsg').textContent = s.status==='loading' ? '노션 불러오는 중…' : s.status==='error' ? s.msg
+      : `노션 ${st.words.length}개 · ${new Date(s.at).toLocaleTimeString('ko-KR',{hour:'numeric',minute:'2-digit'})}`;
+    $('syncBtn').disabled = s.status==='loading';
+  }
+  function render(){
+    renderStatus();
+    const T = [['today','오늘'],['words','단어'],['record','기록']];
+    $('tabs').innerHTML = T.map(([k,l]) => `<button type="button" data-tab="${k}" aria-pressed="${st.tab===k}">${l}</button>`).join('');
+    for(const [k] of T) $('v-'+k).hidden = st.tab!==k;
+    if(st.tab==='today') renderToday(); else if(st.tab==='words') renderWords(); else renderRecord();
+  }
+  function streak(){
+    let s = 0, d = today();
+    if(!(st.prog.log[d] && st.prog.log[d].done)) d = addDays(d,-1);
+    while(st.prog.log[d] && st.prog.log[d].done){ s++; d = addDays(d,-1); }
+    return s;
+  }
+  function renderToday(){
+    const S = st.sess;
+    if(S && S.queue.length) return renderCard();
+    if(S && !S.queue.length){
+      const L = logDay();
+      $('v-today').innerHTML = `<div class="done sess">
+        <div class="stampbig">${L.done?'참 잘했어요':'완료'}</div>
+        <div class="d" style="font-size:1.5rem">${S.total}개 끝!</div>
+        <p class="muted" style="margin:6px 0 0">${L.done ? `오늘 복습을 다 마쳐서 달력에 동그라미를 그렸어요.${streak()>1?` ${streak()}일째예요.`:''}` : '남은 복습이 있어요. 한 번 더 해 볼까요?'}</p>
+        <button class="btn main" data-act="home">처음으로</button></div>`;
+      return;
+    }
+    if(!st.words.length){ $('v-today').innerHTML = `<div class="hero"><p class="muted" style="margin:0">${st.sync.status==='loading'?'노션에서 단어를 가져오는 중이에요…':'단어가 아직 없어요. 노션 💜 수능 단어장에 단어를 넣고 ↻ 동기화를 눌러 주세요.'}</p></div>`; return; }
+    const due = dueList(), nw = newList(), L = st.prog.log[today()], s = streak();
+    const mode = st.prog.settings.mode;
+    const recent = st.words.filter(w => w.d && w.d >= addDays(today(), -7));
+    const hardOnes = st.words.filter(w => card(w.id) && card(w.id).w >= 2);
+    $('v-today').innerHTML = `<div class="hero">
+      <div class="nums"><div class="due"><span class="small muted">복습할 단어</span><b>${due.length}</b></div><div><span class="small muted">새 단어</span><b>${nw.length}</b></div><div><span class="small muted">외운 단어</span><b>${st.words.filter(known).length}</b></div></div>
+      <div class="modes" role="group" aria-label="공부 방식">
+        <button class="chip" data-mode="card" aria-pressed="${mode==='card'}">🃏 카드 넘기기</button>
+        <button class="chip" data-mode="quiz" aria-pressed="${mode==='quiz'}">✅ 뜻 고르기</button></div>
+      <button class="btn main" data-act="start" ${due.length+nw.length?'':'disabled'}>${due.length+nw.length ? `오늘 공부 시작 (${due.length+nw.length}개)` : (L&&L.done ? '오늘 몫 끝! 🎉' : '오늘은 공부할 단어가 없어요')}</button>
+      ${s ? `<span class="streak">⭕ ${s}일 연속</span>` : ''}
+    </div>
+    <section><h2 class="d">골라서 공부하기</h2><div class="panel" style="display:grid;gap:6px">
+      <button class="btn ghost" data-act="recent" ${recent.length?'':'disabled'} style="text-align:left">🆕 최근 7일에 넣은 단어 (${recent.length}개)</button>
+      <button class="btn ghost" data-act="hard" ${hardOnes.length?'':'disabled'} style="text-align:left">🔥 자주 틀린 단어 (${hardOnes.length}개)</button>
+      <button class="btn ghost" data-act="star" ${st.words.some(w=>st.prog.stars[w.id])?'':'disabled'} style="text-align:left">★ 별표 단어 (${st.words.filter(w=>st.prog.stars[w.id]).length}개)</button>
+      <button class="btn ghost" data-act="random" style="text-align:left">🎲 아무거나 20개</button>
+    </div></section>`;
+  }
+  function renderCard(){
+    const S = st.sess, w = st.words.find(x => x.id===S.queue[0]);
+    if(!w){ S.queue.shift(); return render(); }
+    const c = card(w.id), mode = st.prog.settings.mode, pct = S.finished / S.total * 100;
+    const tags = `<div class="tagrow">${!c?'<span class="tag new">새 단어</span>':''}${w.q?`<span class="tag">${w.q}번</span>`:''}${w.d?`<span class="tag">${w.d.slice(5).replace('-','/')} 추가</span>`:''}${c&&c.w>=2?'<span class="tag">자주 틀림</span>':''}</div>`;
+    const wordRow = `<div class="wordrow"><div class="word en">${esc(w.w)}</div><button class="say" data-say="w" aria-label="단어 듣기">🔊</button></div>`;
+    const back = `<div class="mean">${esc(w.m)}</div>${w.ex ? `<div class="ex en">${highlight(w.ex, w.w)} <button class="say" data-say="ex" aria-label="예문 듣기" style="width:28px;height:28px;font-size:.8rem;vertical-align:middle">🔊</button></div>` : ''}`;
+    let body;
+    if(mode==='quiz'){
+      if(!S.opts){ const others = shuffle(st.words.filter(x => x.id!==w.id && x.m && x.m!==w.m)).slice(0,3); S.opts = shuffle([w, ...others]).map(x => ({id:x.id, m:x.m.split('\n')[0].slice(0,60)})); }
+      body = `<div class="card ${!c?'new':''}" style="cursor:default">${tags}${wordRow}
+        <div class="opts">${S.opts.map(o => `<button data-opt="${o.id}" class="${S.answered ? (o.id===w.id?'right':(o.id===S.answered?'wrong':'')) : ''}" ${S.answered?'disabled':''}>${esc(o.m)}</button>`).join('')}</div>
+        ${S.answered ? back.replace('class="mean"','class="mean" style="display:none"') : ''}</div>
+        ${S.answered ? `<div class="answers" style="grid-template-columns:1fr"><button class="${S.answered===w.id?'a-good':'a-again'}" data-grade="${S.answered===w.id?'good':'again'}">${S.answered===w.id?'맞았어요! 다음 →':'다시 나와요. 다음 →'}</button></div>` : ''}`;
+    } else {
+      body = `<div class="card ${!c?'new':''}" data-act="flip">${tags}${wordRow}${S.flipped ? back : `<div class="hint">뜻을 떠올린 뒤 눌러서 확인</div>`}</div>
+        ${S.flipped ? `<div class="answers">
+          <button class="a-again" data-grade="again">모르겠어요<small>곧 다시</small></button>
+          <button class="a-hard" data-grade="hard">헷갈려요<small>내일</small></button>
+          <button class="a-good" data-grade="good">알아요<small>${INT[Math.min(((c&&c.b)||0)+1, INT.length-1)]}일 뒤</small></button></div>` : ''}`;
+    }
+    $('v-today').innerHTML = `<div class="sess"><div class="prog"><i style="width:${pct}%"></i></div>
+      <div class="sesshead"><span>${esc(S.label)} · ${S.finished} / ${S.total}</span><button class="iconbtn" data-act="quit">그만하기</button></div>${body}</div>`;
+    if(!S.spoken || S.spoken!==w.id){ S.spoken = w.id; }
+  }
+  function renderWords(){
+    const f = st.filter, q = st.q.trim().toLowerCase();
+    let list = st.words.slice().sort((a,b)=> (b.d||'').localeCompare(a.d||'') || a.w.localeCompare(b.w));
+    if(f==='new') list = list.filter(isNew); else if(f==='learning') list = list.filter(w => card(w.id) && card(w.id).b < 4); else if(f==='known') list = list.filter(known);
+    else if(f==='star') list = list.filter(w => st.prog.stars[w.id]); else if(f==='hard') list = list.filter(w => card(w.id) && card(w.id).w >= 2);
+    if(q) list = list.filter(w => w.w.toLowerCase().includes(q) || w.m.toLowerCase().includes(q) || (w.ex||'').toLowerCase().includes(q));
+    const F = [['all','전체'],['new','새 단어'],['learning','공부 중'],['known','외움'],['hard','자주 틀림'],['star','★']];
+    const active = document.activeElement && document.activeElement.id==='q';
+    $('v-words').innerHTML = `<section>
+      <input class="search" id="q" type="search" placeholder="단어·뜻·예문 검색" value="${esc(st.q)}" aria-label="검색">
+      <div class="filters">${F.map(([k,l]) => `<button class="chip" data-filter="${k}" aria-pressed="${f===k}">${l}</button>`).join('')}</div>
+      <p class="small muted" style="margin:0 0 6px">${list.length}개 · 단어를 누르면 예문이 보여요</p>
+      ${list.length ? `<ul class="wl">${list.slice(0,300).map(w => { const c = card(w.id), b = c ? c.b : -1;
+        return `<li><div class="wrow" data-open="${w.id}"><div style="min-width:0"><div class="w en">${esc(w.w)}</div><div class="m">${esc(w.m.split('\n')[0])}</div></div>
+          <div style="display:flex;align-items:center;gap:6px"><div class="dots" aria-label="${b<0?'새 단어':'상자 '+b}">${[1,2,3,4,5,6].map(i=>`<i class="${b>=i?'on':''}"></i>`).join('')}</div>
+          <button class="star ${st.prog.stars[w.id]?'on':''}" data-star="${w.id}" aria-label="별표">★</button></div></div>
+          ${st.open===w.id ? `<div class="wdetail"><div class="mean" style="font-size:1rem">${esc(w.m)}</div>${w.ex?`<div class="ex en">${highlight(w.ex, w.w)}</div>`:''}
+            <div class="row"><button class="iconbtn" data-sayw="${w.id}">🔊 단어</button>${w.ex?`<button class="iconbtn" data-sayex="${w.id}">🔊 예문</button>`:''}${w.q?`<span class="tag">${w.q}번</span>`:''}${w.d?`<span class="tag">${w.d}</span>`:''}<a class="iconbtn" href="${esc(w.url)}" target="_blank" rel="noopener" style="text-decoration:none;color:inherit">노션 ↗</a></div></div>` : ''}</li>`; }).join('')}</ul>`
+        : `<div class="empty panel">${q?'찾는 단어가 없어요.':'해당하는 단어가 없어요.'}</div>`}
+      ${list.length ? `<button class="btn main" data-act="studylist">이 목록으로 공부하기 (${Math.min(list.length,50)}개)</button>` : ''}
+    </section>`;
+    if(active){ const el = $('q'); el.focus(); el.setSelectionRange(el.value.length, el.value.length); }
+  }
+  function renderRecord(){
+    const t = today(), cs = st.words.map(w => card(w.id));
+    const counts = [0,0,0,0]; cs.forEach(c => { if(!c) counts[0]++; else if(c.b<2) counts[1]++; else if(c.b<4) counts[2]++; else counts[3]++; });
+    const total = st.words.length || 1;
+    const reviews = Object.values(st.prog.log).reduce((a,l)=>a+(l.r||0),0);
+    const cm = st.calMonth || t.slice(0,7), [cy,cmo] = cm.split('-').map(Number);
+    const first = new Date(cy, cmo-1, 1), lastDay = new Date(cy, cmo, 0).getDate(), lead = (first.getDay()+6)%7;
+    let cells = ['월','화','수','목','금','토','일'].map(w=>`<div class="wd">${w}</div>`).join('') + '<div></div>'.repeat(lead);
+    for(let i=1;i<=lastDay;i++){ const k = `${cm}-${pad(i)}`, L = st.prog.log[k], s2 = L && L.done ? 'done' : L && L.r ? 'part' : '';
+      cells += `<div class="cell ${s2} ${k===t?'now':''}" aria-label="${i}일 ${L?L.r+'번 복습':'기록 없음'}">${i}</div>`; }
+    $('v-record').innerHTML = `
+      <section><div class="stats">
+        <div class="stat"><div class="small muted">연속</div><div class="v d">${streak()}일</div></div>
+        <div class="stat"><div class="small muted">외운 단어</div><div class="v d">${counts[3]}개</div></div>
+        <div class="stat"><div class="small muted">총 복습</div><div class="v d">${reviews}번</div></div></div></section>
+      <section><div class="panel"><div class="small muted">단어 ${st.words.length}개의 상태</div>
+        <div class="boxes"><i style="width:${counts[0]/total*100}%;background:var(--line)"></i><i style="width:${counts[1]/total*100}%;background:var(--hard)"></i><i style="width:${counts[2]/total*100}%;background:var(--violet)"></i><i style="width:${counts[3]/total*100}%;background:var(--ok)"></i></div>
+        <div class="legend"><span>⚪ 새 단어 ${counts[0]}</span><span style="color:var(--hard)">● 익히는 중 ${counts[1]}</span><span style="color:var(--violet)">● 거의 외움 ${counts[2]}</span><span style="color:var(--ok)">● 외움 ${counts[3]}</span></div></div></section>
+      <section><div class="cal">
+        <div class="calhead"><button data-cal="-1" aria-label="이전 달">‹</button><b>${cy}년 ${cmo}월</b><button data-cal="1" aria-label="다음 달" ${cm>=t.slice(0,7)?'disabled':''}>›</button></div>
+        <div class="grid">${cells}</div>
+        <div class="legend"><span><span class="stampi"></span>그날 복습 다 끝냄</span><span>• 조금 함</span></div></div></section>
+      <section><div class="panel">
+        <div style="font-weight:600">하루 새 단어 수</div>
+        <div class="filters">${[5,10,20,30].map(n => `<button class="chip" data-npd="${n}" aria-pressed="${st.prog.settings.newPerDay===n}">${n}개</button>`).join('')}</div>
+        <p class="small muted" style="margin:0">복습할 단어가 많은 날엔 새 단어를 줄이는 게 오래 가요. 알아요 → 1·3·7·14·30·60일 뒤에 다시 나와요.</p>
+      </div></section>
+      <p class="small muted" style="text-align:center;margin-top:14px">단어는 노션 💜 수능 단어장에서 읽어 오고, 학습 기록은 내 계정에만 저장돼요.</p>`;
+  }
+
+  // ---------- events ----------
+  document.addEventListener('click', e => {
+    const q = s => e.target.closest(s); let b;
+    if(b = q('[data-tab]')){ st.tab = b.dataset.tab; if(st.tab!=='today' && st.sess && st.sess.queue.length===0) st.sess = null; render(); return; }
+    if(b = q('#syncBtn')){ sync(); return; }
+    if(b = q('[data-say]')){ e.stopPropagation(); const w = st.words.find(x => x.id===st.sess.queue[0]); if(w) speak(b.dataset.say==='w' ? w.w : w.ex); return; }
+    if(b = q('[data-sayw]')){ const w = st.words.find(x=>x.id===b.dataset.sayw); if(w) speak(w.w); return; }
+    if(b = q('[data-sayex]')){ const w = st.words.find(x=>x.id===b.dataset.sayex); if(w) speak(w.ex); return; }
+    if(b = q('[data-mode]')){ st.prog.settings.mode = b.dataset.mode; saveProg(); render(); return; }
+    if(b = q('[data-grade]')){ const id = st.sess.queue[0]; grade(id, b.dataset.grade); return; }
+    if(b = q('[data-opt]')){ const S = st.sess; if(S.answered) return; S.answered = b.dataset.opt; render(); return; }
+    if(b = q('[data-star]')){ e.stopPropagation(); const id = b.dataset.star; if(st.prog.stars[id]) delete st.prog.stars[id]; else st.prog.stars[id] = true; saveProg(); render(); return; }
+    if(b = q('[data-open]')){ st.open = st.open===b.dataset.open ? null : b.dataset.open; render(); return; }
+    if(b = q('[data-filter]')){ st.filter = b.dataset.filter; render(); return; }
+    if(b = q('[data-npd]')){ st.prog.settings.newPerDay = Number(b.dataset.npd); saveProg(); render(); return; }
+    if(b = q('[data-cal]')){ const [y,m] = (st.calMonth||today().slice(0,7)).split('-').map(Number); st.calMonth = ymd(new Date(y, m-1+Number(b.dataset.cal), 1)).slice(0,7); render(); return; }
+    if(b = q('[data-act]')){ const a = b.dataset.act;
+      if(a==='flip'){ if(!st.sess.flipped){ st.sess.flipped = true; render(); } return; }
+      if(a==='start') startSession([...dueList(), ...newList()], '오늘 공부');
+      else if(a==='recent') startSession(shuffle(st.words.filter(w => w.d && w.d >= addDays(today(), -7))), '최근 단어');
+      else if(a==='hard') startSession(shuffle(st.words.filter(w => card(w.id) && card(w.id).w >= 2)), '자주 틀린 단어');
+      else if(a==='star') startSession(shuffle(st.words.filter(w => st.prog.stars[w.id])), '별표 단어');
+      else if(a==='random') startSession(shuffle(st.words.slice()).slice(0,20), '아무거나 20개');
+      else if(a==='studylist'){ const list = [...document.querySelectorAll('[data-open]')].map(el => st.words.find(w=>w.id===el.dataset.open)).filter(Boolean).slice(0,50); st.tab = 'today'; startSession(shuffle(list), '고른 목록'); }
+      else if(a==='quit' || a==='home'){ stopSpeech(); st.sess = null; render(); }
+    }
+  });
+  document.addEventListener('input', e => { if(e.target.id==='q'){ st.q = e.target.value; renderWords(); } });
+
+  // ---------- init ----------
+  async function init(){
+    render();
+    try{ const d = JSON.parse(localStorage.getItem(LS)||'null'); if(d) st.prog = {cards:d.cards||{}, log:d.log||{}, stars:d.stars||{}, settings:{newPerDay:10, mode:'card', ...(d.settings||{})}}; }catch(e){}
+    try{ const d = JSON.parse(localStorage.getItem(LS+'-words')||'null'); if(d && Array.isArray(d.list)){ st.words = d.list; st.sync.at = d.at||0; } }catch(e){}
+    render();
+    sync();
+  }
+  if(TTS){ try{ speechSynthesis.getVoices(); speechSynthesis.onvoiceschanged = () => {}; }catch(e){} }
+  init();
+})();
+</script>
+</body>
+</html>
