@@ -1,4 +1,4 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="ko">
 <head>
 <meta charset="utf-8">
@@ -41,8 +41,6 @@ a{color:inherit}
 .topnav .navlinks a:hover{color:var(--ink)}
 
 header{margin-bottom:22px}
-.hero-card{background:var(--hero-bg);border-radius:24px;padding:18px;margin-bottom:26px}
-.hero-illust{width:100%;height:auto;display:block;border-radius:16px}
 .logo{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
 .logo h1{font-size:3rem;line-height:1;margin:0;letter-spacing:-.01em}
 .logo h1 span{color:var(--green)}
@@ -83,9 +81,10 @@ header{margin-bottom:22px}
 .app-card .app{flex:1;min-width:0}
 .pick{display:flex;align-items:center;padding:0 2px;cursor:pointer}
 .pick input{width:19px;height:19px;accent-color:var(--green);cursor:pointer}
-.dl{display:flex;align-items:center;justify-content:center;flex:0 0 44px;border-radius:16px;background:var(--surface);border:1.5px solid var(--line);text-decoration:none;color:var(--muted);font-size:1.15rem;transition:border-color .15s,color .15s;font-family:inherit;cursor:pointer;padding:0}
+.dl{display:flex;align-items:center;justify-content:center;flex:0 0 auto;white-space:nowrap;border-radius:14px;background:var(--surface);border:2px solid var(--focus);text-decoration:none;color:var(--focus);font-size:.88rem;font-weight:700;transition:background-color .15s;font-family:inherit;cursor:pointer;padding:0 16px}
 .dl:disabled{opacity:.5;cursor:default}
-.dl:hover{border-color:var(--green);color:var(--green)}
+.dl:hover{background:var(--bg)}
+.today-card .dl{margin-left:8px;padding:0 18px;height:48px}
 .app-card.soon-row .dl{visibility:hidden}
 .bulkbar{position:sticky;bottom:12px;margin-top:14px;background:var(--ink);color:var(--bg);border-radius:16px;padding:10px 14px;display:none;align-items:center;justify-content:space-between;gap:10px;box-shadow:0 6px 20px rgba(0,0,0,.18);z-index:5}
 .bulkbar.show{display:flex}
@@ -117,32 +116,6 @@ footer a{color:var(--muted)}
   </nav>
 
   <header id="top">
-    <div class="hero-card">
-      <svg class="hero-illust" viewBox="0 0 700 260" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="달력에 습관을 체크하고, 그 작은 기록들이 모여 내가 되는 모습">
-        <rect x="30" y="20" width="230" height="220" rx="20" fill="var(--surface)"/>
-        <rect x="30" y="20" width="230" height="46" rx="20" fill="#E3924B"/>
-        <rect x="30" y="46" width="230" height="20" fill="#E3924B"/>
-        <g fill="none" stroke="#D64545" stroke-width="3.5">
-          <circle cx="70" cy="100" r="14"/><circle cx="112" cy="100" r="14"/><circle cx="154" cy="100" r="14"/><circle cx="196" cy="100" r="14"/><circle cx="238" cy="100" r="14" opacity=".35"/>
-          <circle cx="70" cy="142" r="14"/><circle cx="112" cy="142" r="14"/><circle cx="154" cy="142" r="14"/><circle cx="196" cy="142" r="14" opacity=".35"/><circle cx="238" cy="142" r="14" opacity=".35"/>
-          <circle cx="70" cy="184" r="14"/><circle cx="112" cy="184" r="14"/><circle cx="154" cy="184" r="14" opacity=".35"/>
-        </g>
-        <g fill="var(--muted)" opacity=".5"><circle cx="196" cy="184" r="3"/><circle cx="238" cy="184" r="3"/></g>
-        <path d="M270 150 C 340 90, 400 90, 470 130" fill="none" stroke="var(--muted)" stroke-width="2.5" stroke-dasharray="1 10" stroke-linecap="round"/>
-        <g>
-          <ellipse cx="500" cy="150" rx="150" ry="95" fill="var(--peach)" opacity=".6"/>
-          <g fill="var(--pink)"><circle cx="470" cy="70" r="5"/><circle cx="486" cy="62" r="4"/><circle cx="500" cy="72" r="5"/><circle cx="518" cy="64" r="4"/></g>
-          <g fill="var(--green)"><circle cx="460" cy="90" r="5"/><circle cx="480" cy="84" r="4"/><circle cx="506" cy="88" r="5"/><circle cx="524" cy="84" r="4"/><circle cx="540" cy="92" r="4"/></g>
-          <g fill="#D9542B"><circle cx="452" cy="112" r="5"/><circle cx="472" cy="106" r="4"/><circle cx="494" cy="110" r="5"/><circle cx="516" cy="108" r="4"/><circle cx="536" cy="114" r="5"/><circle cx="552" cy="108" r="4"/></g>
-          <g fill="#4B4FA3"><circle cx="448" cy="136" r="5"/><circle cx="470" cy="130" r="4"/><circle cx="492" cy="134" r="5"/><circle cx="514" cy="132" r="4"/><circle cx="536" cy="136" r="5"/><circle cx="556" cy="132" r="4"/></g>
-          <g fill="#3F5E8C"><circle cx="454" cy="158" r="5"/><circle cx="476" cy="154" r="4"/><circle cx="498" cy="158" r="5"/><circle cx="520" cy="154" r="4"/><circle cx="540" cy="160" r="5"/></g>
-          <g fill="var(--muted)" opacity=".7"><circle cx="466" cy="180" r="4"/><circle cx="488" cy="178" r="4"/><circle cx="510" cy="180" r="4"/><circle cx="530" cy="178" r="4"/></g>
-          <g fill="#E3A83B"><circle cx="612" cy="66" r="4"/><circle cx="636" cy="98" r="3"/><circle cx="600" cy="112" r="2.5"/></g>
-          <path d="M608 58 l3 8 8 3 -8 3 -3 8 -3 -8 -8 -3 8 -3 Z" fill="#E3A83B"/>
-        </g>
-      </svg>
-    </div>
-
     <p class="eyebrow">소확앱 · 소소하지만 확실한 앱 <span aria-hidden="true">🍀</span></p>
     <h1 class="headline d">매일 작은 습관으로,<br>나를 만들어요</h1>
     <p class="lead">거창한 결심 대신, 오늘 지킬 수 있는 만큼만. 10쪽 읽기, 팔 들기 50개, 11시에 눕기처럼 매일 실천할 수 있는 작은 습관을 기록해요. 동그라미가 하나씩 쌓이면, 그게 바로 내가 됩니다.</p>
@@ -152,6 +125,7 @@ footer a{color:var(--muted)}
       <p class="kicker" id="todayKicker">오늘의 작은 습관 · 로딩 중</p>
       <p class="quote" id="todayQuote">「 　 」</p>
       <a class="cta" id="todayCta" href="./sleep/"><span aria-hidden="true">🌙</span> <span id="todayCtaLabel">열기</span></a>
+      <button type="button" class="dl" id="todayDl" data-file="sleep" data-name="소확앱-잘자요.html">다운로드</button>
     </div>
 
     <ul class="promise" aria-label="모든 앱의 약속">
@@ -180,7 +154,7 @@ footer a{color:var(--muted)}
           <div class="go">열기 →</div>
         </div>
       </a>
-      <button type="button" class="dl" data-file="jar" data-name="소확앱-항아리가계부.html" aria-label="항아리 가계부만 다운로드" title="이 앱만 HTML로 다운로드">⬇</button>
+      <button type="button" class="dl" data-file="jar" data-name="소확앱-항아리가계부.html" aria-label="항아리 가계부만 다운로드" title="이 앱만 HTML로 다운로드">다운로드</button>
     </div>
 
     <div class="app-card">
@@ -196,7 +170,7 @@ footer a{color:var(--muted)}
           <div class="go">열기 →</div>
         </div>
       </a>
-      <button type="button" class="dl" data-file="fasting" data-name="소확앱-공복타이머.html" aria-label="공복 타이머만 다운로드" title="이 앱만 HTML로 다운로드">⬇</button>
+      <button type="button" class="dl" data-file="fasting" data-name="소확앱-공복타이머.html" aria-label="공복 타이머만 다운로드" title="이 앱만 HTML로 다운로드">다운로드</button>
     </div>
 
     <div class="app-card">
@@ -212,7 +186,7 @@ footer a{color:var(--muted)}
           <div class="go">열기 →</div>
         </div>
       </a>
-      <button type="button" class="dl" data-file="move" data-name="소확앱-매일최소운동.html" aria-label="매일 최소 운동만 다운로드" title="이 앱만 HTML로 다운로드">⬇</button>
+      <button type="button" class="dl" data-file="move" data-name="소확앱-매일최소운동.html" aria-label="매일 최소 운동만 다운로드" title="이 앱만 HTML로 다운로드">다운로드</button>
     </div>
 
     <div class="app-card">
@@ -228,7 +202,7 @@ footer a{color:var(--muted)}
           <div class="go">열기 →</div>
         </div>
       </a>
-      <button type="button" class="dl" data-file="read" data-name="소확앱-한쪽독서.html" aria-label="한 쪽 독서만 다운로드" title="이 앱만 HTML로 다운로드">⬇</button>
+      <button type="button" class="dl" data-file="read" data-name="소확앱-한쪽독서.html" aria-label="한 쪽 독서만 다운로드" title="이 앱만 HTML로 다운로드">다운로드</button>
     </div>
 
     <div class="app-card">
@@ -243,7 +217,7 @@ footer a{color:var(--muted)}
           <div class="go">열기 →</div>
         </div>
       </a>
-      <button type="button" class="dl" data-file="sleep" data-name="소확앱-잘자요.html" aria-label="잘 자요만 다운로드" title="이 앱만 HTML로 다운로드">⬇</button>
+      <button type="button" class="dl" data-file="sleep" data-name="소확앱-잘자요.html" aria-label="잘 자요만 다운로드" title="이 앱만 HTML로 다운로드">다운로드</button>
     </div>
 
     <div class="app-card soon-row">
@@ -307,6 +281,9 @@ footer a{color:var(--muted)}
     cta.href = './' + h.folder + '/';
     cta.querySelector('span[aria-hidden]').textContent = h.icon;
     document.getElementById('todayCtaLabel').textContent = h.label;
+    const dl = document.getElementById('todayDl');
+    dl.dataset.file = h.folder;
+    dl.dataset.name = '소확앱-' + h.label.replace(' 열기','').replace(/\s/g,'') + '.html';
   })();
 
   const boxes = () => Array.from(document.querySelectorAll('.pickbox'));
