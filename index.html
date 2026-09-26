@@ -315,14 +315,14 @@ footer .stats{margin-top:4px;font-size:.75rem}
       try{ await navigator.share({title:'소확앱', text, url}); return; }
       catch(e){ if(e && e.name==='AbortError') return; }
     }
+    const prev = inviteBtn.textContent;
     try{
       await navigator.clipboard.writeText(`${text}\n${url}`);
-      const prev = inviteBtn.textContent;
       inviteBtn.textContent = '✅ 링크를 복사했어요';
-      setTimeout(() => { inviteBtn.textContent = prev; }, 2200);
     }catch(e){
-      prompt('아래 주소를 복사해서 친구에게 보내주세요', url);
+      inviteBtn.textContent = url;
     }
+    setTimeout(() => { inviteBtn.textContent = prev; }, 3000);
   });
 
   async function downloadSingle(btn){
