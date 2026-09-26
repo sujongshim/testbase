@@ -63,7 +63,8 @@ header{margin-bottom:22px}
 .app-card .app{flex:1;min-width:0}
 .pick{display:flex;align-items:center;padding:0 2px;cursor:pointer}
 .pick input{width:19px;height:19px;accent-color:var(--green);cursor:pointer}
-.dl{display:flex;align-items:center;justify-content:center;flex:0 0 44px;border-radius:16px;background:var(--surface);border:1.5px solid var(--line);text-decoration:none;color:var(--muted);font-size:1.15rem;transition:border-color .15s,color .15s}
+.dl{display:flex;align-items:center;justify-content:center;flex:0 0 44px;border-radius:16px;background:var(--surface);border:1.5px solid var(--line);text-decoration:none;color:var(--muted);font-size:1.15rem;transition:border-color .15s,color .15s;font-family:inherit;cursor:pointer;padding:0}
+.dl:disabled{opacity:.5;cursor:default}
 .dl:hover{border-color:var(--green);color:var(--green)}
 .app-card.soon-row .dl{visibility:hidden}
 .bulkbar{position:sticky;bottom:12px;margin-top:14px;background:var(--ink);color:var(--bg);border-radius:16px;padding:10px 14px;display:none;align-items:center;justify-content:space-between;gap:10px;box-shadow:0 6px 20px rgba(0,0,0,.18);z-index:5}
@@ -115,7 +116,7 @@ footer a{color:var(--muted)}
           <div class="go">열기 →</div>
         </div>
       </a>
-      <a class="dl" href="./jar/" download="소확앱-항아리가계부.html" aria-label="항아리 가계부만 다운로드" title="이 앱만 HTML로 다운로드">⬇</a>
+      <button type="button" class="dl" data-file="jar" data-name="소확앱-항아리가계부.html" aria-label="항아리 가계부만 다운로드" title="이 앱만 HTML로 다운로드">⬇</button>
     </div>
 
     <div class="app-card">
@@ -131,7 +132,7 @@ footer a{color:var(--muted)}
           <div class="go">열기 →</div>
         </div>
       </a>
-      <a class="dl" href="./fasting/" download="소확앱-공복타이머.html" aria-label="공복 타이머만 다운로드" title="이 앱만 HTML로 다운로드">⬇</a>
+      <button type="button" class="dl" data-file="fasting" data-name="소확앱-공복타이머.html" aria-label="공복 타이머만 다운로드" title="이 앱만 HTML로 다운로드">⬇</button>
     </div>
 
     <div class="app-card">
@@ -147,7 +148,7 @@ footer a{color:var(--muted)}
           <div class="go">열기 →</div>
         </div>
       </a>
-      <a class="dl" href="./move/" download="소확앱-매일최소운동.html" aria-label="매일 최소 운동만 다운로드" title="이 앱만 HTML로 다운로드">⬇</a>
+      <button type="button" class="dl" data-file="move" data-name="소확앱-매일최소운동.html" aria-label="매일 최소 운동만 다운로드" title="이 앱만 HTML로 다운로드">⬇</button>
     </div>
 
     <div class="app-card">
@@ -163,7 +164,7 @@ footer a{color:var(--muted)}
           <div class="go">열기 →</div>
         </div>
       </a>
-      <a class="dl" href="./read/" download="소확앱-한쪽독서.html" aria-label="한 쪽 독서만 다운로드" title="이 앱만 HTML로 다운로드">⬇</a>
+      <button type="button" class="dl" data-file="read" data-name="소확앱-한쪽독서.html" aria-label="한 쪽 독서만 다운로드" title="이 앱만 HTML로 다운로드">⬇</button>
     </div>
 
     <div class="app-card">
@@ -178,7 +179,7 @@ footer a{color:var(--muted)}
           <div class="go">열기 →</div>
         </div>
       </a>
-      <a class="dl" href="./sleep/" download="소확앱-잘자요.html" aria-label="잘 자요만 다운로드" title="이 앱만 HTML로 다운로드">⬇</a>
+      <button type="button" class="dl" data-file="sleep" data-name="소확앱-잘자요.html" aria-label="잘 자요만 다운로드" title="이 앱만 HTML로 다운로드">⬇</button>
     </div>
 
     <div class="app-card soon-row">
@@ -238,6 +239,21 @@ footer a{color:var(--muted)}
 
   boxes().forEach(b => b.addEventListener('change', refresh));
   selAll.addEventListener('change', () => { boxes().forEach(b => b.checked = selAll.checked); refresh(); });
+
+  async function downloadSingle(btn){
+    const prev = btn.textContent;
+    btn.disabled = true; btn.textContent = '…';
+    try{
+      const res = await fetch('./' + btn.dataset.file + '/');
+      const blob = await res.blob();
+      downloadFile(new Blob([blob], {type:'text/html'}), btn.dataset.name);
+    }catch(e){
+      alert('다운로드 중 문제가 생겼어요. 잠시 후 다시 시도해 주세요.');
+    }finally{
+      btn.disabled = false; btn.textContent = prev;
+    }
+  }
+  document.querySelectorAll('button.dl[data-file]').forEach(btn => btn.addEventListener('click', () => downloadSingle(btn)));
 
   function downloadFile(blob, filename){
     const url = URL.createObjectURL(blob);
