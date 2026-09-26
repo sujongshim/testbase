@@ -62,8 +62,11 @@ header{margin-bottom:0}
 .eyebrow::before{content:"";width:22px;height:1px;background:var(--hero-dark-line)}
 .headline{grid-area:headline;font-family:"Fraunces","IBM Plex Sans KR",serif;font-weight:600;font-size:2.3rem;line-height:1.22;margin:0 0 16px;letter-spacing:-.01em;text-wrap:balance;word-break:keep-all}
 .lead{grid-area:lead;margin:0 0 20px;font-size:1rem;color:var(--hero-dark-muted);max-width:50ch;line-height:1.7}
-.badge-pill{grid-area:badge;display:flex;flex-wrap:wrap;gap:8px;margin:0;padding:0;list-style:none;align-self:start}
+.badge-row{grid-area:badge;display:flex;flex-wrap:wrap;gap:10px;align-items:center;align-self:start}
+.badge-pill{display:flex;flex-wrap:wrap;gap:8px;margin:0;padding:0;list-style:none}
 .badge-pill li{background:transparent;border:1px solid var(--hero-dark-line);color:var(--hero-dark-ink);border-radius:999px;padding:8px 16px;font-size:.85rem;font-weight:600}
+.invite-btn{background:transparent;border:1px solid var(--hero-dark-accent);color:var(--hero-dark-accent);border-radius:999px;padding:8px 16px;font-size:.85rem;font-weight:600;font-family:inherit;cursor:pointer;transition:background-color .15s}
+.invite-btn:hover{background:rgba(143,214,189,.12)}
 .promise{display:flex;flex-wrap:wrap;gap:6px;margin:18px 0 0;padding:0;list-style:none}
 .promise li{background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:4px 11px;font-size:.82rem}
 
@@ -121,9 +124,12 @@ footer .stats{margin-top:4px;font-size:.75rem}
         <p class="eyebrow">소확앱 · 소소하지만 확실한 앱 <span aria-hidden="true">🍀</span></p>
         <h1 class="headline d">매일 작은 습관으로, 나를 만들어요</h1>
         <p class="lead">거창한 결심 대신, 오늘 지킬 수 있는 만큼만. 10쪽 읽기, 팔 들기 50개, 11시에 눕기처럼 매일 실천할 수 있는 작은 습관을 기록해요. 동그라미가 하나씩 쌓이면, 그게 바로 내가 됩니다.</p>
-        <ul class="badge-pill" aria-label="소확앱 소개">
-          <li>습관 앱 5개</li><li>무료</li><li>로그인 없음</li>
-        </ul>
+        <div class="badge-row">
+          <ul class="badge-pill" aria-label="소확앱 소개">
+            <li>습관 앱 5개</li><li>무료</li><li>로그인 없음</li>
+          </ul>
+          <button type="button" class="invite-btn" id="inviteBtn">🔗 친구에게 앱 초대하기</button>
+        </div>
       </div>
     </header>
   </div>
@@ -300,6 +306,24 @@ footer .stats{margin-top:4px;font-size:.75rem}
     refreshStats();
   }
   bumpVisit();
+
+  const inviteBtn = document.getElementById('inviteBtn');
+  inviteBtn.addEventListener('click', async () => {
+    const url = location.origin + location.pathname;
+    const text = '무료로 쓸 수 있는 작은 습관 앱 모음이에요. 로그인 없이 바로 써볼 수 있어요 🍀';
+    if(navigator.share){
+      try{ await navigator.share({title:'소확앱', text, url}); return; }
+      catch(e){ if(e && e.name==='AbortError') return; }
+    }
+    try{
+      await navigator.clipboard.writeText(`${text}\n${url}`);
+      const prev = inviteBtn.textContent;
+      inviteBtn.textContent = '✅ 링크를 복사했어요';
+      setTimeout(() => { inviteBtn.textContent = prev; }, 2200);
+    }catch(e){
+      prompt('아래 주소를 복사해서 친구에게 보내주세요', url);
+    }
+  });
 
   async function downloadSingle(btn){
     const prev = btn.textContent;
