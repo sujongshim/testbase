@@ -63,7 +63,8 @@ header{margin-bottom:0}
 .eyebrow::before{content:"";width:22px;height:1px;background:var(--hero-dark-line)}
 .headline{grid-area:headline;font-family:"Fraunces","IBM Plex Sans KR",serif;font-weight:600;font-size:2.3rem;line-height:1.22;margin:0 0 16px;letter-spacing:-.01em;text-wrap:balance;word-break:keep-all}
 .lead{grid-area:lead;margin:0 0 20px;font-size:1rem;color:var(--hero-dark-muted);max-width:50ch;line-height:1.7}
-.badge-pill{grid-area:badge;display:inline-block;background:transparent;border:1px solid var(--hero-dark-line);color:var(--hero-dark-ink);border-radius:999px;padding:8px 16px;font-size:.85rem;font-weight:600;align-self:start}
+.badge-pill{grid-area:badge;display:flex;flex-wrap:wrap;gap:8px;margin:0;padding:0;list-style:none;align-self:start}
+.badge-pill li{background:transparent;border:1px solid var(--hero-dark-line);color:var(--hero-dark-ink);border-radius:999px;padding:8px 16px;font-size:.85rem;font-weight:600}
 .promise{display:flex;flex-wrap:wrap;gap:6px;margin:18px 0 0;padding:0;list-style:none}
 .promise li{background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:4px 11px;font-size:.82rem}
 
@@ -131,7 +132,9 @@ footer .stats{margin-top:4px;font-size:.75rem}
         <p class="eyebrow">소확앱 · 소소하지만 확실한 앱 <span aria-hidden="true">🍀</span></p>
         <h1 class="headline d">매일 작은 습관으로, 나를 만들어요</h1>
         <p class="lead">거창한 결심 대신, 오늘 지킬 수 있는 만큼만. 10쪽 읽기, 팔 들기 50개, 11시에 눕기처럼 매일 실천할 수 있는 작은 습관을 기록해요. 동그라미가 하나씩 쌓이면, 그게 바로 내가 됩니다.</p>
-        <span class="badge-pill">습관 앱 5개 · 무료 · 로그인 없음</span>
+        <ul class="badge-pill" aria-label="소확앱 소개">
+          <li>습관 앱 5개</li><li>무료</li><li>로그인 없음</li>
+        </ul>
       </div>
     </header>
   </div>
