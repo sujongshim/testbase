@@ -1,0 +1,15 @@
+{
+  "app": {
+    "name": "testbase",
+    "url": "https://testbase-one.vercel.app",
+    "stack": "정적 HTML"
+  },
+  "tracks": [
+    "security"
+  ],
+  "edzipCase": null,
+  "teacher": {
+    "dormsHandle": ""
+  },
+  "ownershipConfirmed": true
+}
