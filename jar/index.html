@@ -685,7 +685,7 @@ details.panel summary{cursor:pointer;font-weight:600}
     if(b.dataset.inc==='add' && state.incoming){ state.friends[state.incoming.id] = {...state.incoming, at:Date.now()}; save(); toast(`${state.incoming.n}님을 친구 보드에 추가했어요.`); }
     state.incoming = null; render(); });
   $('uFocus').addEventListener('click', e => { const b = e.target.closest('[data-herocat]'); if(!b) return; state.setupHero = b.dataset.herocat; renderSetup(); });
-  $('sHeroCat').addEventListener('click', e => { const b = e.target.closest('[data-herocat]'); if(!b) return; state.settings.heroCat = b.dataset.herocat; renderSettingsHero(); });
+  $('sHeroCat').addEventListener('click', e => { const b = e.target.closest('[data-herocat]'); if(!b) return; state.settings.heroCat = b.dataset.herocat; if(state.form.cat!==HERO()){ state.form.cat = HERO(); state.form.sub = cats()[HERO()].subs[0]; } save(); render(); });
   $('uStart').addEventListener('click', finishSetup);
   $('seg').addEventListener('click', e => { const b = e.target.closest('[data-cat]'); if(!b) return; state.form.cat = b.dataset.cat; state.form.sub = cats()[b.dataset.cat].subs[0]; render(); });
   $('subs').addEventListener('click', e => { const b = e.target.closest('[data-sub]'); if(!b) return; state.form.sub = b.dataset.sub; render(); });
