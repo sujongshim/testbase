@@ -29,6 +29,16 @@ html{scroll-behavior:smooth}
 *,*::before,*::after{box-sizing:inherit}
 body{margin:0;background:var(--bg);color:var(--ink);font-family:"IBM Plex Sans KR","Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;font-size:15px;line-height:1.55;-webkit-text-size-adjust:100%}
 main{max-width:560px;margin:0 auto;padding:28px 16px 40px}
+@media (min-width:860px){
+  main{max-width:920px;padding:40px 24px 56px}
+  header{max-width:640px}
+  .apps{grid-template-columns:1fr 1fr}
+  section.how{max-width:640px}
+}
+@media (min-width:1200px){
+  main{max-width:1120px}
+  .apps{grid-template-columns:1fr 1fr 1fr}
+}
 a{color:inherit}
 :focus-visible{outline:2px solid var(--focus);outline-offset:3px;border-radius:6px}
 .d{font-family:"Do Hyeon","IBM Plex Sans KR",sans-serif;font-weight:400}
