@@ -9,6 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Do+Hyeon&family=IBM+Plex+Sans+KR:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <style>
 :root{
   --bg:#F6F3EC; --surface:#FFFFFF; --ink:#1F2421; --muted:#636B66; --line:#E3DED3;
@@ -69,6 +70,7 @@ header{margin-bottom:22px}
 .bulkbar.show{display:flex}
 .bulkbar span{font-size:.9rem}
 .bulkbar button{border:0;border-radius:10px;padding:9px 14px;font-weight:600;font-size:.88rem;cursor:pointer;background:var(--bg);color:var(--ink)}
+.bulkbar button:disabled{opacity:.6;cursor:default}
 
 section.how{margin-top:30px}
 .how h2{font-size:1.25rem;margin:0 0 10px}
@@ -194,7 +196,7 @@ footer a{color:var(--muted)}
 
   <div class="bulkbar" id="bulkbar">
     <span id="bulkCount">0개 선택됨</span>
-    <button type="button" id="bulkDl">선택한 앱 다운로드</button>
+    <button type="button" id="bulkDl">선택한 앱 zip으로 받기</button>
   </div>
 
   <section class="how" aria-labelledby="howTitle">
@@ -237,20 +239,49 @@ footer a{color:var(--muted)}
   boxes().forEach(b => b.addEventListener('change', refresh));
   selAll.addEventListener('change', () => { boxes().forEach(b => b.checked = selAll.checked); refresh(); });
 
-  function downloadOne(folder, filename, delay){
-    setTimeout(() => {
-      const a = document.createElement('a');
-      a.href = './' + folder + '/';
-      a.download = filename;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-    }, delay);
+  function downloadFile(blob, filename){
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 4000);
   }
 
-  dlBtn.addEventListener('click', () => {
+  dlBtn.addEventListener('click', async () => {
     const checked = boxes().filter(b => b.checked);
-    checked.forEach((b, i) => downloadOne(b.dataset.file, b.dataset.name, i * 350));
+    if(!checked.length) return;
+
+    if(checked.length === 1){
+      const b = checked[0];
+      try{
+        const res = await fetch('./' + b.dataset.file + '/');
+        const blob = await res.blob();
+        downloadFile(blob, b.dataset.name);
+      }catch(e){ alert('다운로드 중 문제가 생겼어요. 잠시 후 다시 시도해 주세요.'); }
+      return;
+    }
+
+    dlBtn.disabled = true;
+    const prevLabel = dlBtn.textContent;
+    dlBtn.textContent = '묶는 중…';
+    try{
+      const zip = new JSZip();
+      for(const b of checked){
+        const res = await fetch('./' + b.dataset.file + '/');
+        const text = await res.text();
+        zip.file(b.dataset.name, text);
+      }
+      const blob = await zip.generateAsync({type:'blob'});
+      downloadFile(blob, '소확앱-선택한앱-' + checked.length + '개.zip');
+    }catch(e){
+      alert('다운로드 중 문제가 생겼어요. 잠시 후 다시 시도해 주세요.');
+    }finally{
+      dlBtn.disabled = false;
+      dlBtn.textContent = prevLabel;
+    }
   });
 
   refresh();
