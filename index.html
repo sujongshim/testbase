@@ -55,6 +55,21 @@ header{margin-bottom:22px}
 .soon{border:1.5px dashed var(--line);background:transparent}
 .soon .icon{background:var(--surface);font-size:1.6rem}
 
+.apps-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:2px 2px 2px}
+.selectall{display:flex;align-items:center;gap:6px;font-size:.85rem;color:var(--muted);cursor:pointer;user-select:none}
+.selectall input{width:17px;height:17px}
+.app-card{display:flex;align-items:stretch;gap:8px}
+.app-card .app{flex:1;min-width:0}
+.pick{display:flex;align-items:center;padding:0 2px;cursor:pointer}
+.pick input{width:19px;height:19px;accent-color:var(--green);cursor:pointer}
+.dl{display:flex;align-items:center;justify-content:center;flex:0 0 44px;border-radius:16px;background:var(--surface);border:1.5px solid var(--line);text-decoration:none;color:var(--muted);font-size:1.15rem;transition:border-color .15s,color .15s}
+.dl:hover{border-color:var(--green);color:var(--green)}
+.app-card.soon-row .dl{visibility:hidden}
+.bulkbar{position:sticky;bottom:12px;margin-top:14px;background:var(--ink);color:var(--bg);border-radius:16px;padding:10px 14px;display:none;align-items:center;justify-content:space-between;gap:10px;box-shadow:0 6px 20px rgba(0,0,0,.18);z-index:5}
+.bulkbar.show{display:flex}
+.bulkbar span{font-size:.9rem}
+.bulkbar button{border:0;border-radius:10px;padding:9px 14px;font-weight:600;font-size:.88rem;cursor:pointer;background:var(--bg);color:var(--ink)}
+
 section.how{margin-top:30px}
 .how h2{font-size:1.25rem;margin:0 0 10px}
 .steps{margin:0;padding:0;list-style:none;display:grid;gap:8px}
@@ -77,75 +92,109 @@ footer a{color:var(--muted)}
     </ul>
   </header>
 
+  <div class="apps-head">
+    <label class="selectall"><input type="checkbox" id="selAll"> 전체 선택</label>
+    <span class="small muted" style="font-size:.8rem">체크 후 아래에서 다운로드</span>
+  </div>
+
   <div class="apps">
-    <a class="app jar" href="./jar/">
-      <div class="icon" aria-hidden="true">
-        <svg viewBox="0 0 120 152"><rect x="30" y="14" width="60" height="15" rx="5" fill="currentColor" opacity=".25"/>
-          <defs><clipPath id="j"><path d="M20 44 Q20 33 31 33 L89 33 Q100 33 100 44 L100 130 Q100 146 84 146 L36 146 Q20 146 20 130 Z"/></clipPath></defs>
-          <g clip-path="url(#j)"><rect x="0" y="80" width="120" height="80" fill="var(--pink)"/></g>
-          <path d="M20 44 Q20 33 31 33 L89 33 Q100 33 100 44 L100 130 Q100 146 84 146 L36 146 Q20 146 20 130 Z" fill="none" stroke="var(--ink)" stroke-width="6"/></svg>
-      </div>
-      <div>
-        <h2 class="d">항아리 가계부</h2>
-        <p>간식·커피·배달처럼 새는 돈 하나만 주간 항아리로 관리해요. 참은 것도 저금처럼 쌓여요.</p>
-        <div class="go">열기 →</div>
-      </div>
-    </a>
-
-    <a class="app fast" href="./fasting/">
-      <div class="icon" aria-hidden="true">
-        <svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="38" fill="none" stroke="var(--ink)" stroke-opacity=".15" stroke-width="12"/>
-          <circle cx="50" cy="50" r="38" fill="none" stroke="var(--green)" stroke-width="12" stroke-linecap="round" stroke-dasharray="239" stroke-dashoffset="70" transform="rotate(-90 50 50)"/></svg>
-      </div>
-      <div>
-        <h2 class="d">공복 타이머</h2>
-        <p>16:8 같은 공복 시간을 원형 타이머로 지키고, 매일 기록을 쌓아 연속 달성을 확인해요.</p>
-        <div class="go">열기 →</div>
-      </div>
-    </a>
-
-    <a class="app move" href="./move/">
-      <div class="icon" aria-hidden="true">
-        <svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="38" fill="none" stroke="#D9542B" stroke-width="12"/>
-          <path d="M33 51 L45 63 L68 38" fill="none" stroke="var(--ink)" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      </div>
-      <div>
-        <h2 class="d">매일 최소 운동</h2>
-        <p>팔 들기 50개, 러닝머신 20분처럼 무리 없는 최소 운동을 매일 체크하고, 달력에 연속 기록을 쌓아요.</p>
-        <div class="go">열기 →</div>
-      </div>
-    </a>
-
-    <a class="app read" href="./read/">
-      <div class="icon" aria-hidden="true">
-        <svg viewBox="0 0 100 100"><path d="M50 28 C38 20 22 20 14 24 L14 78 C22 74 38 74 50 82 C62 74 78 74 86 78 L86 24 C78 20 62 20 50 28 Z" fill="none" stroke="var(--ink)" stroke-width="6" stroke-linejoin="round"/>
-          <path d="M50 28 L50 82" stroke="#3F5E8C" stroke-width="6"/></svg>
-      </div>
-      <div>
-        <h2 class="d">한 쪽 독서</h2>
-        <p>하루 최소 쪽수만 정하고 매일 조금씩. 책장, 밑줄 모음, 완독 목표와 독서 달력까지.</p>
-        <div class="go">열기 →</div>
-      </div>
-    </a>
-
-    <a class="app sleep" href="./sleep/">
-      <div class="icon" aria-hidden="true">
-        <svg viewBox="0 0 100 100"><path d="M62 18 A34 34 0 1 0 82 70 A28 28 0 1 1 62 18 Z" fill="#4B4FA3"/><circle cx="74" cy="28" r="3" fill="#E3A83B"/><circle cx="84" cy="44" r="2" fill="#E3A83B"/></svg>
-      </div>
-      <div>
-        <h2 class="d">잘 자요</h2>
-        <p>밤 11시 취침, 아침 6시 기상처럼 목표를 정하고 잠을 기록해요. 취침 알림 문구와 수면 달력까지.</p>
-        <div class="go">열기 →</div>
-      </div>
-    </a>
-
-    <div class="app soon">
-      <div class="icon" aria-hidden="true">＋</div>
-      <div>
-        <h2 class="d" style="color:var(--muted)">다음 앱 준비 중</h2>
-        <p>필요한 게 생기면 또 만들어서 여기에 올릴게요.</p>
-      </div>
+    <div class="app-card">
+      <label class="pick"><input type="checkbox" class="pickbox" data-file="jar" data-name="소확앱-항아리가계부.html" aria-label="항아리 가계부 선택"></label>
+      <a class="app jar" href="./jar/">
+        <div class="icon" aria-hidden="true">
+          <svg viewBox="0 0 120 152"><rect x="30" y="14" width="60" height="15" rx="5" fill="currentColor" opacity=".25"/>
+            <defs><clipPath id="j"><path d="M20 44 Q20 33 31 33 L89 33 Q100 33 100 44 L100 130 Q100 146 84 146 L36 146 Q20 146 20 130 Z"/></clipPath></defs>
+            <g clip-path="url(#j)"><rect x="0" y="80" width="120" height="80" fill="var(--pink)"/></g>
+            <path d="M20 44 Q20 33 31 33 L89 33 Q100 33 100 44 L100 130 Q100 146 84 146 L36 146 Q20 146 20 130 Z" fill="none" stroke="var(--ink)" stroke-width="6"/></svg>
+        </div>
+        <div>
+          <h2 class="d">항아리 가계부</h2>
+          <p>간식·커피·배달처럼 새는 돈 하나만 주간 항아리로 관리해요. 참은 것도 저금처럼 쌓여요.</p>
+          <div class="go">열기 →</div>
+        </div>
+      </a>
+      <a class="dl" href="./jar/" download="소확앱-항아리가계부.html" aria-label="항아리 가계부만 다운로드" title="이 앱만 HTML로 다운로드">⬇</a>
     </div>
+
+    <div class="app-card">
+      <label class="pick"><input type="checkbox" class="pickbox" data-file="fasting" data-name="소확앱-공복타이머.html" aria-label="공복 타이머 선택"></label>
+      <a class="app fast" href="./fasting/">
+        <div class="icon" aria-hidden="true">
+          <svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="38" fill="none" stroke="var(--ink)" stroke-opacity=".15" stroke-width="12"/>
+            <circle cx="50" cy="50" r="38" fill="none" stroke="var(--green)" stroke-width="12" stroke-linecap="round" stroke-dasharray="239" stroke-dashoffset="70" transform="rotate(-90 50 50)"/></svg>
+        </div>
+        <div>
+          <h2 class="d">공복 타이머</h2>
+          <p>16:8 같은 공복 시간을 원형 타이머로 지키고, 매일 기록을 쌓아 연속 달성을 확인해요.</p>
+          <div class="go">열기 →</div>
+        </div>
+      </a>
+      <a class="dl" href="./fasting/" download="소확앱-공복타이머.html" aria-label="공복 타이머만 다운로드" title="이 앱만 HTML로 다운로드">⬇</a>
+    </div>
+
+    <div class="app-card">
+      <label class="pick"><input type="checkbox" class="pickbox" data-file="move" data-name="소확앱-매일최소운동.html" aria-label="매일 최소 운동 선택"></label>
+      <a class="app move" href="./move/">
+        <div class="icon" aria-hidden="true">
+          <svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="38" fill="none" stroke="#D9542B" stroke-width="12"/>
+            <path d="M33 51 L45 63 L68 38" fill="none" stroke="var(--ink)" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        <div>
+          <h2 class="d">매일 최소 운동</h2>
+          <p>팔 들기 50개, 러닝머신 20분처럼 무리 없는 최소 운동을 매일 체크하고, 달력에 연속 기록을 쌓아요.</p>
+          <div class="go">열기 →</div>
+        </div>
+      </a>
+      <a class="dl" href="./move/" download="소확앱-매일최소운동.html" aria-label="매일 최소 운동만 다운로드" title="이 앱만 HTML로 다운로드">⬇</a>
+    </div>
+
+    <div class="app-card">
+      <label class="pick"><input type="checkbox" class="pickbox" data-file="read" data-name="소확앱-한쪽독서.html" aria-label="한 쪽 독서 선택"></label>
+      <a class="app read" href="./read/">
+        <div class="icon" aria-hidden="true">
+          <svg viewBox="0 0 100 100"><path d="M50 28 C38 20 22 20 14 24 L14 78 C22 74 38 74 50 82 C62 74 78 74 86 78 L86 24 C78 20 62 20 50 28 Z" fill="none" stroke="var(--ink)" stroke-width="6" stroke-linejoin="round"/>
+            <path d="M50 28 L50 82" stroke="#3F5E8C" stroke-width="6"/></svg>
+        </div>
+        <div>
+          <h2 class="d">한 쪽 독서</h2>
+          <p>하루 최소 쪽수만 정하고 매일 조금씩. 책장, 밑줄 모음, 완독 목표와 독서 달력까지.</p>
+          <div class="go">열기 →</div>
+        </div>
+      </a>
+      <a class="dl" href="./read/" download="소확앱-한쪽독서.html" aria-label="한 쪽 독서만 다운로드" title="이 앱만 HTML로 다운로드">⬇</a>
+    </div>
+
+    <div class="app-card">
+      <label class="pick"><input type="checkbox" class="pickbox" data-file="sleep" data-name="소확앱-잘자요.html" aria-label="잘 자요 선택"></label>
+      <a class="app sleep" href="./sleep/">
+        <div class="icon" aria-hidden="true">
+          <svg viewBox="0 0 100 100"><path d="M62 18 A34 34 0 1 0 82 70 A28 28 0 1 1 62 18 Z" fill="#4B4FA3"/><circle cx="74" cy="28" r="3" fill="#E3A83B"/><circle cx="84" cy="44" r="2" fill="#E3A83B"/></svg>
+        </div>
+        <div>
+          <h2 class="d">잘 자요</h2>
+          <p>밤 11시 취침, 아침 6시 기상처럼 목표를 정하고 잠을 기록해요. 취침 알림 문구와 수면 달력까지.</p>
+          <div class="go">열기 →</div>
+        </div>
+      </a>
+      <a class="dl" href="./sleep/" download="소확앱-잘자요.html" aria-label="잘 자요만 다운로드" title="이 앱만 HTML로 다운로드">⬇</a>
+    </div>
+
+    <div class="app-card soon-row">
+      <span class="pick" aria-hidden="true"></span>
+      <div class="app soon">
+        <div class="icon" aria-hidden="true">＋</div>
+        <div>
+          <h2 class="d" style="color:var(--muted)">다음 앱 준비 중</h2>
+          <p>필요한 게 생기면 또 만들어서 여기에 올릴게요.</p>
+        </div>
+      </div>
+      <span class="dl" aria-hidden="true"></span>
+    </div>
+  </div>
+
+  <div class="bulkbar" id="bulkbar">
+    <span id="bulkCount">0개 선택됨</span>
+    <button type="button" id="bulkDl">선택한 앱 다운로드</button>
   </div>
 
   <section class="how" aria-labelledby="howTitle">
@@ -169,5 +218,43 @@ footer a{color:var(--muted)}
     <p>소확앱 · 내가 필요해서 만든 작은 앱들</p>
   </footer>
 </main>
+<script>
+(function(){
+  const boxes = () => Array.from(document.querySelectorAll('.pickbox'));
+  const selAll = document.getElementById('selAll');
+  const bar = document.getElementById('bulkbar');
+  const count = document.getElementById('bulkCount');
+  const dlBtn = document.getElementById('bulkDl');
+
+  function refresh(){
+    const checked = boxes().filter(b => b.checked);
+    bar.classList.toggle('show', checked.length > 0);
+    count.textContent = checked.length + '개 선택됨';
+    selAll.checked = checked.length === boxes().length;
+    selAll.indeterminate = checked.length > 0 && checked.length < boxes().length;
+  }
+
+  boxes().forEach(b => b.addEventListener('change', refresh));
+  selAll.addEventListener('change', () => { boxes().forEach(b => b.checked = selAll.checked); refresh(); });
+
+  function downloadOne(folder, filename, delay){
+    setTimeout(() => {
+      const a = document.createElement('a');
+      a.href = './' + folder + '/';
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+    }, delay);
+  }
+
+  dlBtn.addEventListener('click', () => {
+    const checked = boxes().filter(b => b.checked);
+    checked.forEach((b, i) => downloadOne(b.dataset.file, b.dataset.name, i * 350));
+  });
+
+  refresh();
+})();
+</script>
 </body>
 </html>
