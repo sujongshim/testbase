@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>💜 내 수능 단어장</title>
+<title>💜 2027 수능완성 단어장</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Do+Hyeon&family=IBM+Plex+Sans+KR:wght@400;500;600&family=Newsreader:opsz,wght@6..72,500;6..72,600&display=swap" rel="stylesheet">
@@ -135,7 +135,7 @@ button,input{font:inherit;color:inherit}
 <main>
   <p class="copyright">© 2026 수쌤 · All rights reserved.</p>
   <div class="top">
-    <h1>💜 내 수능 단어장</h1>
+    <h1>💜 2027 수능완성 단어장</h1>
     <div class="status" id="status"><span id="statusMsg">노션 불러오는 중…</span><button class="iconbtn" id="syncBtn" type="button">↻ 동기화</button></div>
   </div>
   <nav class="tabs" id="tabs" aria-label="화면"></nav>
@@ -312,7 +312,7 @@ button,input{font:inherit;color:inherit}
     if(!w){ S.queue.shift(); return render(); }
     const c = card(w.id), mode = st.prog.settings.mode, pct = S.finished / S.total * 100;
     const tags = `<div class="tagrow">${!c?'<span class="tag new">새 단어</span>':''}${w.q?`<span class="tag">${w.q}번</span>`:''}${w.d?`<span class="tag">${w.d.slice(5).replace('-','/')} 추가</span>`:''}${c&&c.w>=2?'<span class="tag">자주 틀림</span>':''}</div>`;
-    const wordRow = `<div class="wordrow"><div class="word en">${esc(w.w)}</div><button class="say" data-say="w" aria-label="단어 듣기">🔊</button></div>`;
+    const wordRow = `<div class="wordrow"><div class="word en">${esc(w.w)}</div><div style="display:flex;gap:6px;flex:none"><button class="star ${st.prog.stars[w.id]?'on':''}" data-star="${w.id}" aria-label="별표">★</button><button class="say" data-say="w" aria-label="단어 듣기">🔊</button></div></div>`;
     const back = `<div class="mean">${esc(w.m)}</div>${w.ex ? `<div class="ex en">${highlight(w.ex, w.w)} <button class="say" data-say="ex" aria-label="예문 듣기" style="width:28px;height:28px;font-size:.8rem;vertical-align:middle">🔊</button></div>` : ''}`;
     let body;
     if(mode==='quiz'){
