@@ -62,6 +62,9 @@ button,input,select{font:inherit;color:inherit}
 .budget .bar i.over{background:var(--warn)}
 .streak{display:flex;align-items:center;gap:8px;margin-top:10px;font-size:.88rem;color:var(--muted)}
 .streak b{color:var(--ink)}
+.cheatrow{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:10px;font-size:.83rem}
+.btn.cheat{background:var(--accent-soft);color:var(--accent)}
+.cell.cheat{background:var(--accent-soft);color:var(--accent);font-weight:700}
 
 /* log button + picker */
 .logbtn{display:block;width:100%;background:var(--accent);color:#fff;border:0;border-radius:16px;padding:16px;font-size:1.05rem;font-weight:700;cursor:pointer;margin-top:14px}
@@ -84,7 +87,7 @@ button,input,select{font:inherit;color:inherit}
 .week .col .b.today{background:var(--accent)}
 .week .col span{font-size:.72rem;color:var(--muted)}
 
-.quote{text-align:center;font-size:.92rem;font-weight:600;color:var(--accent);margin:0 0 14px;line-height:1.5}
+.quote{text-align:center;font-size:1.05rem;font-weight:700;color:var(--ok);margin:0 0 14px;line-height:1.5}
 .freerow{display:flex;gap:8px;margin-top:20px}
 .freecard{flex:1;background:var(--ok-soft);border-radius:14px;padding:12px;text-align:center}
 .freecard .v{font-family:"Do Hyeon",sans-serif;font-size:1.5rem;color:var(--ok)}
@@ -140,7 +143,7 @@ button,input,select{font:inherit;color:inherit}
   </div>
 
   <div id="app" hidden>
-    <p class="quote d">"먹는 걸 조절할 줄 아는 사람이 성공한다"</p>
+    <p class="quote">"먹는 걸 조절할 줄 아는 사람이 성공한다"</p>
     <h1>간식 칼로리 기록</h1>
 
     <div class="budget">
@@ -148,6 +151,7 @@ button,input,select{font:inherit;color:inherit}
       <div class="num d" id="todayNum">0kcal</div>
       <div class="bar"><i id="todayBar" style="width:0%"></i></div>
       <div class="streak" id="streakLine"></div>
+      <div class="cheatrow" id="cheatRow"></div>
     </div>
 
     <button type="button" class="logbtn" id="logBtn">🍽️ 간식 먹었어요</button>
@@ -229,6 +233,7 @@ button,input,select{font:inherit;color:inherit}
     items: DEFAULT_ITEMS.slice(),
     dailyTarget: 300,
     log: {}, // date -> [{id, itemId, kcal, t}]
+    cheat: {}, // date -> true
     setupDate: null,
     calMonth: null,
     storageOk:true
@@ -236,7 +241,7 @@ button,input,select{font:inherit;color:inherit}
   let toastTimer = null, pickerOpen = false;
 
   function save(){
-    try{ localStorage.setItem(KEY, JSON.stringify({v:1, setup:st.setup, items:st.items, dailyTarget:st.dailyTarget, log:st.log, setupDate:st.setupDate})); st.storageOk = true; }
+    try{ localStorage.setItem(KEY, JSON.stringify({v:1, setup:st.setup, items:st.items, dailyTarget:st.dailyTarget, log:st.log, cheat:st.cheat, setupDate:st.setupDate})); st.storageOk = true; }
     catch(e){ st.storageOk = false; toast('저장하지 못했어요. 이 브라우저 저장공간을 확인해 주세요.'); }
   }
   function load(){
@@ -248,6 +253,7 @@ button,input,select{font:inherit;color:inherit}
         if(Array.isArray(d.items) && d.items.length) st.items = d.items;
         if(d.dailyTarget) st.dailyTarget = d.dailyTarget;
         st.log = d.log && typeof d.log==='object' ? d.log : {};
+        st.cheat = d.cheat && typeof d.cheat==='object' ? d.cheat : {};
         st.setupDate = d.setupDate || null;
       }
     }catch(e){ st.storageOk = false; }
@@ -261,9 +267,16 @@ button,input,select{font:inherit;color:inherit}
     const t = today();
     if(k>t) return 'future';
     if(st.setupDate && k<st.setupDate) return 'before';
+    if(st.cheat[k]) return 'cheat';
     const v = dayTotal(k);
     if(v===0) return 'free';
     return v<=(st.dailyTarget||300) ? 'ok' : 'over';
+  }
+  function useCheat(){
+    const d = today();
+    if(st.cheat[d]) delete st.cheat[d];
+    else st.cheat[d] = true;
+    save(); render();
   }
   function cumulativeFreeDays(){
     if(!st.setupDate) return 0;
@@ -326,22 +339,30 @@ button,input,select{font:inherit;color:inherit}
 
   // ---------- render ----------
   function renderBudget(){
-    const d = today(), total = dayTotal(d), target = st.dailyTarget || 300;
-    const pct = Math.min(total/target,1)*100, over = total>target;
-    $('todayNum').textContent = total.toLocaleString('ko-KR')+'kcal';
+    const d = today(), total = dayTotal(d), target = st.dailyTarget || 300, isCheat = !!st.cheat[d];
+    const pct = Math.min(total/target,1)*100, over = !isCheat && total>target;
+    $('todayNum').textContent = total.toLocaleString('ko-KR')+'kcal'+(isCheat?' 🎉':'');
     $('todayNum').classList.toggle('over', over);
     $('targetLabel').textContent = `목표 ${target.toLocaleString('ko-KR')}kcal`;
     $('todayBar').style.width = pct+'%';
     $('todayBar').classList.toggle('over', over);
 
-    // streak: consecutive days (ending yesterday or today) within target
-    let streak = 0, d2 = (total<=target) ? d : addDays(d,-1);
-    for(let i=0;i<365;i++){
-      const t = dayTotal(d2);
-      if(t===0 && d2!==d) break; // no record that day, stop counting (only counts days actually under target with data, or today if within target)
-      if(t<=target){ streak++; d2 = addDays(d2,-1); } else break;
+    // streak: consecutive days (ending today) that are 'ok'/'free'/'cheat' (cheat days are excused, don't break it but don't count up either)
+    let streak = 0, d2 = d, guard = 0;
+    while(st.setupDate && d2>=st.setupDate && guard<366){
+      guard++;
+      const s = dayStatus(d2);
+      if(s==='cheat'){ d2 = addDays(d2,-1); continue; }
+      if(s==='ok' || s==='free'){ streak++; d2 = addDays(d2,-1); }
+      else break;
     }
-    $('streakLine').innerHTML = streak>0 ? `🔥 목표 이내로 <b>${streak}일째</b> 이어가는 중` : `오늘부터 시작해봐요`;
+    $('streakLine').innerHTML = isCheat ? `🎉 오늘은 치팅 데이예요. 내일 다시 이어가요.`
+      : streak>0 ? `🔥 목표 이내로 <b>${streak}일째</b> 이어가는 중` : `오늘부터 시작해봐요`;
+  }
+  function renderCheatRow(){
+    const isCheat = !!st.cheat[today()];
+    $('cheatRow').innerHTML = `<span class="muted">가끔은 계획된 치팅 데이도 괜찮아요</span>
+      <button type="button" class="btn cheat small" data-act="cheat">${isCheat?'치팅 데이 취소':'🎉 오늘은 치팅 데이'}</button>`;
   }
 
   function renderPicker(){
@@ -403,12 +424,12 @@ button,input,select{font:inherit;color:inherit}
     let cells = ['월','화','수','목','금','토','일'].map(w=>`<div class="wd">${w}</div>`).join('') + '<div></div>'.repeat(lead);
     for(let i=1;i<=lastDay;i++){
       const k = `${cm}-${pad(i)}`, s = dayStatus(k);
-      const label = {free:'무간식일', ok:'목표 이내', over:'목표 초과', future:'', before:''}[s] || '';
+      const label = {free:'무간식일', ok:'목표 이내', over:'목표 초과', cheat:'치팅 데이', future:'', before:''}[s] || '';
       cells += `<div class="cell ${s} ${k===t?'now':''}" aria-label="${i}일 ${label}">${i}</div>`;
     }
     $('cal').innerHTML = `<div class="calhead"><button type="button" data-cal="-1" aria-label="이전 달">‹</button><b>${cy}년 ${cmo}월</b><button type="button" data-cal="1" aria-label="다음 달" ${cm>=t.slice(0,7)?'disabled':''}>›</button></div>
       <div class="calgrid">${cells}</div>
-      <div class="legend"><span><span class="freei"></span>무간식일</span><span><span class="oki"></span>목표 이내</span><span><i style="background:var(--warn-soft)"></i>목표 초과</span></div>`;
+      <div class="legend"><span><span class="freei"></span>무간식일</span><span><span class="oki"></span>목표 이내</span><span><i style="background:var(--warn-soft)"></i>목표 초과</span><span><i style="background:var(--accent-soft)"></i>치팅 데이</span></div>`;
   }
 
   function renderWeek(){
@@ -441,6 +462,7 @@ button,input,select{font:inherit;color:inherit}
     $('app').hidden = !st.setup;
     if(!st.setup) return;
     renderBudget();
+    renderCheatRow();
     renderPicker();
     renderBrag();
     renderFreeStats();
@@ -452,7 +474,7 @@ button,input,select{font:inherit;color:inherit}
   }
 
   async function backup(){
-    const text = JSON.stringify({app:'snack-kcal', v:1, exportedAt:new Date().toISOString(), items:st.items, dailyTarget:st.dailyTarget, log:st.log, setupDate:st.setupDate}, null, 1);
+    const text = JSON.stringify({app:'snack-kcal', v:1, exportedAt:new Date().toISOString(), items:st.items, dailyTarget:st.dailyTarget, log:st.log, cheat:st.cheat, setupDate:st.setupDate}, null, 1);
     const blob = new Blob([text], {type:'application/json'});
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a'); a.href = url; a.download = '간식칼로리-백업-'+today()+'.json';
@@ -470,6 +492,7 @@ button,input,select{font:inherit;color:inherit}
         if(Array.isArray(d.items)) st.items = d.items;
         if(d.dailyTarget) st.dailyTarget = d.dailyTarget;
         if(d.log) st.log = d.log;
+        if(d.cheat) st.cheat = d.cheat;
         if(d.setupDate) st.setupDate = d.setupDate;
         save(); render(); toast('백업을 불러왔어요.');
       }catch(e){ toast('간식 칼로리 백업 파일이 아니에요.'); }
@@ -505,6 +528,7 @@ button,input,select{font:inherit;color:inherit}
     const b = e.target.closest('[data-del]'); if(!b) return;
     removeEntry(today(), b.dataset.del);
   });
+  $('cheatRow').addEventListener('click', e => { if(e.target.closest('[data-act="cheat"]')) useCheat(); });
   $('cal').addEventListener('click', e => {
     const b = e.target.closest('[data-cal]'); if(!b) return;
     const [y,m] = (st.calMonth||today().slice(0,7)).split('-').map(Number);
