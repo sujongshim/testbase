@@ -301,7 +301,7 @@ button,input{font:inherit;color:inherit}
       ${s ? `<span class="streak">⭕ ${s}일 연속</span>` : ''}
     </div>
     <section><h2 class="d">골라서 공부하기</h2><div class="panel" style="display:grid;gap:6px">
-      <button class="btn ghost" data-act="recent" ${recent.length?'':'disabled'} style="text-align:left">🆕 최근 7일에 넣은 단어 (${recent.length}개)</button>
+      <button class="btn ghost" data-act="recent" ${recent.length?'':'disabled'} style="text-align:left">🆕 최근 7일에 넣은 단어 (${Math.min(recent.length,20)}개)</button>
       <button class="btn ghost" data-act="hard" ${hardOnes.length?'':'disabled'} style="text-align:left">🔥 자주 틀린 단어 (${hardOnes.length}개)</button>
       <button class="btn ghost" data-act="star" ${st.words.some(w=>st.prog.stars[w.id])?'':'disabled'} style="text-align:left">★ 별표 단어 (${st.words.filter(w=>st.prog.stars[w.id]).length}개)</button>
       <button class="btn ghost" data-act="random" style="text-align:left">🎲 아무거나 20개</button>
@@ -404,7 +404,7 @@ button,input{font:inherit;color:inherit}
     if(b = q('[data-act]')){ const a = b.dataset.act;
       if(a==='flip'){ if(!st.sess.flipped){ st.sess.flipped = true; render(); } return; }
       if(a==='start') startSession([...dueList(), ...newList()], '오늘 공부');
-      else if(a==='recent') startSession(shuffle(st.words.filter(w => w.d && w.d >= addDays(today(), -7))), '최근 단어');
+      else if(a==='recent') startSession(shuffle(st.words.filter(w => w.d && w.d >= addDays(today(), -7))).slice(0,20), '최근 단어');
       else if(a==='hard') startSession(shuffle(st.words.filter(w => card(w.id) && card(w.id).w >= 2)), '자주 틀린 단어');
       else if(a==='star') startSession(shuffle(st.words.filter(w => st.prog.stars[w.id])), '별표 단어');
       else if(a==='random') startSession(shuffle(st.words.slice()).slice(0,20), '아무거나 20개');
