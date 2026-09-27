@@ -193,7 +193,7 @@ textarea.field{resize:vertical;min-height:64px}
   const COVERS = ['#3F5E8C','#8C3F5E','#2F6B4F','#8A6D3B','#5B4A8C','#A0522D','#2E6B7A','#6B6B2E'];
   const st = {setup:false, goal:{daily:10, yearly:12}, books:[], log:{}, rest:{}, notes:[], lastBackup:0,
     tab:'today', day:null, pending:null, notesForm:false, shelf:'reading', calMonth:null, openNote:null, editBook:null, addOpen:false, storageOk:true};
-  let toastTimer = null, undoFn = null;
+  let toastTimer = null, undoFn = null, resetArmed = false, resetTimer = null;
 
   const $ = id => document.getElementById(id);
   const pad = n => String(n).padStart(2,'0');
@@ -671,6 +671,9 @@ textarea.field{resize:vertical;min-height:64px}
         <p class="small muted" style="margin:6px 0 0">기록은 이 휴대폰 브라우저에만 있어요. 가끔 백업 파일을 받아 두세요.</p>
         <div class="btnrow" style="margin-top:0"><button class="btn primary" data-act="backup">백업 파일 받기</button>
           <label class="btn ghost" style="display:inline-block">백업 불러오기<input id="restoreInput" class="filepick" type="file" accept=".json,application/json"></label></div>
+        <div style="margin-top:16px">
+          <button type="button" class="btn ghost" data-act="reset" style="color:var(--rest)">${resetArmed?'정말요? 다시 누르면 전부 지워져요':'다시 시작하기 (모든 기록 초기화)'}</button>
+        </div>
       </div></section>`;
   }
 
@@ -722,6 +725,16 @@ textarea.field{resize:vertical;min-height:64px}
       else if(a==='unphoto'){ const keep = keepForm(); clearPending(); render(); restoreForm(keep); }
       else if(a==='opennoteform'){ st.notesForm = true; clearPending(); render(); }
       else if(a==='closenoteform'){ st.notesForm = false; clearPending(); render(); }
+      else if(a==='reset'){
+        if(!resetArmed){
+          resetArmed = true; render();
+          resetTimer = setTimeout(() => { resetArmed = false; render(); }, 4000);
+        } else {
+          clearTimeout(resetTimer);
+          localStorage.removeItem(KEY);
+          location.reload();
+        }
+      }
     }
   });
   document.querySelector('main').addEventListener('change', e => { if(e.target.id==='restoreInput'){ restore(e.target.files[0]); e.target.value = ''; } else if(e.target.hasAttribute('data-photoin')){ const f = e.target.files[0]; e.target.value = ''; pickPhoto(f); } });

@@ -113,6 +113,14 @@ details.card summary{cursor:pointer;font-weight:600}
     </details>
   </section>
 
+  <section>
+    <details class="card">
+      <summary>초기화</summary>
+      <p class="small muted" style="margin:8px 0 0">모든 공복 기록과 진행 중인 타이머를 지우고 처음부터 다시 시작해요.</p>
+      <button type="button" class="btn ghost" id="resetBtn" style="margin-top:10px;color:var(--warn)">다시 시작하기 (모든 기록 초기화)</button>
+    </details>
+  </section>
+
   <p class="mode" id="mode"></p>
 <p style="text-align:center;margin:14px 0 0;font-size:.82rem"><a href="../" style="color:var(--muted)">← 소확앱 다른 앱 보기</a></p>
 </main>
@@ -193,6 +201,16 @@ details.card summary{cursor:pointer;font-weight:600}
       if(f){ lastDeleted = f; st.years[y] = st.years[y].filter(x=>x.id!==id); saveYear(y); renderAll(); toast('지웠어요.', true); return; } }
   }
   function undo(){ if(lastDeleted){ addFast(lastDeleted); lastDeleted=null; renderAll(); hideToast(); } }
+  function resetAll(){
+    st.active = null;
+    const years = Object.keys(st.years);
+    st.years = {};
+    years.forEach(y => saveYear(y));
+    saveState();
+    localStorage.removeItem(LS);
+    renderAll();
+    toast('모든 기록을 초기화했어요.');
+  }
   function setGoal(h){
     st.goalH = h; if(st.active) st.active = {...st.active, goalH:h}; saveState(); renderAll();
   }
@@ -333,6 +351,20 @@ details.card summary{cursor:pointer;font-weight:600}
     if(en - s > 72*H){ toast('72시간이 넘는 기록은 넣을 수 없어요.'); return; }
     addFast({id:uid(), start:s, end:en, goalH:st.goalH}); $('addEnd').value=''; renderAll(); toast('지난 공복을 기록했어요.');
   });
+  (function(){
+    let armed = false, timer = null;
+    $('resetBtn').addEventListener('click', () => {
+      if(!armed){
+        armed = true;
+        $('resetBtn').textContent = '정말요? 다시 누르면 전부 지워져요';
+        timer = setTimeout(() => { armed = false; $('resetBtn').textContent = '다시 시작하기 (모든 기록 초기화)'; }, 4000);
+      } else {
+        clearTimeout(timer);
+        armed = false; $('resetBtn').textContent = '다시 시작하기 (모든 기록 초기화)';
+        resetAll();
+      }
+    });
+  })();
   setInterval(tick, 1000);
   document.addEventListener('visibilitychange', () => { if(document.visibilityState==='visible') renderAll(); });
   init();

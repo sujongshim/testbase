@@ -179,6 +179,9 @@ details.panel summary{cursor:pointer;font-weight:600}
           <button class="btn primary" id="backupBtn">백업 파일 받기</button>
           <label class="btn ghost" style="display:inline-block">백업 불러오기<input id="restoreInput" class="filepick" type="file" accept=".json,application/json"></label>
         </div>
+        <div style="margin-top:16px">
+          <button type="button" class="btn ghost" id="resetBtn" style="color:var(--stamp)">다시 시작하기 (모든 기록 초기화)</button>
+        </div>
       </details>
     </section>
     <p class="mode" id="mode"></p>
@@ -569,6 +572,20 @@ details.panel summary{cursor:pointer;font-weight:600}
   $('toastUndo').addEventListener('click', () => { if(undoFn){ undoFn(); undoFn = null; } $('toast').hidden = true; });
   $('backupBtn').addEventListener('click', backup);
   $('restoreInput').addEventListener('change', e => { restore(e.target.files[0]); e.target.value = ''; });
+  (function(){
+    let armed = false, timer = null;
+    $('resetBtn').addEventListener('click', () => {
+      if(!armed){
+        armed = true;
+        $('resetBtn').textContent = '정말요? 다시 누르면 전부 지워져요';
+        timer = setTimeout(() => { armed = false; $('resetBtn').textContent = '다시 시작하기 (모든 기록 초기화)'; }, 4000);
+      } else {
+        clearTimeout(timer);
+        localStorage.removeItem(KEY);
+        location.reload();
+      }
+    });
+  })();
   document.addEventListener('visibilitychange', () => { if(document.visibilityState==='visible'){ tick(); render(); } });
   setInterval(tick, 1000);
 
