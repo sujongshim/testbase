@@ -84,6 +84,29 @@ button,input,select{font:inherit;color:inherit}
 .week .col .b.today{background:var(--accent)}
 .week .col span{font-size:.72rem;color:var(--muted)}
 
+.quote{text-align:center;font-size:.92rem;font-weight:600;color:var(--accent);margin:0 0 14px;line-height:1.5}
+.freerow{display:flex;gap:8px;margin-top:20px}
+.freecard{flex:1;background:var(--ok-soft);border-radius:14px;padding:12px;text-align:center}
+.freecard .v{font-family:"Do Hyeon",sans-serif;font-size:1.5rem;color:var(--ok)}
+.freecard .l{font-size:.78rem;color:var(--muted)}
+
+.cal{background:var(--surface);border-radius:14px;padding:12px}
+.calhead{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.calhead button{border:1px solid var(--line);background:transparent;border-radius:8px;width:30px;height:28px;cursor:pointer}
+.calgrid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:5px;text-align:center}
+.calgrid .wd{font-size:.72rem;color:var(--muted)}
+.cell{width:100%;min-width:0;height:auto;aspect-ratio:1;border-radius:8px;display:grid;place-items:center;font-size:.78rem;background:var(--bg);border:0;padding:0;color:var(--muted);position:relative}
+.cell.free{background:transparent;color:var(--ok);font-weight:700}
+.cell.free::before{content:"";position:absolute;inset:9%;border:3px solid var(--ok);border-radius:50%;transform:rotate(-8deg)}
+.cell.ok{color:var(--ink)}
+.cell.ok::after{content:"";position:absolute;left:50%;bottom:10%;width:5px;height:5px;margin-left:-2.5px;border-radius:50%;background:var(--ok);opacity:.8}
+.cell.over{background:var(--warn-soft);color:var(--warn);font-weight:700}
+.cell.now{outline:2px solid var(--ink);outline-offset:-2px}
+.legend{display:flex;gap:10px;flex-wrap:wrap;margin-top:8px;font-size:.75rem;color:var(--muted)}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:4px;vertical-align:-1px}
+.freei{display:inline-block;width:11px;height:11px;border:2px solid var(--ok);border-radius:50%;margin-right:4px;vertical-align:-2px}
+.oki{display:inline-block;width:5px;height:5px;border-radius:50%;background:var(--ok);opacity:.8;margin:0 4px 1px 3px}
+
 .timeline{list-style:none;margin:0;padding:0;background:var(--surface);border-radius:14px;overflow:hidden}
 .timeline li{display:flex;justify-content:space-between;align-items:center;padding:9px 12px;border-bottom:1px solid var(--line);font-size:.88rem}
 .timeline li:last-child{border-bottom:0}
@@ -117,6 +140,7 @@ button,input,select{font:inherit;color:inherit}
   </div>
 
   <div id="app" hidden>
+    <p class="quote d">"먹는 걸 조절할 줄 아는 사람이 성공한다"</p>
     <h1>간식 칼로리 기록</h1>
 
     <div class="budget">
@@ -130,9 +154,19 @@ button,input,select{font:inherit;color:inherit}
     <div id="picker"></div>
     <div id="bragCard"></div>
 
+    <div class="freerow">
+      <div class="freecard"><div class="v d" id="freeStreak">0</div><div class="l">연속 무간식일</div></div>
+      <div class="freecard"><div class="v d" id="freeTotal">0</div><div class="l">누적 무간식일</div></div>
+    </div>
+
     <section aria-labelledby="weekTitle">
       <h2 id="weekTitle" class="d">최근 7일</h2>
       <div class="week" id="week"></div>
+    </section>
+
+    <section aria-labelledby="calTitle">
+      <h2 id="calTitle" class="d">달력으로 보기</h2>
+      <div class="cal" id="cal"></div>
     </section>
 
     <section aria-labelledby="todayTitle">
@@ -195,12 +229,14 @@ button,input,select{font:inherit;color:inherit}
     items: DEFAULT_ITEMS.slice(),
     dailyTarget: 300,
     log: {}, // date -> [{id, itemId, kcal, t}]
+    setupDate: null,
+    calMonth: null,
     storageOk:true
   };
   let toastTimer = null, pickerOpen = false;
 
   function save(){
-    try{ localStorage.setItem(KEY, JSON.stringify({v:1, setup:st.setup, items:st.items, dailyTarget:st.dailyTarget, log:st.log})); st.storageOk = true; }
+    try{ localStorage.setItem(KEY, JSON.stringify({v:1, setup:st.setup, items:st.items, dailyTarget:st.dailyTarget, log:st.log, setupDate:st.setupDate})); st.storageOk = true; }
     catch(e){ st.storageOk = false; toast('저장하지 못했어요. 이 브라우저 저장공간을 확인해 주세요.'); }
   }
   function load(){
@@ -212,6 +248,7 @@ button,input,select{font:inherit;color:inherit}
         if(Array.isArray(d.items) && d.items.length) st.items = d.items;
         if(d.dailyTarget) st.dailyTarget = d.dailyTarget;
         st.log = d.log && typeof d.log==='object' ? d.log : {};
+        st.setupDate = d.setupDate || null;
       }
     }catch(e){ st.storageOk = false; }
   }
@@ -220,6 +257,27 @@ button,input,select{font:inherit;color:inherit}
 
   function allEntries(){ return Object.entries(st.log).flatMap(([d,list]) => list.map(e => ({...e, d}))); }
   function dayTotal(d){ return (st.log[d]||[]).reduce((a,e)=>a+e.kcal,0); }
+  function dayStatus(k){
+    const t = today();
+    if(k>t) return 'future';
+    if(st.setupDate && k<st.setupDate) return 'before';
+    const v = dayTotal(k);
+    if(v===0) return 'free';
+    return v<=(st.dailyTarget||300) ? 'ok' : 'over';
+  }
+  function cumulativeFreeDays(){
+    if(!st.setupDate) return 0;
+    let d = st.setupDate, t = today(), n = 0;
+    while(d<=t){ if(dayStatus(d)==='free') n++; d = addDays(d,1); }
+    return n;
+  }
+  function freeStreak(){
+    let d = today(), n = 0;
+    while(st.setupDate && d>=st.setupDate){
+      if(dayStatus(d)==='free'){ n++; d = addDays(d,-1); } else break;
+    }
+    return n;
+  }
 
   function logEntry(itemId){
     const it = st.items.find(x=>x.id===itemId); if(!it) return;
@@ -332,6 +390,27 @@ button,input,select{font:inherit;color:inherit}
     }
   }
 
+  function renderFreeStats(){
+    $('freeStreak').textContent = freeStreak()+'일';
+    $('freeTotal').textContent = cumulativeFreeDays()+'일';
+  }
+
+  function renderCal(){
+    const t = today();
+    const cm = st.calMonth || t.slice(0,7);
+    const [cy,cmo] = cm.split('-').map(Number);
+    const first = new Date(cy, cmo-1, 1), lastDay = new Date(cy, cmo, 0).getDate(), lead = (first.getDay()+6)%7;
+    let cells = ['월','화','수','목','금','토','일'].map(w=>`<div class="wd">${w}</div>`).join('') + '<div></div>'.repeat(lead);
+    for(let i=1;i<=lastDay;i++){
+      const k = `${cm}-${pad(i)}`, s = dayStatus(k);
+      const label = {free:'무간식일', ok:'목표 이내', over:'목표 초과', future:'', before:''}[s] || '';
+      cells += `<div class="cell ${s} ${k===t?'now':''}" aria-label="${i}일 ${label}">${i}</div>`;
+    }
+    $('cal').innerHTML = `<div class="calhead"><button type="button" data-cal="-1" aria-label="이전 달">‹</button><b>${cy}년 ${cmo}월</b><button type="button" data-cal="1" aria-label="다음 달" ${cm>=t.slice(0,7)?'disabled':''}>›</button></div>
+      <div class="calgrid">${cells}</div>
+      <div class="legend"><span><span class="freei"></span>무간식일</span><span><span class="oki"></span>목표 이내</span><span><i style="background:var(--warn-soft)"></i>목표 초과</span></div>`;
+  }
+
   function renderWeek(){
     const t = today();
     const days = []; for(let i=6;i>=0;i--) days.push(addDays(t,-i));
@@ -364,14 +443,16 @@ button,input,select{font:inherit;color:inherit}
     renderBudget();
     renderPicker();
     renderBrag();
+    renderFreeStats();
     renderWeek();
+    renderCal();
     renderTimeline();
     renderSettingsItems();
     $('sTarget').value = st.dailyTarget;
   }
 
   async function backup(){
-    const text = JSON.stringify({app:'snack-kcal', v:1, exportedAt:new Date().toISOString(), items:st.items, dailyTarget:st.dailyTarget, log:st.log}, null, 1);
+    const text = JSON.stringify({app:'snack-kcal', v:1, exportedAt:new Date().toISOString(), items:st.items, dailyTarget:st.dailyTarget, log:st.log, setupDate:st.setupDate}, null, 1);
     const blob = new Blob([text], {type:'application/json'});
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a'); a.href = url; a.download = '간식칼로리-백업-'+today()+'.json';
@@ -389,6 +470,7 @@ button,input,select{font:inherit;color:inherit}
         if(Array.isArray(d.items)) st.items = d.items;
         if(d.dailyTarget) st.dailyTarget = d.dailyTarget;
         if(d.log) st.log = d.log;
+        if(d.setupDate) st.setupDate = d.setupDate;
         save(); render(); toast('백업을 불러왔어요.');
       }catch(e){ toast('간식 칼로리 백업 파일이 아니에요.'); }
     };
@@ -405,6 +487,7 @@ button,input,select{font:inherit;color:inherit}
     const target = num($('uTarget').value) || 300;
     st.dailyTarget = target;
     st.setup = true;
+    st.setupDate = today();
     save(); render(); window.scrollTo(0,0);
   });
 
@@ -421,6 +504,13 @@ button,input,select{font:inherit;color:inherit}
   $('timeline').addEventListener('click', e => {
     const b = e.target.closest('[data-del]'); if(!b) return;
     removeEntry(today(), b.dataset.del);
+  });
+  $('cal').addEventListener('click', e => {
+    const b = e.target.closest('[data-cal]'); if(!b) return;
+    const [y,m] = (st.calMonth||today().slice(0,7)).split('-').map(Number);
+    const nd = new Date(y, m-1+Number(b.dataset.cal), 1);
+    st.calMonth = ymd(nd).slice(0,7);
+    renderCal();
   });
 
   $('saveSet').addEventListener('click', () => {
