@@ -1,0 +1,506 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#F6F1EC">
+<title>간식 관찰일지</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Do+Hyeon&family=IBM+Plex+Sans+KR:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#F6F1EC; --surface:#FFFFFF; --ink:#241F1A; --muted:#726A60; --line:#E7DED2;
+  --accent:#C2703A; --accent-soft:#F5E1CE; --ok:#2F7D5B; --ok-soft:#DDF0E6; --warn:#B4541B; --focus:#2F5FD0;
+  --fest:#7A3B63; --fest-soft:#F3E2EC;
+  box-sizing:border-box; padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){ :root:not([data-theme="light"]){
+  --bg:#17140F; --surface:#211C16; --ink:#EFE9E1; --muted:#A79C8E; --line:#332C22;
+  --accent:#E39A5C; --accent-soft:#3A2A1A; --ok:#6FCB8A; --ok-soft:#1F3A27; --warn:#F0A060; --focus:#8AA8FF;
+  --fest:#D98CBB; --fest-soft:#3A2432; } }
+:root[data-theme="dark"]{
+  --bg:#17140F; --surface:#211C16; --ink:#EFE9E1; --muted:#A79C8E; --line:#332C22;
+  --accent:#E39A5C; --accent-soft:#3A2A1A; --ok:#6FCB8A; --ok-soft:#1F3A27; --warn:#F0A060; --focus:#8AA8FF;
+  --fest:#D98CBB; --fest-soft:#3A2432; }
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*::before,*::after{box-sizing:inherit}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"IBM Plex Sans KR","Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;font-size:15px;line-height:1.5;-webkit-text-size-adjust:100%}
+.d{font-family:"Do Hyeon","IBM Plex Sans KR",sans-serif;font-weight:400}
+main{max-width:520px;margin:0 auto;padding:12px 12px 40px}
+@media (min-width:860px){ main{max-width:680px;padding:28px 24px 56px} }
+h1{font-size:1rem;color:var(--muted);font-weight:500;margin:0 0 8px}
+h2{font-size:1.1rem;margin:0 0 8px}
+section{margin-top:20px}
+button,input,select{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+.muted{color:var(--muted)} .small{font-size:.82rem}
+.card{background:var(--surface);border-radius:16px;padding:14px}
+.copyright{text-align:center;font-size:.78rem;color:var(--muted);margin:0 0 14px}
+
+/* setup */
+.setup{background:var(--surface);border-radius:18px;padding:18px}
+.setup h2{margin-bottom:4px}
+.set{display:grid;gap:10px;margin-top:10px}
+.field{border:1px solid var(--line);background:var(--bg);border-radius:10px;padding:9px 11px;width:100%;font-size:.92rem}
+.itemrow{display:flex;align-items:center;gap:8px;background:var(--bg);border-radius:12px;padding:8px 10px}
+.itemrow input[type="checkbox"]{width:18px;height:18px;flex:0 0 auto}
+.itemrow .en{font-size:1.2rem;flex:0 0 auto}
+.itemrow .subin{flex:1;min-width:0}
+.itemrow .subin input{width:100%;border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:6px 8px;font-size:.82rem}
+.addrow{display:flex;gap:6px}
+.addrow input{flex:1}
+.btn{border:0;border-radius:10px;padding:10px 14px;font-weight:600;cursor:pointer;font-size:.92rem}
+.btn.primary{background:var(--ink);color:var(--bg)}
+.btn.ghost{background:var(--surface);border:1px solid var(--line)}
+.btn.small{padding:6px 10px;font-size:.82rem}
+.toggle-row{display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--bg);border-radius:12px;padding:10px 12px}
+.switch{position:relative;width:42px;height:24px;flex:0 0 auto}
+.switch input{position:absolute;opacity:0;width:100%;height:100%;margin:0;cursor:pointer}
+.switch .track{position:absolute;inset:0;background:var(--line);border-radius:999px;transition:background .15s}
+.switch .knob{position:absolute;top:2px;left:2px;width:20px;height:20px;background:var(--surface);border-radius:50%;transition:transform .15s;box-shadow:0 1px 2px rgba(0,0,0,.2)}
+.switch input:checked + .track{background:var(--accent)}
+.switch input:checked ~ .knob{transform:translateX(18px)}
+.daterow{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+
+/* quick log */
+.quick{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+@media (min-width:420px){ .quick{grid-template-columns:repeat(3,1fr)} }
+.qbtn{display:flex;flex-direction:column;align-items:center;gap:4px;background:var(--surface);border:1.5px solid transparent;border-radius:16px;padding:14px 8px;cursor:pointer;text-align:center}
+.qbtn:active{border-color:var(--accent)}
+.qbtn .en{font-size:1.8rem}
+.qbtn .n{font-size:.85rem;font-weight:600}
+.qbtn .cnt{font-size:.75rem;color:var(--muted)}
+
+/* substitution prompt */
+.subprompt{background:var(--accent-soft);border-radius:16px;padding:16px;margin-top:14px}
+.subprompt .en{font-size:2rem;text-align:center;display:block;margin-bottom:6px}
+.subprompt p{margin:0 0 12px;text-align:center;font-size:.95rem}
+.subprompt .row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.subprompt .row button{padding:12px 8px}
+.subprompt .ok{background:var(--ok);color:#fff}
+.subprompt .no{background:var(--surface);border:1px solid var(--line)}
+
+/* fest card */
+.fest{background:var(--fest-soft);border-radius:18px;padding:16px;margin-top:14px}
+.fest .kicker{font-size:.82rem;color:var(--fest);font-weight:600;margin:0 0 6px}
+.fest .row{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+.fest .chip{background:var(--surface);border-radius:999px;padding:6px 12px;font-size:.85rem;font-weight:600}
+.fest p.tip{margin:10px 0 0;font-size:.85rem;color:var(--muted)}
+
+/* stats */
+.stats{display:grid;gap:8px}
+.srow{display:grid;grid-template-columns:24px 1fr auto;gap:10px;align-items:center;background:var(--surface);border-radius:12px;padding:10px 12px}
+.srow .en{font-size:1.1rem}
+.srow .bar{height:8px;border-radius:99px;background:var(--line);overflow:hidden;margin-top:4px}
+.srow .bar i{display:block;height:100%;background:var(--accent)}
+.srow .num{font-family:"Do Hyeon",sans-serif;font-size:1.1rem}
+.peak{margin-top:10px;font-size:.85rem;color:var(--muted)}
+.brag{background:var(--ok-soft);border-radius:16px;padding:14px 16px;margin-top:12px}
+.brag p{margin:0 0 10px;font-size:.92rem;font-weight:600;color:var(--ink)}
+.brag button{background:var(--ok);color:#fff;border:0;border-radius:999px;padding:9px 16px;font-weight:600;font-size:.88rem;cursor:pointer}
+
+/* today list */
+.timeline{list-style:none;margin:0;padding:0;background:var(--surface);border-radius:14px;overflow:hidden}
+.timeline li{display:flex;justify-content:space-between;align-items:center;padding:9px 12px;border-bottom:1px solid var(--line);font-size:.88rem}
+.timeline li:last-child{border-bottom:0}
+.timeline .del{border:0;background:transparent;color:var(--muted);cursor:pointer;font-size:1rem;padding:2px 6px}
+.empty{padding:16px;text-align:center;color:var(--muted);font-size:.88rem}
+
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(18px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);padding:9px 14px;border-radius:12px;max-width:calc(100% - 28px);font-size:.9rem;z-index:5}
+.toast[hidden]{display:none}
+[hidden]{display:none !important}
+</style>
+</head>
+<body>
+<main>
+  <p class="copyright">© 2026 수쌤 · All rights reserved.</p>
+
+  <div class="setup" id="setup" hidden>
+    <h2 class="d">간식 관찰일지 시작하기</h2>
+    <p class="small muted" style="margin:0 0 10px">판단하거나 막지 않아요. 먹을 때마다 톡 눌러서 기록만 해봐요. 로그인 없이 이 휴대폰에만 저장돼요.</p>
+    <div class="set">
+      <div class="small muted" style="margin-bottom:-2px">관찰할 간식 (필요하면 대신 먹을 것도 적어두면, 먹으려 할 때 살짝 제안해줘요)</div>
+      <div id="setupItems"></div>
+      <div class="addrow">
+        <input id="newItem" class="field" type="text" maxlength="10" placeholder="+ 다른 간식 추가 (예: 초코파이)">
+        <button class="btn ghost small" id="addItemBtn" type="button">추가</button>
+      </div>
+      <div class="toggle-row">
+        <div>
+          <div style="font-weight:600;font-size:.9rem">명절·연휴 특별 모드</div>
+          <div class="small muted">그 기간엔 죄책감 없이 따로 모아서 보여줘요</div>
+        </div>
+        <label class="switch"><input type="checkbox" id="uFestOn"><span class="track"></span><span class="knob"></span></label>
+      </div>
+      <div class="daterow" id="uFestDates" hidden>
+        <label class="small muted">시작<input id="uFestStart" class="field" type="date"></label>
+        <label class="small muted">끝<input id="uFestEnd" class="field" type="date"></label>
+      </div>
+      <button class="btn primary" id="uStart" style="margin-top:4px">시작하기</button>
+    </div>
+  </div>
+
+  <div id="app" hidden>
+    <h1>간식 관찰일지</h1>
+
+    <div id="festCard"></div>
+
+    <section aria-labelledby="quickTitle">
+      <h2 id="quickTitle" class="d">지금 먹었어요</h2>
+      <div class="quick" id="quick"></div>
+    </section>
+
+    <div id="subPrompt"></div>
+
+    <section aria-labelledby="statsTitle">
+      <h2 id="statsTitle" class="d">이번 주 관찰</h2>
+      <div class="stats" id="stats"></div>
+      <p class="peak" id="peak"></p>
+      <div id="bragCard"></div>
+    </section>
+
+    <section aria-labelledby="todayTitle">
+      <h2 id="todayTitle" class="d">오늘 기록</h2>
+      <ul class="timeline" id="timeline"></ul>
+    </section>
+
+    <section>
+      <details class="card">
+        <summary style="cursor:pointer;font-weight:600">설정 · 대체 습관 · 백업</summary>
+        <div class="set" style="margin-top:12px">
+          <div class="small muted">관찰할 간식과 대체 습관</div>
+          <div id="settingsItems"></div>
+          <div class="addrow">
+            <input id="newItem2" class="field" type="text" maxlength="10" placeholder="+ 다른 간식 추가">
+            <button class="btn ghost small" id="addItemBtn2" type="button">추가</button>
+          </div>
+          <div class="toggle-row">
+            <div>
+              <div style="font-weight:600;font-size:.9rem">명절·연휴 특별 모드</div>
+              <div class="small muted">기간 안에서는 따로 모아 보여줘요</div>
+            </div>
+            <label class="switch"><input type="checkbox" id="sFestOn"><span class="track"></span><span class="knob"></span></label>
+          </div>
+          <div class="daterow" id="sFestDates" hidden>
+            <label class="small muted">시작<input id="sFestStart" class="field" type="date"></label>
+            <label class="small muted">끝<input id="sFestEnd" class="field" type="date"></label>
+          </div>
+          <button class="btn primary" id="saveSet">설정 저장하기</button>
+        </div>
+        <div style="margin-top:16px;font-weight:600">백업</div>
+        <p class="small muted" style="margin:2px 0 0">기록은 이 휴대폰 브라우저에만 있어요. 가끔 백업 파일을 받아 두면 폰을 바꿔도 되살릴 수 있어요.</p>
+        <div class="addrow" style="margin-top:8px">
+          <button class="btn primary small" id="backupBtn" type="button">백업 파일 받기</button>
+          <label class="btn ghost small" style="display:inline-flex;align-items:center">백업 불러오기<input id="restoreInput" type="file" accept=".json,application/json" style="position:absolute;width:1px;height:1px;opacity:0"></label>
+        </div>
+      </details>
+    </section>
+  </div>
+
+  <p style="text-align:center;margin:14px 0 0;font-size:.82rem"><a href="../" style="color:var(--muted)">← 소확앱 다른 앱 보기</a></p>
+</main>
+<div class="toast" id="toast" hidden></div>
+
+<script>
+(function(){
+  const DEFAULT_ITEMS = [
+    {id:'ivy',  e:'🍘', n:'아이비 크래커'},
+    {id:'hangwa',e:'🍯', n:'한과'},
+    {id:'oranda',e:'🍬', n:'오란다'},
+    {id:'songpyeon',e:'🥮', n:'송편'}
+  ];
+  const KEY = 'snack-journal-v1';
+  const $ = id => document.getElementById(id);
+  const pad = n => String(n).padStart(2,'0');
+  const ymd = d => d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
+  const parseDate = s => { const [y,m,d] = s.split('-').map(Number); return new Date(y,m-1,d); };
+  const addDays = (s,n) => { const d = parseDate(s); d.setDate(d.getDate()+n); return ymd(d); };
+  const today = () => ymd(new Date());
+  const esc = s => String(s??'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,7);
+  const weekStart = (s) => { const d = parseDate(s); d.setDate(d.getDate() - ((d.getDay()+6)%7)); return ymd(d); };
+
+  const st = {
+    setup:false,
+    items: DEFAULT_ITEMS.map(x=>({...x, sub:''})),
+    fest: {on:false, start:'', end:''},
+    log: {}, // date -> [{id, itemId, t(ms), substituted}]
+    storageOk:true
+  };
+  let toastTimer = null, pendingItem = null;
+
+  function save(){
+    try{ localStorage.setItem(KEY, JSON.stringify({v:1, setup:st.setup, items:st.items, fest:st.fest, log:st.log})); st.storageOk = true; }
+    catch(e){ st.storageOk = false; toast('저장하지 못했어요. 이 브라우저 저장공간을 확인해 주세요.'); }
+  }
+  function load(){
+    try{
+      const raw = localStorage.getItem(KEY);
+      if(raw){
+        const d = JSON.parse(raw);
+        st.setup = !!d.setup;
+        if(Array.isArray(d.items) && d.items.length) st.items = d.items;
+        if(d.fest) st.fest = {on:!!d.fest.on, start:d.fest.start||'', end:d.fest.end||''};
+        st.log = d.log && typeof d.log==='object' ? d.log : {};
+      }
+    }catch(e){ st.storageOk = false; }
+  }
+
+  function toast(msg){ $('toast').textContent = msg; $('toast').hidden = false; clearTimeout(toastTimer); toastTimer = setTimeout(()=>{ $('toast').hidden = true; }, 2600); }
+
+  function allEntries(){ return Object.entries(st.log).flatMap(([d,list]) => list.map(e => ({...e, d}))); }
+  function inFest(dateStr){ return st.fest.on && st.fest.start && st.fest.end && dateStr >= st.fest.start && dateStr <= st.fest.end; }
+  function todayInFest(){ return inFest(today()); }
+
+  function logEntry(itemId, substituted){
+    const d = today();
+    const entry = {id:uid(), itemId, t:Date.now(), substituted:!!substituted};
+    st.log[d] = [...(st.log[d]||[]), entry];
+    save(); render();
+    if(substituted) toast('대체 성공! 잘했어요 🙌');
+  }
+  function removeEntry(d, id){
+    if(!st.log[d]) return;
+    st.log[d] = st.log[d].filter(e=>e.id!==id);
+    if(!st.log[d].length) delete st.log[d];
+    save(); render();
+  }
+
+  // ---------- setup / settings item editors ----------
+  function itemEditorHtml(prefix){
+    return st.items.map((it,i) => `<div class="itemrow">
+      <input type="checkbox" data-${prefix}-on="${i}" ${it.active===false?'':'checked'} aria-label="${esc(it.n)} 관찰하기">
+      <span class="en">${esc(it.e||'🍪')}</span>
+      <div style="min-width:64px;font-size:.88rem">${esc(it.n)}</div>
+      <div class="subin"><input type="text" data-${prefix}-sub="${i}" value="${esc(it.sub||'')}" maxlength="16" placeholder="대신 먹을 것 (선택, 예: 오이 한 조각)"></div>
+    </div>`).join('');
+  }
+  function bindItemEditor(containerId, prefix){
+    const el = $(containerId);
+    el.addEventListener('input', e => {
+      const subI = e.target.dataset[prefix+'Sub'];
+      if(subI!==undefined){ st.items[Number(subI)].sub = e.target.value; }
+    });
+    el.addEventListener('change', e => {
+      const onI = e.target.dataset[prefix+'On'];
+      if(onI!==undefined){ st.items[Number(onI)].active = e.target.checked; }
+    });
+  }
+  function addItem(name){
+    const n = name.trim();
+    if(!n) return;
+    if(st.items.some(x=>x.n===n)){ toast('이미 있는 이름이에요.'); return; }
+    st.items.push({id:uid(), e:'🍪', n, sub:''});
+    renderSetupItems(); renderSettingsItems();
+  }
+  function renderSetupItems(){ $('setupItems').innerHTML = itemEditorHtml('u'); }
+  function renderSettingsItems(){ $('settingsItems').innerHTML = itemEditorHtml('s'); }
+
+  // ---------- render ----------
+  function renderFestToggleUI(onId, datesId, startId, endId){
+    const on = $(onId).checked;
+    $(datesId).hidden = !on;
+  }
+
+  function renderFestCard(){
+    if(!todayInFest()){ $('festCard').innerHTML = ''; return; }
+    const entries = allEntries().filter(e => e.d >= st.fest.start && e.d <= st.fest.end);
+    const byItem = {};
+    entries.forEach(e => { if(e.substituted) return; byItem[e.itemId] = (byItem[e.itemId]||0)+1; });
+    const chips = st.items.filter(it=>it.active!==false).map(it => `<span class="chip">${esc(it.e||'🍪')} ${esc(it.n)} ${byItem[it.id]||0}개째</span>`).join('');
+    $('festCard').innerHTML = `<div class="fest">
+      <p class="kicker">🎉 명절·연휴 특별판</p>
+      <div class="row">${chips}</div>
+      <p class="tip">괜찮아요, 명절이잖아요. 그냥 얼마나 먹었는지만 가볍게 모아봤어요.</p>
+    </div>`;
+  }
+
+  function renderQuick(){
+    const d = today();
+    const todays = st.log[d] || [];
+    $('quick').innerHTML = st.items.filter(it=>it.active!==false).map(it => {
+      const cnt = todays.filter(e=>e.itemId===it.id && !e.substituted).length;
+      return `<button type="button" class="qbtn" data-log="${it.id}">
+        <span class="en">${esc(it.e||'🍪')}</span>
+        <span class="n">${esc(it.n)}</span>
+        <span class="cnt">오늘 ${cnt}개</span>
+      </button>`;
+    }).join('');
+  }
+
+  function renderSubPrompt(){
+    if(!pendingItem){ $('subPrompt').innerHTML = ''; return; }
+    const it = st.items.find(x=>x.id===pendingItem);
+    if(!it || !it.sub){ pendingItem = null; $('subPrompt').innerHTML = ''; return; }
+    $('subPrompt').innerHTML = `<div class="subprompt">
+      <span class="en" aria-hidden="true">🌱</span>
+      <p><b>${esc(it.sub)}</b>은 어때요?</p>
+      <div class="row">
+        <button type="button" class="ok" data-sub-yes>대체 성공!</button>
+        <button type="button" class="no" data-sub-no>그냥 ${esc(it.n)} 먹을래요</button>
+      </div>
+    </div>`;
+  }
+
+  function renderStats(){
+    const ws = weekStart(today()), t = today();
+    const week = allEntries().filter(e => e.d>=ws && e.d<=t && !e.substituted);
+    const active = st.items.filter(it=>it.active!==false);
+    const max = Math.max(1, ...active.map(it => week.filter(e=>e.itemId===it.id).length));
+    $('stats').innerHTML = active.map(it => {
+      const n = week.filter(e=>e.itemId===it.id).length;
+      return `<div class="srow">
+        <span class="en">${esc(it.e||'🍪')}</span>
+        <div><div>${esc(it.n)}</div><div class="bar"><i style="width:${Math.round(n/max*100)}%"></i></div></div>
+        <span class="num d">${n}</span>
+      </div>`;
+    }).join('') || `<p class="empty">아직 기록이 없어요.</p>`;
+    if(week.length){
+      const hours = week.map(e => new Date(e.t).getHours());
+      const freq = {}; hours.forEach(h => freq[h]=(freq[h]||0)+1);
+      const peak = Object.entries(freq).sort((a,b)=>b[1]-a[1])[0];
+      const h = Number(peak[0]);
+      $('peak').textContent = `이번 주는 ${h}시~${h+1}시쯤 가장 많이 먹었어요.`;
+    } else $('peak').textContent = '';
+  }
+
+  function renderBrag(){
+    const ws = weekStart(today()), t = today();
+    const lastWs = weekStart(addDays(ws, -1));
+    const week = allEntries().filter(e => e.d>=ws && e.d<=t);
+    const lastWeek = allEntries().filter(e => e.d>=lastWs && e.d<ws);
+    const subCount = week.filter(e=>e.substituted).length;
+    const thisCount = week.filter(e=>!e.substituted).length;
+    const lastCount = lastWeek.filter(e=>!e.substituted).length;
+    const improved = lastWeek.length>0 && thisCount < lastCount;
+
+    let msg = '';
+    if(subCount>0 && improved) msg = `이번 주 간식 대신 다른 걸 ${subCount}번 선택했고, 간식도 지난주보다 줄었어요! 🎉`;
+    else if(subCount>0) msg = `이번 주 간식 대신 다른 걸 ${subCount}번 선택했어요! 🌱`;
+    else if(improved) msg = `이번 주 간식이 지난주(${lastCount}개)보다 ${lastCount-thisCount}개 줄었어요! 🎉`;
+
+    if(!msg){ $('bragCard').innerHTML = ''; return; }
+    $('bragCard').innerHTML = `<div class="brag"><p>${esc(msg)}</p><button type="button" id="bragBtn">🔗 친구에게 자랑하기</button></div>`;
+    $('bragBtn').addEventListener('click', () => shareBrag(msg));
+  }
+  async function shareBrag(msg){
+    const url = location.origin + location.pathname;
+    const text = `${msg} 나도 간식 관찰일지로 기록해보는 중이에요.`;
+    if(navigator.share){
+      try{ await navigator.share({title:'간식 관찰일지', text, url}); return; }
+      catch(e){ if(e && e.name==='AbortError') return; }
+    }
+    const btn = $('bragBtn'); const prev = btn ? btn.textContent : '';
+    try{
+      await navigator.clipboard.writeText(`${text}\n${url}`);
+      if(btn){ btn.textContent = '✅ 복사했어요'; setTimeout(()=>{ btn.textContent = prev; }, 2200); }
+    }catch(e){
+      if(btn){ btn.textContent = url; setTimeout(()=>{ btn.textContent = prev; }, 3000); }
+    }
+  }
+
+  function renderTimeline(){
+    const d = today();
+    const list = (st.log[d]||[]).slice().sort((a,b)=>b.t-a.t);
+    if(!list.length){ $('timeline').innerHTML = `<li class="empty" style="border:0">오늘은 아직 기록이 없어요.</li>`; return; }
+    $('timeline').innerHTML = list.map(e => {
+      const it = st.items.find(x=>x.id===e.itemId);
+      const time = new Date(e.t); const hh = pad(time.getHours()), mm = pad(time.getMinutes());
+      return `<li><span>${esc(it?.e||'🍪')} ${esc(it?.n||'?')}${e.substituted?' <span class="muted">(대체함)</span>':''}</span>
+        <span class="muted">${hh}:${mm}<button class="del" data-del="${e.id}" aria-label="지우기">×</button></span></li>`;
+    }).join('');
+  }
+
+  function render(){
+    $('setup').hidden = st.setup;
+    $('app').hidden = !st.setup;
+    if(!st.setup) return;
+    renderFestCard();
+    renderQuick();
+    renderSubPrompt();
+    renderStats();
+    renderBrag();
+    renderTimeline();
+    renderSettingsItems();
+    $('sFestOn').checked = st.fest.on;
+    $('sFestStart').value = st.fest.start;
+    $('sFestEnd').value = st.fest.end;
+    $('sFestDates').hidden = !st.fest.on;
+  }
+
+  // ---------- backup ----------
+  async function backup(){
+    const text = JSON.stringify({app:'snack-journal', v:1, exportedAt:new Date().toISOString(), items:st.items, fest:st.fest, log:st.log}, null, 1);
+    const blob = new Blob([text], {type:'application/json'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a'); a.href = url; a.download = '간식관찰일지-백업-'+today()+'.json';
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(()=>URL.revokeObjectURL(url), 4000);
+    toast('백업 파일을 받았어요.');
+  }
+  function restore(file){
+    if(!file) return;
+    const r = new FileReader();
+    r.onload = () => {
+      try{
+        const d = JSON.parse(r.result);
+        if(!d || d.app!=='snack-journal') throw 0;
+        if(Array.isArray(d.items)) st.items = d.items;
+        if(d.fest) st.fest = d.fest;
+        if(d.log) st.log = d.log;
+        save(); render(); toast('백업을 불러왔어요.');
+      }catch(e){ toast('간식 관찰일지 백업 파일이 아니에요.'); }
+    };
+    r.readAsText(file);
+  }
+
+  // ---------- events ----------
+  $('addItemBtn').addEventListener('click', () => { addItem($('newItem').value); $('newItem').value=''; });
+  $('newItem').addEventListener('keydown', e => { if(e.key==='Enter'){ e.preventDefault(); addItem($('newItem').value); $('newItem').value=''; } });
+  $('addItemBtn2').addEventListener('click', () => { addItem($('newItem2').value); $('newItem2').value=''; });
+  $('newItem2').addEventListener('keydown', e => { if(e.key==='Enter'){ e.preventDefault(); addItem($('newItem2').value); $('newItem2').value=''; } });
+
+  $('uFestOn').addEventListener('change', () => renderFestToggleUI('uFestOn','uFestDates'));
+
+  $('uStart').addEventListener('click', () => {
+    st.fest = {on:$('uFestOn').checked, start:$('uFestStart').value, end:$('uFestEnd').value};
+    if(st.fest.on && (!st.fest.start || !st.fest.end)){ toast('명절 모드를 켰으면 시작/끝 날짜를 정해 주세요.'); return; }
+    st.setup = true;
+    save(); render(); window.scrollTo(0,0);
+  });
+
+  bindItemEditor('setupItems', 'u');
+  bindItemEditor('settingsItems', 's');
+  renderSetupItems();
+
+  $('quick').addEventListener('click', e => {
+    const b = e.target.closest('[data-log]'); if(!b) return;
+    const it = st.items.find(x=>x.id===b.dataset.log);
+    if(it && it.sub){ pendingItem = it.id; renderSubPrompt(); }
+    else logEntry(b.dataset.log, false);
+  });
+  $('subPrompt').addEventListener('click', e => {
+    if(e.target.closest('[data-sub-yes]')){ logEntry(pendingItem, true); pendingItem = null; renderSubPrompt(); }
+    else if(e.target.closest('[data-sub-no]')){ logEntry(pendingItem, false); pendingItem = null; renderSubPrompt(); }
+  });
+  $('timeline').addEventListener('click', e => {
+    const b = e.target.closest('[data-del]'); if(!b) return;
+    removeEntry(today(), b.dataset.del);
+  });
+
+  $('sFestOn').addEventListener('change', () => renderFestToggleUI('sFestOn','sFestDates'));
+  $('saveSet').addEventListener('click', () => {
+    st.fest = {on:$('sFestOn').checked, start:$('sFestStart').value, end:$('sFestEnd').value};
+    if(st.fest.on && (!st.fest.start || !st.fest.end)){ toast('명절 모드를 켰으면 시작/끝 날짜를 정해 주세요.'); return; }
+    save(); render(); toast('설정을 저장했어요.');
+  });
+  $('backupBtn').addEventListener('click', backup);
+  $('restoreInput').addEventListener('change', e => { restore(e.target.files[0]); e.target.value=''; });
+
+  load();
+  render();
+})();
+</script>
+</body>
+</html>
