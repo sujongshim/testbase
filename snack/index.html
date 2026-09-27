@@ -37,13 +37,21 @@ button,input,select{font:inherit;color:inherit}
 
 .setup{background:var(--surface);border-radius:18px;padding:18px}
 .setup h2{margin-bottom:4px}
+.intro-list{margin:0 0 12px;padding-left:18px;display:grid;gap:4px}
+.intro-list li{line-height:1.4}
 .set{display:grid;gap:10px;margin-top:10px}
 .field{border:1px solid var(--line);background:var(--bg);border-radius:10px;padding:9px 11px;width:100%;font-size:.92rem}
-.itemrow{display:flex;align-items:center;gap:8px;background:var(--bg);border-radius:12px;padding:8px 10px}
+.grouphead{font-size:.8rem;color:var(--muted);font-weight:600;margin:12px 0 6px}
+.grouphead:first-child{margin-top:0}
+.grouphead.health{color:var(--ok)}
+.itemrow{display:flex;align-items:center;gap:8px;background:var(--bg);border-radius:12px;padding:8px 10px;margin-bottom:6px}
+.itemrow.health{box-shadow:inset 3px 0 0 var(--ok)}
 .itemrow .en{font-size:1.2rem;flex:0 0 auto}
 .itemrow .nm{flex:1;min-width:0;font-size:.9rem}
 .itemrow .kc{display:flex;align-items:center;gap:4px;flex:0 0 auto}
 .itemrow .kc input{width:56px;border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:6px 6px;font-size:.82rem;text-align:right}
+.itemrow .tag{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:5px 8px;font-size:.74rem;color:var(--muted);cursor:pointer;flex:0 0 auto}
+.itemrow .tag.health{border-color:var(--ok);color:var(--ok)}
 .itemrow .x{border:0;background:transparent;color:var(--muted);cursor:pointer;font-size:1rem;padding:2px 4px}
 .addrow{display:flex;gap:6px}
 .addrow input{flex:1}
@@ -62,6 +70,7 @@ button,input,select{font:inherit;color:inherit}
 .budget .bar i.over{background:var(--warn)}
 .streak{display:flex;align-items:center;gap:8px;margin-top:10px;font-size:.88rem;color:var(--muted)}
 .streak b{color:var(--ink)}
+.healthline{margin-top:6px;font-size:.85rem;color:var(--ok)}
 .cheatrow{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:10px;font-size:.83rem}
 .btn.cheat{background:var(--accent-soft);color:var(--accent)}
 .cell.cheat{background:var(--accent-soft);color:var(--accent);font-weight:700}
@@ -70,8 +79,12 @@ button,input,select{font:inherit;color:inherit}
 .logbtn{display:block;width:100%;background:var(--accent);color:#fff;border:0;border-radius:16px;padding:16px;font-size:1.05rem;font-weight:700;cursor:pointer;margin-top:14px}
 .picker{background:var(--surface);border-radius:16px;padding:14px;margin-top:10px}
 .picker p{margin:0 0 10px;font-size:.9rem;color:var(--muted)}
+.picker .grouplabel{font-size:.78rem;color:var(--muted);font-weight:600;margin:10px 0 6px}
+.picker .grouplabel:first-of-type{margin-top:0}
+.picker .grouplabel.health{color:var(--ok)}
 .chips{display:flex;flex-wrap:wrap;gap:8px}
 .chips button{border:1px solid var(--line);background:var(--bg);border-radius:12px;padding:9px 12px;font-size:.88rem;cursor:pointer;display:flex;align-items:center;gap:6px}
+.chips button.health{border-color:var(--ok);color:var(--ok)}
 .chips button .k{color:var(--muted);font-size:.78rem}
 .picker .cancel{margin-top:10px;background:transparent;border:0;color:var(--muted);font-size:.85rem;cursor:pointer;text-decoration:underline}
 
@@ -102,14 +115,17 @@ button,input,select{font:inherit;color:inherit}
 .cell{width:100%;min-width:0;height:auto;aspect-ratio:1;border-radius:8px;display:grid;place-items:center;font-size:.78rem;background:var(--bg);border:0;padding:0;color:var(--muted);position:relative}
 .cell.free{background:transparent;color:var(--ok);font-weight:700}
 .cell.free::before{content:"";position:absolute;inset:9%;border:3px solid var(--ok);border-radius:50%;transform:rotate(-8deg)}
-.cell.ok{color:var(--ink)}
-.cell.ok::after{content:"";position:absolute;left:50%;bottom:10%;width:5px;height:5px;margin-left:-2.5px;border-radius:50%;background:var(--ok);opacity:.8}
+.cell.healthy{background:transparent;color:var(--ok);font-weight:700}
+.cell.healthy::before{content:"";position:absolute;inset:9%;border:3px dashed var(--ok);border-radius:50%;transform:rotate(6deg)}
+.cell.ok{background:transparent;color:var(--accent);font-weight:700}
+.cell.ok::before{content:"";position:absolute;inset:9%;border:3px solid var(--accent);border-radius:50%;transform:rotate(5deg);opacity:.9}
 .cell.over{background:var(--warn-soft);color:var(--warn);font-weight:700}
 .cell.now{outline:2px solid var(--ink);outline-offset:-2px}
 .legend{display:flex;gap:10px;flex-wrap:wrap;margin-top:8px;font-size:.75rem;color:var(--muted)}
 .legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:4px;vertical-align:-1px}
 .freei{display:inline-block;width:11px;height:11px;border:2px solid var(--ok);border-radius:50%;margin-right:4px;vertical-align:-2px}
-.oki{display:inline-block;width:5px;height:5px;border-radius:50%;background:var(--ok);opacity:.8;margin:0 4px 1px 3px}
+.healthyi{display:inline-block;width:11px;height:11px;border:2px dashed var(--ok);border-radius:50%;margin-right:4px;vertical-align:-2px}
+.oki{display:inline-block;width:11px;height:11px;border:2px solid var(--accent);border-radius:50%;margin-right:4px;vertical-align:-2px}
 
 .timeline{list-style:none;margin:0;padding:0;background:var(--surface);border-radius:14px;overflow:hidden}
 .timeline li{display:flex;justify-content:space-between;align-items:center;padding:9px 12px;border-bottom:1px solid var(--line);font-size:.88rem}
@@ -128,15 +144,19 @@ button,input,select{font:inherit;color:inherit}
 
   <div class="setup" id="setup" hidden>
     <h2 class="d">간식만 참아봐요 시작하기</h2>
-    <p class="small muted" style="margin:0 0 10px">먹을 때마다 톡 눌러서 기록만 해요. 칼로리는 대략치예요.</p>
+    <ul class="intro-list small muted">
+      <li>먹을 때마다 톡 눌러서 기록만 해요. 칼로리는 대략치예요.</li>
+      <li>목표 이내로 하루를 마치면 달력에 수쌤이 도장을 콱 찍어드려요.</li>
+      <li>건강 간식으로만 채운 날도 도장을 받을 수 있어요.</li>
+    </ul>
     <div class="set">
-      <div class="small muted" style="margin-bottom:-2px">간식 종류와 대략 칼로리 (눌러서 고쳐도 돼요)</div>
+      <div class="small muted" style="margin-bottom:-2px">간식 종류와 대략 칼로리 (눌러서 고쳐도 돼요, 이름표를 누르면 간식/건강 간식이 바뀌어요)</div>
       <div id="setupItems"></div>
       <div class="addrow">
         <input id="newItem" class="field" type="text" maxlength="10" placeholder="+ 종류 추가 (예: 젤리)" list="foodList">
         <button class="btn ghost small" id="addItemBtn" type="button">추가</button>
       </div>
-      <p class="small muted" style="margin:-4px 0 0">이름을 적으면 흔한 간식은 칼로리를 자동으로 채워 드려요. 없는 이름이면 150kcal로 넣고, 숫자는 직접 고쳐도 돼요.</p>
+      <p class="small muted" style="margin:-4px 0 0">이름을 적으면 흔한 간식/건강 간식은 칼로리와 분류를 자동으로 채워 드려요. 없는 이름이면 간식 150kcal로 넣고, 나중에 고쳐도 돼요.</p>
       <label>하루 간식 칼로리 목표
         <input id="uTarget" class="field" type="text" inputmode="numeric" value="300">
       </label>
@@ -155,6 +175,7 @@ button,input,select{font:inherit;color:inherit}
       <div class="num d" id="todayNum">0kcal</div>
       <div class="bar"><i id="todayBar" style="width:0%"></i></div>
       <div class="streak" id="streakLine"></div>
+      <div class="healthline" id="healthLine"></div>
       <div class="cheatrow" id="cheatRow"></div>
     </div>
 
@@ -186,7 +207,7 @@ button,input,select{font:inherit;color:inherit}
       <details class="card">
         <summary style="cursor:pointer;font-weight:600">설정 · 백업</summary>
         <div class="set" style="margin-top:12px">
-          <div class="small muted">간식 종류와 칼로리</div>
+          <div class="small muted">간식 종류와 칼로리 (이름표를 누르면 분류가 바뀌어요)</div>
           <div id="settingsItems"></div>
           <div class="addrow">
             <input id="newItem2" class="field" type="text" maxlength="10" placeholder="+ 종류 추가" list="foodList">
@@ -218,28 +239,48 @@ button,input,select{font:inherit;color:inherit}
 <script>
 (function(){
   const DEFAULT_ITEMS = [
-    {id:'snack', e:'🍪', n:'과자',    kcal:150},
-    {id:'candy', e:'🍬', n:'사탕',    kcal:30},
-    {id:'bread', e:'🥐', n:'빵',      kcal:250},
-    {id:'etc',   e:'✨', n:'기타',    kcal:150}
+    {id:'snack',  e:'🍪', n:'과자',      kcal:150, cat:'snack',  gram:30},
+    {id:'candy',  e:'🍬', n:'사탕',      kcal:30,  cat:'snack',  gram:8},
+    {id:'bread',  e:'🥐', n:'빵',        kcal:250, cat:'snack',  gram:80},
+    {id:'yogurt', e:'🥣', n:'그릭요거트', kcal:100, cat:'health', gram:100, protein:10},
+    {id:'almond', e:'🌰', n:'아몬드',    kcal:170, cat:'health', gram:28,  protein:6},
+    {id:'tomato', e:'🍅', n:'방울토마토', kcal:30,  cat:'health', gram:150, protein:1},
+    {id:'etc',    e:'✨', n:'기타',      kcal:150, cat:'snack',  gram:30}
   ];
-  // 흔한 간식 이름 -> 대략 칼로리(1인분/1개 기준). 서버나 DB 없이 이 목록에서만 찾아요.
+  // 흔한 간식/건강 간식 이름 -> 대략 칼로리 + g + 분류(1인분/1개 기준, 건강 간식은 단백질도 함께). 서버나 DB 없이 이 목록에서만 찾아요.
   const FOOD_KCAL = {
-    '과자':150,'사탕':30,'빵':250,'아이스크림':200,'초콜릿':250,'초코파이':170,
-    '감자칩':500,'포카칩':500,'새우깡':458,'꼬북칩':480,'수미칩':480,
-    '젤리':350,'껌':5,'마카롱':90,'도넛':300,'쿠키':80,'크래커':200,
-    '요거트':120,'푸딩':150,'바나나':100,'사과':95,'귤':50,'딸기':40,
-    '우유':130,'두유':120,'커피믹스':50,'라떼':150,'콜라':140,'사이다':140,
-    '어묵':50,'떡볶이':450,'순대':300,'튀김':200,'핫도그':350,'붕어빵':180,
-    '계란':80,'삶은계란':80,'견과류':170,'초코송이':190,'홈런볼':200,
-    '몽쉘':200,'빼빼로':290,'커스타드':210,'롤케이크':250,'약과':130,
-    '치즈스틱':100,'와플':280,'번':250,'라면':500,'과일':60,
-    '그릭요거트':100,'아몬드':170,'방울토마토':30
+    '과자':{kcal:150,gram:30,cat:'snack'},'사탕':{kcal:30,gram:8,cat:'snack'},'빵':{kcal:250,gram:80,cat:'snack'},
+    '아이스크림':{kcal:200,gram:100,cat:'snack'},'초콜릿':{kcal:250,gram:45,cat:'snack'},'초코파이':{kcal:170,gram:39,cat:'snack'},
+    '감자칩':{kcal:500,gram:90,cat:'snack'},'포카칩':{kcal:500,gram:90,cat:'snack'},'새우깡':{kcal:458,gram:90,cat:'snack'},
+    '꼬북칩':{kcal:480,gram:100,cat:'snack'},'수미칩':{kcal:480,gram:90,cat:'snack'},'젤리':{kcal:350,gram:100,cat:'snack'},
+    '껌':{kcal:5,gram:3,cat:'snack'},'마카롱':{kcal:90,gram:25,cat:'snack'},'도넛':{kcal:300,gram:70,cat:'snack'},
+    '쿠키':{kcal:80,gram:15,cat:'snack'},'크래커':{kcal:200,gram:50,cat:'snack'},'푸딩':{kcal:150,gram:100,cat:'snack'},
+    '커피믹스':{kcal:50,gram:12,cat:'snack'},'라떼':{kcal:150,gram:200,cat:'snack'},'콜라':{kcal:140,gram:250,cat:'snack'},
+    '사이다':{kcal:140,gram:250,cat:'snack'},'어묵':{kcal:50,gram:50,cat:'snack'},'떡볶이':{kcal:450,gram:300,cat:'snack'},
+    '순대':{kcal:300,gram:200,cat:'snack'},'튀김':{kcal:200,gram:80,cat:'snack'},'핫도그':{kcal:350,gram:100,cat:'snack'},
+    '붕어빵':{kcal:180,gram:90,cat:'snack'},'초코송이':{kcal:190,gram:36,cat:'snack'},'홈런볼':{kcal:200,gram:43,cat:'snack'},
+    '몽쉘':{kcal:200,gram:34,cat:'snack'},'빼빼로':{kcal:290,gram:54,cat:'snack'},'커스타드':{kcal:210,gram:50,cat:'snack'},
+    '롤케이크':{kcal:250,gram:80,cat:'snack'},'약과':{kcal:130,gram:30,cat:'snack'},'와플':{kcal:280,gram:90,cat:'snack'},
+    '번':{kcal:250,gram:80,cat:'snack'},'라면':{kcal:500,gram:120,cat:'snack'},
+    '요거트':{kcal:120,gram:100,protein:5,cat:'health'},'그릭요거트':{kcal:100,gram:100,protein:10,cat:'health'},
+    '아몬드':{kcal:170,gram:28,protein:6,cat:'health'},'방울토마토':{kcal:30,gram:150,protein:1,cat:'health'},
+    '견과류':{kcal:170,gram:30,protein:6,cat:'health'},'바나나':{kcal:100,gram:100,protein:1,cat:'health'},
+    '사과':{kcal:95,gram:200,protein:1,cat:'health'},'귤':{kcal:50,gram:100,protein:1,cat:'health'},
+    '딸기':{kcal:40,gram:100,protein:1,cat:'health'},'우유':{kcal:130,gram:200,protein:7,cat:'health'},
+    '두유':{kcal:120,gram:200,protein:8,cat:'health'},'계란':{kcal:80,gram:50,protein:6,cat:'health'},
+    '삶은계란':{kcal:80,gram:50,protein:6,cat:'health'},'치즈스틱':{kcal:100,gram:20,protein:6,cat:'health'},
+    '과일':{kcal:60,gram:100,protein:1,cat:'health'}
   };
-  function lookupKcal(name){
+  function lookupFood(name){
     if(FOOD_KCAL[name] != null) return FOOD_KCAL[name];
     const hit = Object.keys(FOOD_KCAL).find(k => name.includes(k) || k.includes(name));
     return hit ? FOOD_KCAL[hit] : null;
+  }
+  function foodLabel(it){
+    let s = esc(it.n);
+    if(it.gram) s += ` <span class="muted">${it.gram}g</span>`;
+    if(it.cat==='health' && it.protein!=null) s += ` <span class="muted">(단백질 ${it.protein}g)</span>`;
+    return s;
   }
   const KEY = 'snack-kcal-v1';
   const $ = id => document.getElementById(id);
@@ -286,8 +327,14 @@ button,input,select{font:inherit;color:inherit}
 
   function toast(msg){ $('toast').textContent = msg; $('toast').hidden = false; clearTimeout(toastTimer); toastTimer = setTimeout(()=>{ $('toast').hidden = true; }, 2600); }
 
-  function allEntries(){ return Object.entries(st.log).flatMap(([d,list]) => list.map(e => ({...e, d}))); }
   function dayTotal(d){ return (st.log[d]||[]).reduce((a,e)=>a+e.kcal,0); }
+  function dayHealthCount(d){ return (st.log[d]||[]).filter(e=>{ const it=st.items.find(x=>x.id===e.itemId); return it && it.cat==='health'; }).length; }
+  // 그 날 기록한 항목이 하나 이상이고, 전부 '건강 간식'이면 정크 간식은 안 먹은 날로 쳐요.
+  function dayAllHealthy(d){
+    const list = st.log[d]||[];
+    if(!list.length) return false;
+    return list.every(e => { const it = st.items.find(x=>x.id===e.itemId); return it && it.cat==='health'; });
+  }
   function dayStatus(k){
     const t = today();
     if(k>t) return 'future';
@@ -295,8 +342,10 @@ button,input,select{font:inherit;color:inherit}
     if(st.cheat[k]) return 'cheat';
     const v = dayTotal(k);
     if(v===0) return 'free';
+    if(dayAllHealthy(k)) return 'healthy';
     return v<=(st.dailyTarget||300) ? 'ok' : 'over';
   }
+  function isSuccessDay(k){ const s = dayStatus(k); return s==='free' || s==='healthy'; }
   function useCheat(){
     const d = today();
     if(st.cheat[d]) delete st.cheat[d];
@@ -306,13 +355,13 @@ button,input,select{font:inherit;color:inherit}
   function cumulativeFreeDays(){
     if(!st.setupDate) return 0;
     let d = st.setupDate, t = today(), n = 0;
-    while(d<=t){ if(dayStatus(d)==='free') n++; d = addDays(d,1); }
+    while(d<=t){ if(isSuccessDay(d)) n++; d = addDays(d,1); }
     return n;
   }
   function freeStreak(){
     let d = today(), n = 0;
     while(st.setupDate && d>=st.setupDate){
-      if(dayStatus(d)==='free'){ n++; d = addDays(d,-1); } else break;
+      if(isSuccessDay(d)){ n++; d = addDays(d,-1); } else break;
     }
     return n;
   }
@@ -333,12 +382,19 @@ button,input,select{font:inherit;color:inherit}
 
   // ---------- item editors ----------
   function itemEditorHtml(){
-    return st.items.map((it,i) => `<div class="itemrow">
-      <span class="en">${esc(it.e||'🍪')}</span>
-      <span class="nm">${esc(it.n)}</span>
-      <span class="kc"><input type="text" inputmode="numeric" data-kcal="${i}" value="${it.kcal}"><span class="small muted">kcal</span></span>
-      <button type="button" class="x" data-rmitem="${i}" aria-label="${esc(it.n)} 삭제">×</button>
-    </div>`).join('');
+    const groups = [['snack','간식'], ['health','건강 간식 🌿']];
+    return groups.map(([cat,label]) => {
+      const rows = st.items.map((it,i)=>({it,i})).filter(o => (o.it.cat||'snack')===cat);
+      if(!rows.length) return '';
+      return `<div class="grouphead ${cat==='health'?'health':''}">${label}</div>` +
+        rows.map(({it,i}) => `<div class="itemrow ${cat==='health'?'health':''}">
+          <span class="en">${esc(it.e||'🍪')}</span>
+          <span class="nm">${foodLabel(it)}</span>
+          <button type="button" class="tag ${cat==='health'?'health':''}" data-togglecat="${i}">${cat==='health'?'🌿 건강':'간식'}</button>
+          <span class="kc"><input type="text" inputmode="numeric" data-kcal="${i}" value="${it.kcal}"><span class="small muted">kcal</span></span>
+          <button type="button" class="x" data-rmitem="${i}" aria-label="${esc(it.n)} 삭제">×</button>
+        </div>`).join('');
+    }).join('');
   }
   function bindItemEditor(containerId){
     const el = $(containerId);
@@ -347,19 +403,26 @@ button,input,select{font:inherit;color:inherit}
       if(i!==undefined) st.items[Number(i)].kcal = num(e.target.value);
     });
     el.addEventListener('click', e => {
+      const t = e.target.closest('[data-togglecat]');
+      if(t){
+        const it = st.items[Number(t.dataset.togglecat)];
+        it.cat = (it.cat||'snack')==='health' ? 'snack' : 'health';
+        save(); renderSetupItems(); renderSettingsItems(); render();
+        return;
+      }
       const b = e.target.closest('[data-rmitem]'); if(!b) return;
       st.items.splice(Number(b.dataset.rmitem),1);
-      renderSetupItems(); renderSettingsItems();
+      save(); renderSetupItems(); renderSettingsItems();
     });
   }
   function addItem(name){
     const n = name.trim();
     if(!n) return;
     if(st.items.some(x=>x.n===n)){ toast('이미 있는 이름이에요.'); return; }
-    const known = lookupKcal(n);
-    st.items.push({id:uid(), e:'🍪', n, kcal: known!=null ? known : 150});
-    renderSetupItems(); renderSettingsItems();
-    toast(known!=null ? `${n} 칼로리를 자동으로 채웠어요. (${known}kcal)` : `${n}을(를) 150kcal로 넣었어요. 숫자는 고쳐도 돼요.`);
+    const known = lookupFood(n);
+    st.items.push({id:uid(), e: known && known.cat==='health' ? '🌿' : '🍪', n, kcal: known ? known.kcal : 150, cat: known ? known.cat : 'snack', gram: known ? known.gram : undefined, protein: known ? known.protein : undefined});
+    save(); renderSetupItems(); renderSettingsItems();
+    toast(known ? `${n} · ${known.kcal}kcal · ${known.cat==='health'?'건강 간식':'간식'}으로 채웠어요.` : `${n}을(를) 간식 150kcal로 넣었어요. 이름표를 누르면 분류를 바꿀 수 있어요.`);
   }
   function renderSetupItems(){ $('setupItems').innerHTML = itemEditorHtml(); }
   function renderSettingsItems(){ $('settingsItems').innerHTML = itemEditorHtml(); }
@@ -374,17 +437,19 @@ button,input,select{font:inherit;color:inherit}
     $('todayBar').style.width = pct+'%';
     $('todayBar').classList.toggle('over', over);
 
-    // streak: consecutive days (ending today) that are 'ok'/'free'/'cheat' (cheat days are excused, don't break it but don't count up either)
     let streak = 0, d2 = d, guard = 0;
     while(st.setupDate && d2>=st.setupDate && guard<366){
       guard++;
       const s = dayStatus(d2);
       if(s==='cheat'){ d2 = addDays(d2,-1); continue; }
-      if(s==='ok' || s==='free'){ streak++; d2 = addDays(d2,-1); }
+      if(s==='ok' || s==='free' || s==='healthy'){ streak++; d2 = addDays(d2,-1); }
       else break;
     }
     $('streakLine').innerHTML = isCheat ? `🎉 오늘은 치팅 데이예요. 내일 다시 이어가요.`
       : streak>0 ? `🔥 목표 이내로 <b>${streak}일째</b> 이어가는 중` : `오늘부터 시작해봐요`;
+
+    const hc = dayHealthCount(d);
+    $('healthLine').textContent = hc>0 ? `🌿 오늘 건강 간식으로 ${hc}번 골랐어요` : '';
   }
   function renderCheatRow(){
     const isCheat = !!st.cheat[today()];
@@ -394,9 +459,13 @@ button,input,select{font:inherit;color:inherit}
 
   function renderPicker(){
     if(!pickerOpen){ $('picker').innerHTML = ''; return; }
+    const snackItems = st.items.filter(it=>(it.cat||'snack')==='snack');
+    const healthItems = st.items.filter(it=>it.cat==='health');
+    const chip = it => `<button type="button" class="${it.cat==='health'?'health':''}" data-pick="${it.id}">${esc(it.e||'🍪')} ${foodLabel(it)} <span class="k">${it.kcal}kcal</span></button>`;
     $('picker').innerHTML = `<div class="picker">
       <p>무슨 간식이었어요?</p>
-      <div class="chips">${st.items.map(it => `<button type="button" data-pick="${it.id}">${esc(it.e||'🍪')} ${esc(it.n)} <span class="k">${it.kcal}kcal</span></button>`).join('')}</div>
+      ${snackItems.length ? `<div class="grouplabel">간식</div><div class="chips">${snackItems.map(chip).join('')}</div>` : ''}
+      ${healthItems.length ? `<div class="grouplabel health">건강 간식 🌿</div><div class="chips">${healthItems.map(chip).join('')}</div>` : ''}
       <button type="button" class="cancel" id="pickerCancel">취소</button>
     </div>`;
   }
@@ -451,12 +520,12 @@ button,input,select{font:inherit;color:inherit}
     let cells = ['월','화','수','목','금','토','일'].map(w=>`<div class="wd">${w}</div>`).join('') + '<div></div>'.repeat(lead);
     for(let i=1;i<=lastDay;i++){
       const k = `${cm}-${pad(i)}`, s = dayStatus(k);
-      const label = {free:'무간식일', ok:'목표 이내', over:'목표 초과', cheat:'치팅 데이', future:'', before:''}[s] || '';
+      const label = {free:'무간식일', healthy:'건강 간식으로 대체', ok:'목표 이내', over:'목표 초과', cheat:'치팅 데이', future:'', before:''}[s] || '';
       cells += `<div class="cell ${s} ${k===t?'now':''}" aria-label="${i}일 ${label}">${i}</div>`;
     }
     $('cal').innerHTML = `<div class="calhead"><button type="button" data-cal="-1" aria-label="이전 달">‹</button><b>${cy}년 ${cmo}월</b><button type="button" data-cal="1" aria-label="다음 달" ${cm>=t.slice(0,7)?'disabled':''}>›</button></div>
       <div class="calgrid">${cells}</div>
-      <div class="legend"><span><span class="freei"></span>무간식일</span><span><span class="oki"></span>목표 이내</span><span><i style="background:var(--warn-soft)"></i>목표 초과</span><span><i style="background:var(--accent-soft)"></i>치팅 데이</span></div>`;
+      <div class="legend"><span><span class="freei"></span>무간식일</span><span><span class="healthyi"></span>건강 간식으로 대체</span><span><span class="oki"></span>목표 이내</span><span><i style="background:var(--warn-soft)"></i>목표 초과</span><span><i style="background:var(--accent-soft)"></i>치팅 데이</span></div>`;
   }
 
   function renderWeek(){
@@ -479,7 +548,8 @@ button,input,select{font:inherit;color:inherit}
     $('timeline').innerHTML = list.map(e => {
       const it = st.items.find(x=>x.id===e.itemId);
       const time = new Date(e.t); const hh = pad(time.getHours()), mm = pad(time.getMinutes());
-      return `<li><span>${esc(it?.e||'🍪')} ${esc(it?.n||'?')} · ${e.kcal}kcal</span>
+      const healthMark = it && it.cat==='health' ? '🌿 ' : '';
+      return `<li><span>${healthMark}${esc(it?.e||'🍪')} ${esc(it?.n||'?')} · ${e.kcal}kcal</span>
         <span class="muted">${hh}:${mm}<button class="del" data-del="${e.id}" aria-label="지우기">×</button></span></li>`;
     }).join('');
   }
