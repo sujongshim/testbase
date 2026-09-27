@@ -147,7 +147,10 @@ textarea.field{resize:vertical;min-height:64px}
 </head>
 <body>
 <main>
-  <p class="copyright">© 2026 수쌤 · All rights reserved.</p>
+  <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin:0 0 14px">
+    <p class="copyright" style="margin:0">© 2026 수쌤 · All rights reserved.</p>
+    <button type="button" id="resetBtn" style="border:0;background:transparent;color:var(--muted);text-decoration:underline;cursor:pointer;font-size:.78rem;padding:2px;white-space:nowrap">다시 시작하기</button>
+  </div>
   <div class="setup" id="setup" hidden>
     <h2 class="d">한 쪽 독서 시작하기</h2>
     <p class="small muted" style="margin:0 0 12px">바쁜 날에도 읽을 수 있을 만큼만 정하세요. 한 쪽이라도 매일 읽는 게 이겨요.</p>
@@ -671,9 +674,6 @@ textarea.field{resize:vertical;min-height:64px}
         <p class="small muted" style="margin:6px 0 0">기록은 이 휴대폰 브라우저에만 있어요. 가끔 백업 파일을 받아 두세요.</p>
         <div class="btnrow" style="margin-top:0"><button class="btn primary" data-act="backup">백업 파일 받기</button>
           <label class="btn ghost" style="display:inline-block">백업 불러오기<input id="restoreInput" class="filepick" type="file" accept=".json,application/json"></label></div>
-        <div style="margin-top:16px">
-          <button type="button" class="btn ghost" data-act="reset" style="color:var(--rest)">${resetArmed?'정말요? 다시 누르면 전부 지워져요':'다시 시작하기 (모든 기록 초기화)'}</button>
-        </div>
       </div></section>`;
   }
 
@@ -725,16 +725,17 @@ textarea.field{resize:vertical;min-height:64px}
       else if(a==='unphoto'){ const keep = keepForm(); clearPending(); render(); restoreForm(keep); }
       else if(a==='opennoteform'){ st.notesForm = true; clearPending(); render(); }
       else if(a==='closenoteform'){ st.notesForm = false; clearPending(); render(); }
-      else if(a==='reset'){
-        if(!resetArmed){
-          resetArmed = true; render();
-          resetTimer = setTimeout(() => { resetArmed = false; render(); }, 4000);
-        } else {
-          clearTimeout(resetTimer);
-          localStorage.removeItem(KEY);
-          location.reload();
-        }
-      }
+    }
+  });
+  $('resetBtn').addEventListener('click', () => {
+    if(!resetArmed){
+      resetArmed = true;
+      $('resetBtn').textContent = '정말요? 다시 누르면 전부 지워져요';
+      resetTimer = setTimeout(() => { resetArmed = false; $('resetBtn').textContent = '다시 시작하기'; }, 4000);
+    } else {
+      clearTimeout(resetTimer);
+      localStorage.removeItem(KEY);
+      location.reload();
     }
   });
   document.querySelector('main').addEventListener('change', e => { if(e.target.id==='restoreInput'){ restore(e.target.files[0]); e.target.value = ''; } else if(e.target.hasAttribute('data-photoin')){ const f = e.target.files[0]; e.target.value = ''; pickPhoto(f); } });
