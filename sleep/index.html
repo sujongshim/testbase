@@ -94,6 +94,8 @@ details.panel summary{cursor:pointer;font-weight:600}
 .form{display:grid;gap:8px;margin-top:10px}
 .form label{display:grid;gap:3px;font-size:.84rem;color:var(--muted)}
 .two{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.timesel{display:flex;gap:6px}
+.timesel select{flex:1;min-width:0}
 .btnrow{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
 .filepick{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
 .warnbox{background:var(--surface);border-left:4px solid var(--night);border-radius:12px;padding:10px 12px;margin-top:10px;font-size:.85rem}
@@ -115,8 +117,8 @@ details.panel summary{cursor:pointer;font-weight:600}
     <h2 class="d">잘 자요 · 수면 목표 정하기</h2>
     <p class="small muted" style="margin:0 0 4px">매일 같은 시간에 자고 일어나는 게 가장 중요해요. 나중에 바꿀 수 있어요.</p>
     <div class="form">
-      <div class="two"><label>잠자리에 들 시각<input id="uBed" class="field" type="time" value="23:00"></label>
-        <label>일어날 시각<input id="uWake" class="field" type="time" value="06:00"></label></div>
+      <div class="two"><label>잠자리에 들 시각<div class="timesel"><select id="uBedH" class="field"></select><select id="uBedM" class="field"></select></div></label>
+        <label>일어날 시각<div class="timesel"><select id="uWakeH" class="field"></select><select id="uWakeM" class="field"></select></div></label></div>
       <div class="two"><label>최소 수면 (시간)<input id="uMin" class="field" type="number" inputmode="decimal" step="0.5" min="4" max="12" value="7"></label>
         <label>적정 최대 (시간)<input id="uMax" class="field" type="number" inputmode="decimal" step="0.5" min="4" max="12" value="8"></label></div>
       <button class="btn primary" id="uStart">시작하기</button>
@@ -152,7 +154,7 @@ details.panel summary{cursor:pointer;font-weight:600}
       <details class="panel" id="setPanel">
         <summary>목표 바꾸기 · 지난 잠 추가 · 백업</summary>
         <div class="form">
-          <div class="two"><label>잠자리에 들 시각<input id="sBed" class="field" type="time"></label><label>일어날 시각<input id="sWake" class="field" type="time"></label></div>
+          <div class="two"><label>잠자리에 들 시각<div class="timesel"><select id="sBedH" class="field"></select><select id="sBedM" class="field"></select></div></label><label>일어날 시각<div class="timesel"><select id="sWakeH" class="field"></select><select id="sWakeM" class="field"></select></div></label></div>
           <div class="two"><label>최소 수면 (시간)<input id="sMin" class="field" type="number" inputmode="decimal" step="0.5" min="4" max="12"></label><label>적정 최대 (시간)<input id="sMax" class="field" type="number" inputmode="decimal" step="0.5" min="4" max="12"></label></div>
           <button class="btn primary" id="saveGoal">목표 저장</button>
         </div>
@@ -189,6 +191,16 @@ details.panel summary{cursor:pointer;font-weight:600}
   const addDays = (s,n) => { const d = parse(s); d.setDate(d.getDate()+n); return ymd(d); };
   const toLocal = ms => { const d = new Date(ms); return ymd(d)+'T'+pad(d.getHours())+':'+pad(d.getMinutes()); };
   const fromLocal = s => s ? new Date(s).getTime() : NaN;
+  function fillTimeSelect(hId, mId){
+    $(hId).innerHTML = Array.from({length:24}, (_,h) => `<option value="${pad(h)}">${pad(h)}시</option>`).join('');
+    $(mId).innerHTML = Array.from({length:12}, (_,i) => `<option value="${pad(i*5)}">${pad(i*5)}분</option>`).join('');
+  }
+  function setTimeSelect(hId, mId, hhmm){
+    const [h,m] = hhmm.split(':').map(Number);
+    $(hId).value = pad(h);
+    $(mId).value = pad(Math.round(m/5)*5 % 60);
+  }
+  const getTimeSelect = (hId, mId) => `${$(hId).value}:${$(mId).value}`;
   const hm = ms => { const m = Math.round(Math.max(0,ms)/M), h = Math.floor(m/60), r = m%60; return h ? (r ? `${h}시간 ${r}분` : `${h}시간`) : `${r}분`; };
   const clk = ms => { const m = Math.floor(Math.max(0,ms)/M); return Math.floor(m/60)+':'+pad(m%60); };
   const tstr = ms => new Date(ms).toLocaleTimeString('ko-KR',{hour:'numeric',minute:'2-digit'});
@@ -403,14 +415,14 @@ details.panel summary{cursor:pointer;font-weight:600}
       : `<li class="empty">아직 기록이 없어요. 오늘 밤 '잠자리에 들기'를 눌러 보세요.</li>`;
 
     const setv = (id,v) => { if(document.activeElement!==$(id)) $(id).value = v; };
-    if(!$('setPanel').open){ setv('sBed', g.bed); setv('sWake', g.wake); setv('sMin', g.min); setv('sMax', g.max); }
+    if(!$('setPanel').open){ setTimeSelect('sBedH','sBedM', g.bed); setTimeSelect('sWakeH','sWakeM', g.wake); setv('sMin', g.min); setv('sMax', g.max); }
     if(!$('aEnd').value){ const e = new Date(); e.setHours(...g.wake.split(':').map(Number),0,0); if(e.getTime()>Date.now()) e.setDate(e.getDate()-1); $('aEnd').value = toLocal(e.getTime()); $('aStart').value = toLocal(e.getTime() - g.min*HR); }
     $('mode').textContent = st.storageOk ? '기록은 이 기기의 브라우저에만 저장돼요. 로그인은 필요 없어요.' : '지금은 저장이 되지 않는 상태예요.';
   }
 
   // ---------- events ----------
   function readGoal(p){
-    const bed = $(p+'Bed').value, wake = $(p+'Wake').value, mn = Number($(p+'Min').value), mx = Number($(p+'Max').value);
+    const bed = getTimeSelect(p+'BedH', p+'BedM'), wake = getTimeSelect(p+'WakeH', p+'WakeM'), mn = Number($(p+'Min').value), mx = Number($(p+'Max').value);
     if(!bed || !wake){ toast('시각을 모두 정해 주세요.'); return null; }
     if(!(mn>=4 && mn<=12) || !(mx>=mn && mx<=12)){ toast('수면 시간은 4~12시간, 최대는 최소보다 크게 적어 주세요.'); return null; }
     return {bed, wake, min:mn, max:mx};
@@ -448,6 +460,10 @@ details.panel summary{cursor:pointer;font-weight:600}
   $('toastUndo').addEventListener('click', () => { if(undoFn){ undoFn(); undoFn = null; } $('toast').hidden = true; });
   setInterval(() => { if(st.setup && !st.editing) renderTimer(); }, 15000);
   document.addEventListener('visibilitychange', () => { if(document.visibilityState==='visible') render(); });
+
+  fillTimeSelect('uBedH','uBedM'); fillTimeSelect('uWakeH','uWakeM');
+  fillTimeSelect('sBedH','sBedM'); fillTimeSelect('sWakeH','sWakeM');
+  setTimeSelect('uBedH','uBedM','23:00'); setTimeSelect('uWakeH','uWakeM','06:00');
 
   load(); render();
 })();
