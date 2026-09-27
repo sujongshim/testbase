@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#F6F1EC">
-<title>간식 칼로리 기록</title>
+<title>간식만 참아봐요</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Do+Hyeon&family=IBM+Plex+Sans+KR:wght@400;500;600&display=swap" rel="stylesheet">
@@ -87,7 +87,8 @@ button,input,select{font:inherit;color:inherit}
 .week .col .b.today{background:var(--accent)}
 .week .col span{font-size:.72rem;color:var(--muted)}
 
-.quote{text-align:center;font-size:1.05rem;font-weight:700;color:var(--ok);margin:0 0 14px;line-height:1.5}
+.quote{text-align:center;font-size:1.05rem;font-weight:700;color:var(--ok);margin:0 0 4px;line-height:1.5}
+.quote2{text-align:center;font-size:.85rem;color:var(--muted);margin:0 0 14px;line-height:1.4}
 .freerow{display:flex;gap:8px;margin-top:20px}
 .freecard{flex:1;background:var(--ok-soft);border-radius:14px;padding:12px;text-align:center}
 .freecard .v{font-family:"Do Hyeon",sans-serif;font-size:1.5rem;color:var(--ok)}
@@ -126,15 +127,16 @@ button,input,select{font:inherit;color:inherit}
   <p class="copyright">© 2026 수쌤 · All rights reserved.</p>
 
   <div class="setup" id="setup" hidden>
-    <h2 class="d">간식 칼로리 기록 시작하기</h2>
+    <h2 class="d">간식만 참아봐요 시작하기</h2>
     <p class="small muted" style="margin:0 0 10px">먹을 때마다 톡 눌러서 기록만 해요. 칼로리는 대략치예요. 로그인 없이 이 휴대폰에만 저장돼요.</p>
     <div class="set">
       <div class="small muted" style="margin-bottom:-2px">간식 종류와 대략 칼로리 (눌러서 고쳐도 돼요)</div>
       <div id="setupItems"></div>
       <div class="addrow">
-        <input id="newItem" class="field" type="text" maxlength="10" placeholder="+ 종류 추가 (예: 젤리)">
+        <input id="newItem" class="field" type="text" maxlength="10" placeholder="+ 종류 추가 (예: 젤리)" list="foodList">
         <button class="btn ghost small" id="addItemBtn" type="button">추가</button>
       </div>
+      <p class="small muted" style="margin:-4px 0 0">이름을 적으면 흔한 간식은 칼로리를 자동으로 채워 드려요. 없는 이름이면 150kcal로 넣고, 숫자는 직접 고쳐도 돼요.</p>
       <label>하루 간식 칼로리 목표
         <input id="uTarget" class="field" type="text" inputmode="numeric" value="300">
       </label>
@@ -144,7 +146,8 @@ button,input,select{font:inherit;color:inherit}
 
   <div id="app" hidden>
     <p class="quote">"먹는 걸 조절할 줄 아는 사람이 성공한다"</p>
-    <h1>간식 칼로리 기록</h1>
+    <p class="quote2">한 순간에 모든 걸 놓지 말자</p>
+    <h1>간식만 참아봐요</h1>
 
     <div class="budget">
       <div class="top"><span class="muted small">오늘 간식 칼로리</span><span class="muted small" id="targetLabel"></span></div>
@@ -185,7 +188,7 @@ button,input,select{font:inherit;color:inherit}
           <div class="small muted">간식 종류와 칼로리</div>
           <div id="settingsItems"></div>
           <div class="addrow">
-            <input id="newItem2" class="field" type="text" maxlength="10" placeholder="+ 종류 추가">
+            <input id="newItem2" class="field" type="text" maxlength="10" placeholder="+ 종류 추가" list="foodList">
             <button class="btn ghost small" id="addItemBtn2" type="button">추가</button>
           </div>
           <label>하루 간식 칼로리 목표
@@ -205,6 +208,7 @@ button,input,select{font:inherit;color:inherit}
 
   <p style="text-align:center;margin:14px 0 0;font-size:.82rem"><a href="../" style="color:var(--muted)">← 소확앱 다른 앱 보기</a></p>
 </main>
+<datalist id="foodList"></datalist>
 <div class="toast" id="toast" hidden></div>
 
 <script>
@@ -216,6 +220,23 @@ button,input,select{font:inherit;color:inherit}
     {id:'ice',   e:'🍦', n:'아이스크림', kcal:200},
     {id:'etc',   e:'✨', n:'기타',    kcal:150}
   ];
+  // 흔한 간식 이름 -> 대략 칼로리(1인분/1개 기준). 서버나 DB 없이 이 목록에서만 찾아요.
+  const FOOD_KCAL = {
+    '과자':150,'사탕':30,'빵':250,'아이스크림':200,'초콜릿':250,'초코파이':170,
+    '감자칩':500,'포카칩':500,'새우깡':458,'꼬북칩':480,'수미칩':480,
+    '젤리':350,'껌':5,'마카롱':90,'도넛':300,'쿠키':80,'크래커':200,
+    '요거트':120,'푸딩':150,'바나나':100,'사과':95,'귤':50,'딸기':40,
+    '우유':130,'두유':120,'커피믹스':50,'라떼':150,'콜라':140,'사이다':140,
+    '어묵':50,'떡볶이':450,'순대':300,'튀김':200,'핫도그':350,'붕어빵':180,
+    '계란':80,'삶은계란':80,'견과류':170,'초코송이':190,'홈런볼':200,
+    '몽쉘':200,'빼빼로':290,'커스타드':210,'롤케이크':250,'약과':130,
+    '치즈스틱':100,'와플':280,'번':250,'라면':500,'과일':60
+  };
+  function lookupKcal(name){
+    if(FOOD_KCAL[name] != null) return FOOD_KCAL[name];
+    const hit = Object.keys(FOOD_KCAL).find(k => name.includes(k) || k.includes(name));
+    return hit ? FOOD_KCAL[hit] : null;
+  }
   const KEY = 'snack-kcal-v1';
   const $ = id => document.getElementById(id);
   const pad = n => String(n).padStart(2,'0');
@@ -331,8 +352,10 @@ button,input,select{font:inherit;color:inherit}
     const n = name.trim();
     if(!n) return;
     if(st.items.some(x=>x.n===n)){ toast('이미 있는 이름이에요.'); return; }
-    st.items.push({id:uid(), e:'🍪', n, kcal:150});
+    const known = lookupKcal(n);
+    st.items.push({id:uid(), e:'🍪', n, kcal: known!=null ? known : 150});
     renderSetupItems(); renderSettingsItems();
+    toast(known!=null ? `${n} 칼로리를 자동으로 채웠어요. (${known}kcal)` : `${n}을(를) 150kcal로 넣었어요. 숫자는 고쳐도 돼요.`);
   }
   function renderSetupItems(){ $('setupItems').innerHTML = itemEditorHtml(); }
   function renderSettingsItems(){ $('settingsItems').innerHTML = itemEditorHtml(); }
@@ -399,7 +422,7 @@ button,input,select{font:inherit;color:inherit}
     const url = location.origin + location.pathname;
     const text = `${msg} 나도 간식 칼로리를 가볍게 기록해보는 중이에요.`;
     if(navigator.share){
-      try{ await navigator.share({title:'간식 칼로리 기록', text, url}); return; }
+      try{ await navigator.share({title:'간식만 참아봐요', text, url}); return; }
       catch(e){ if(e && e.name==='AbortError') return; }
     }
     const btn = $('bragBtn'); const prev = btn ? btn.textContent : '';
@@ -543,6 +566,8 @@ button,input,select{font:inherit;color:inherit}
   });
   $('backupBtn').addEventListener('click', backup);
   $('restoreInput').addEventListener('change', e => { restore(e.target.files[0]); e.target.value=''; });
+
+  $('foodList').innerHTML = Object.keys(FOOD_KCAL).map(n => `<option value="${esc(n)}">`).join('');
 
   load();
   render();
