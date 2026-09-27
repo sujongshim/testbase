@@ -87,6 +87,10 @@ button,input,select{font:inherit;color:inherit}
 .chips button.health{border-color:var(--ok);color:var(--ok)}
 .chips button .k{color:var(--muted);font-size:.78rem}
 .picker .cancel{margin-top:10px;background:transparent;border:0;color:var(--muted);font-size:.85rem;cursor:pointer;text-decoration:underline}
+.picker .addrow{margin-top:12px}
+.target-btn{background:transparent;border:0;color:var(--muted);font-size:.82rem;cursor:pointer;text-decoration:underline;padding:2px}
+.targetedit{display:flex;gap:6px;margin-top:8px}
+.targetedit input{flex:1}
 
 /* brag */
 .brag{background:var(--ok-soft);border-radius:16px;padding:14px 16px;margin-top:14px}
@@ -145,38 +149,20 @@ button,input,select{font:inherit;color:inherit}
     <button type="button" id="resetBtn" style="border:0;background:transparent;color:var(--muted);text-decoration:underline;cursor:pointer;font-size:.78rem;padding:2px;white-space:nowrap">다시 시작하기</button>
   </div>
 
-  <div class="setup" id="setup" hidden>
-    <h2 class="d">간식만 참아봐요 시작하기</h2>
-    <ul class="intro-list small muted">
-      <li>먹을 때마다 톡 눌러서 기록만 해요. 칼로리는 대략치예요.</li>
-      <li>목표 이내로 하루를 마치면 달력에 수쌤이 도장을 콱 찍어드려요.</li>
-      <li>건강 간식으로만 채운 날도 도장을 받을 수 있어요.</li>
-    </ul>
-    <div class="set">
-      <div class="small muted" style="margin-bottom:-2px">간식 종류와 대략 칼로리 (눌러서 고쳐도 돼요, 이름표를 누르면 간식/건강 간식이 바뀌어요)</div>
-      <div id="setupItems"></div>
-      <div class="addrow">
-        <input id="newItem" class="field" type="text" maxlength="10" placeholder="+ 종류 추가 (예: 젤리)" list="foodList">
-        <button class="btn ghost small" id="addItemBtn" type="button">추가</button>
-      </div>
-      <p class="small muted" style="margin:-4px 0 0">이름을 적으면 흔한 간식/건강 간식은 칼로리와 분류를 자동으로 채워 드려요. 없는 이름이면 간식 150kcal로 넣고, 나중에 고쳐도 돼요.</p>
-      <label>하루 간식 칼로리 목표
-        <input id="uTarget" class="field" type="text" inputmode="numeric" value="300">
-      </label>
-      <button class="btn primary" id="uStart" style="margin-top:4px">시작하기</button>
-    </div>
-  </div>
-
-  <div id="app" hidden>
+  <div id="app">
     <p class="quote">"먹는 걸 조절할 줄 아는 사람이 성공한다"</p>
     <p class="quote2">한 순간에 모든 걸 놓지 말아요</p>
     <p class="quote2">내가 먹는 것이 곧 나다</p>
-    <h1>간식만 참아봐요</h1>
+    <h1>간식만 참아봐요. (건강한 몸을 위해 우리 간식만 참아봐요.)</h1>
 
     <div class="budget">
-      <div class="top"><span class="muted small">오늘 간식 칼로리</span><span class="muted small" id="targetLabel"></span></div>
+      <div class="top"><span class="muted small">오늘 간식 칼로리</span><button type="button" class="target-btn" id="targetLabel" aria-label="하루 목표 칼로리 수정"></button></div>
       <div class="num d" id="todayNum">0kcal</div>
       <div class="bar"><i id="todayBar" style="width:0%"></i></div>
+      <div class="targetedit" id="targetEdit" hidden>
+        <input id="targetInput" class="field" type="text" inputmode="numeric">
+        <button type="button" class="btn primary small" id="targetSave">저장</button>
+      </div>
       <div class="streak" id="streakLine"></div>
       <div class="healthline" id="healthLine"></div>
       <div class="cheatrow" id="cheatRow"></div>
@@ -295,7 +281,6 @@ button,input,select{font:inherit;color:inherit}
   const weekStart = (s) => { const d = parseDate(s); d.setDate(d.getDate() - ((d.getDay()+6)%7)); return ymd(d); };
 
   const st = {
-    setup:false,
     items: DEFAULT_ITEMS.slice(),
     dailyTarget: 300,
     log: {}, // date -> [{id, itemId, kcal, t}]
@@ -307,7 +292,7 @@ button,input,select{font:inherit;color:inherit}
   let toastTimer = null, pickerOpen = false;
 
   function save(){
-    try{ localStorage.setItem(KEY, JSON.stringify({v:1, setup:st.setup, items:st.items, dailyTarget:st.dailyTarget, log:st.log, cheat:st.cheat, setupDate:st.setupDate})); st.storageOk = true; }
+    try{ localStorage.setItem(KEY, JSON.stringify({v:1, items:st.items, dailyTarget:st.dailyTarget, log:st.log, cheat:st.cheat, setupDate:st.setupDate})); st.storageOk = true; }
     catch(e){ st.storageOk = false; toast('저장하지 못했어요. 이 브라우저 저장공간을 확인해 주세요.'); }
   }
   function load(){
@@ -315,7 +300,6 @@ button,input,select{font:inherit;color:inherit}
       const raw = localStorage.getItem(KEY);
       if(raw){
         const d = JSON.parse(raw);
-        st.setup = !!d.setup;
         if(Array.isArray(d.items) && d.items.length) st.items = d.items;
         if(d.dailyTarget) st.dailyTarget = d.dailyTarget;
         st.log = d.log && typeof d.log==='object' ? d.log : {};
@@ -323,6 +307,7 @@ button,input,select{font:inherit;color:inherit}
         st.setupDate = d.setupDate || null;
       }
     }catch(e){ st.storageOk = false; }
+    if(!st.setupDate){ st.setupDate = today(); save(); }
   }
 
   function toast(msg){ $('toast').textContent = msg; $('toast').hidden = false; clearTimeout(toastTimer); toastTimer = setTimeout(()=>{ $('toast').hidden = true; }, 2600); }
@@ -407,12 +392,12 @@ button,input,select{font:inherit;color:inherit}
       if(t){
         const it = st.items[Number(t.dataset.togglecat)];
         it.cat = (it.cat||'snack')==='health' ? 'snack' : 'health';
-        save(); renderSetupItems(); renderSettingsItems(); render();
+        save(); renderSettingsItems(); render();
         return;
       }
       const b = e.target.closest('[data-rmitem]'); if(!b) return;
       st.items.splice(Number(b.dataset.rmitem),1);
-      save(); renderSetupItems(); renderSettingsItems();
+      save(); renderSettingsItems();
     });
   }
   function addItem(name){
@@ -421,10 +406,23 @@ button,input,select{font:inherit;color:inherit}
     if(st.items.some(x=>x.n===n)){ toast('이미 있는 이름이에요.'); return; }
     const known = lookupFood(n);
     st.items.push({id:uid(), e: known && known.cat==='health' ? '🌿' : '🍪', n, kcal: known ? known.kcal : 150, cat: known ? known.cat : 'snack', gram: known ? known.gram : undefined, protein: known ? known.protein : undefined});
-    save(); renderSetupItems(); renderSettingsItems();
+    save(); renderSettingsItems();
     toast(known ? `${n} · ${known.kcal}kcal · ${known.cat==='health'?'건강 간식':'간식'}으로 채웠어요.` : `${n}을(를) 간식 150kcal로 넣었어요. 이름표를 누르면 분류를 바꿀 수 있어요.`);
   }
-  function renderSetupItems(){ $('setupItems').innerHTML = itemEditorHtml(); }
+  function addAndLog(name){
+    const n = name.trim();
+    if(!n) return;
+    if(st.items.some(x=>x.n===n)){ toast('이미 있는 이름이에요.'); return; }
+    const known = lookupFood(n);
+    const item = {id:uid(), e: known && known.cat==='health' ? '🌿' : '🍪', n, kcal: known ? known.kcal : 150, cat: known ? known.cat : 'snack', gram: known ? known.gram : undefined, protein: known ? known.protein : undefined};
+    st.items.push(item);
+    const d = today();
+    st.log[d] = [...(st.log[d]||[]), {id:uid(), itemId:item.id, kcal:item.kcal, t:Date.now()}];
+    save();
+    pickerOpen = false;
+    render();
+    toast(`${n} ${item.kcal}kcal 추가하고 기록했어요.`);
+  }
   function renderSettingsItems(){ $('settingsItems').innerHTML = itemEditorHtml(); }
 
   // ---------- render ----------
@@ -466,6 +464,10 @@ button,input,select{font:inherit;color:inherit}
       <p>무슨 간식이었어요?</p>
       ${snackItems.length ? `<div class="grouplabel">간식</div><div class="chips">${snackItems.map(chip).join('')}</div>` : ''}
       ${healthItems.length ? `<div class="grouplabel health">건강 간식 🌿</div><div class="chips">${healthItems.map(chip).join('')}</div>` : ''}
+      <div class="addrow">
+        <input id="pickerNewItem" class="field" type="text" maxlength="10" placeholder="+ 목록에 없는 간식 추가" list="foodList">
+        <button type="button" class="btn ghost small" id="pickerAddBtn">추가</button>
+      </div>
       <button type="button" class="cancel" id="pickerCancel">취소</button>
     </div>`;
   }
@@ -555,9 +557,6 @@ button,input,select{font:inherit;color:inherit}
   }
 
   function render(){
-    $('setup').hidden = st.setup;
-    $('app').hidden = !st.setup;
-    if(!st.setup) return;
     renderBudget();
     renderCheatRow();
     renderPicker();
@@ -598,28 +597,30 @@ button,input,select{font:inherit;color:inherit}
   }
 
   // ---------- events ----------
-  $('addItemBtn').addEventListener('click', () => { addItem($('newItem').value); $('newItem').value=''; });
-  $('newItem').addEventListener('keydown', e => { if(e.key==='Enter'){ e.preventDefault(); addItem($('newItem').value); $('newItem').value=''; } });
   $('addItemBtn2').addEventListener('click', () => { addItem($('newItem2').value); $('newItem2').value=''; });
   $('newItem2').addEventListener('keydown', e => { if(e.key==='Enter'){ e.preventDefault(); addItem($('newItem2').value); $('newItem2').value=''; } });
 
-  $('uStart').addEventListener('click', () => {
-    const target = num($('uTarget').value) || 300;
-    st.dailyTarget = target;
-    st.setup = true;
-    st.setupDate = today();
-    save(); render(); window.scrollTo(0,0);
-  });
-
-  bindItemEditor('setupItems');
   bindItemEditor('settingsItems');
-  renderSetupItems();
 
   $('logBtn').addEventListener('click', () => { pickerOpen = !pickerOpen; renderPicker(); });
   $('picker').addEventListener('click', e => {
     const b = e.target.closest('[data-pick]');
     if(b){ logEntry(b.dataset.pick); pickerOpen = false; renderPicker(); return; }
+    if(e.target.closest('#pickerAddBtn')){ addAndLog($('pickerNewItem').value); return; }
     if(e.target.closest('#pickerCancel')){ pickerOpen = false; renderPicker(); }
+  });
+  $('picker').addEventListener('keydown', e => {
+    if(e.key==='Enter' && e.target.id==='pickerNewItem'){ e.preventDefault(); addAndLog(e.target.value); }
+  });
+
+  $('targetLabel').addEventListener('click', () => {
+    $('targetInput').value = st.dailyTarget;
+    $('targetEdit').hidden = !$('targetEdit').hidden;
+  });
+  $('targetSave').addEventListener('click', () => {
+    st.dailyTarget = num($('targetInput').value) || 300;
+    $('targetEdit').hidden = true;
+    save(); render(); toast('오늘 목표를 바꿨어요.');
   });
   $('timeline').addEventListener('click', e => {
     const b = e.target.closest('[data-del]'); if(!b) return;
