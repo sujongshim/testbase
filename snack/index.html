@@ -11,15 +11,15 @@
 <style>
 :root{
   --bg:#F6F1EC; --surface:#FFFFFF; --ink:#241F1A; --muted:#726A60; --line:#E7DED2;
-  --accent:#C2703A; --accent-soft:#F5E1CE; --ok:#2F7D5B; --ok-soft:#DDF0E6; --warn:#B4541B; --warn-soft:#F7E2D3; --focus:#2F5FD0;
+  --accent:#C2703A; --accent-soft:#F5E1CE; --ok:#2F7D5B; --ok-soft:#DDF0E6; --warn:#B4541B; --warn-soft:#F7E2D3; --focus:#2F5FD0; --weight:#4A6FA5;
   box-sizing:border-box; padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
 }
 @media (prefers-color-scheme:dark){ :root:not([data-theme="light"]){
   --bg:#17140F; --surface:#211C16; --ink:#EFE9E1; --muted:#A79C8E; --line:#332C22;
-  --accent:#E39A5C; --accent-soft:#3A2A1A; --ok:#6FCB8A; --ok-soft:#1F3A27; --warn:#F0A060; --warn-soft:#3A2418; --focus:#8AA8FF; } }
+  --accent:#E39A5C; --accent-soft:#3A2A1A; --ok:#6FCB8A; --ok-soft:#1F3A27; --warn:#F0A060; --warn-soft:#3A2418; --focus:#8AA8FF; --weight:#8FB0E0; } }
 :root[data-theme="dark"]{
   --bg:#17140F; --surface:#211C16; --ink:#EFE9E1; --muted:#A79C8E; --line:#332C22;
-  --accent:#E39A5C; --accent-soft:#3A2A1A; --ok:#6FCB8A; --ok-soft:#1F3A27; --warn:#F0A060; --warn-soft:#3A2418; --focus:#8AA8FF; }
+  --accent:#E39A5C; --accent-soft:#3A2A1A; --ok:#6FCB8A; --ok-soft:#1F3A27; --warn:#F0A060; --warn-soft:#3A2418; --focus:#8AA8FF; --weight:#8FB0E0; }
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
 *,*::before,*::after{box-sizing:inherit}
 body{margin:0;background:var(--bg);color:var(--ink);font-family:"IBM Plex Sans KR","Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;font-size:15px;line-height:1.5;-webkit-text-size-adjust:100%}
@@ -80,6 +80,20 @@ button,input,select{font:inherit;color:inherit}
 .cheatrow{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:10px;font-size:.83rem}
 .btn.cheat{background:var(--accent-soft);color:var(--accent)}
 .cell.cheat{background:var(--accent-soft);color:var(--accent);font-weight:700}
+
+/* weight */
+.wrow{display:grid;grid-template-columns:1fr auto;gap:6px;align-items:center}
+.wnum{display:flex;align-items:baseline;gap:4px;border-bottom:2px solid var(--line);padding-bottom:2px}
+.wnum:focus-within{border-color:var(--ink)}
+.wnum input{border:0;background:transparent;font-family:"Do Hyeon",sans-serif;font-size:1.6rem;width:100%;min-width:0;padding:0}
+.wnum input:focus{outline:none}
+.wstats{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:10px}
+.wstats div{background:var(--bg);border-radius:10px;padding:7px 9px}
+.wstats b{display:block;font-family:"Do Hyeon",sans-serif;font-weight:400;font-size:1.1rem}
+.wchart svg{width:100%;height:auto;display:block;margin-top:10px}
+.rng{display:flex;gap:4px;margin-top:10px}
+.wchip{border:1px solid var(--line);background:transparent;border-radius:999px;padding:5px 11px;cursor:pointer;font-size:.85rem}
+.wchip[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
 
 /* log button + picker */
 .logbtn{display:block;width:100%;background:var(--accent);color:#fff;border:0;border-radius:16px;padding:16px;font-size:1.05rem;font-weight:700;cursor:pointer;margin-top:14px}
@@ -183,6 +197,11 @@ button,input,select{font:inherit;color:inherit}
       <div class="healthline" id="healthLine"></div>
       <div class="cheatrow" id="cheatRow"></div>
     </div>
+
+    <section aria-labelledby="weightTitle">
+      <h2 id="weightTitle" class="d">체중</h2>
+      <div class="card" id="weight"></div>
+    </section>
 
     <button type="button" class="logbtn" id="logBtn">🍽️ 간식 먹었어요</button>
     <div id="picker"></div>
@@ -302,6 +321,8 @@ button,input,select{font:inherit;color:inherit}
     dailyTarget: 300,
     log: {}, // date -> [{id, itemId, kcal, t}]
     cheat: {}, // date -> true
+    weight: {}, // date -> kg
+    wRange: 30,
     setupDate: null,
     calMonth: null,
     storageOk:true
@@ -309,7 +330,7 @@ button,input,select{font:inherit;color:inherit}
   let toastTimer = null, pickerOpen = false, pickerChipsOpen = false;
 
   function save(){
-    try{ localStorage.setItem(KEY, JSON.stringify({v:1, items:st.items, dailyTarget:st.dailyTarget, log:st.log, cheat:st.cheat, setupDate:st.setupDate})); st.storageOk = true; }
+    try{ localStorage.setItem(KEY, JSON.stringify({v:1, items:st.items, dailyTarget:st.dailyTarget, log:st.log, cheat:st.cheat, weight:st.weight, wRange:st.wRange, setupDate:st.setupDate})); st.storageOk = true; }
     catch(e){ st.storageOk = false; toast('저장하지 못했어요. 이 브라우저 저장공간을 확인해 주세요.'); }
   }
   function load(){
@@ -321,6 +342,8 @@ button,input,select{font:inherit;color:inherit}
         if(d.dailyTarget) st.dailyTarget = d.dailyTarget;
         st.log = d.log && typeof d.log==='object' ? d.log : {};
         st.cheat = d.cheat && typeof d.cheat==='object' ? d.cheat : {};
+        st.weight = d.weight && typeof d.weight==='object' ? d.weight : {};
+        st.wRange = d.wRange || 30;
         st.setupDate = d.setupDate || null;
       }
     }catch(e){ st.storageOk = false; }
@@ -483,6 +506,63 @@ button,input,select{font:inherit;color:inherit}
     if(bump){ const el = $('faceWrap').querySelector('.faceemoji'); setTimeout(()=>{ el && el.classList.remove('bump'); }, 220); }
   }
 
+  // ---------- weight ----------
+  const wKeys = () => Object.keys(st.weight).sort();
+  function weightTrend(){ // 최근 7일 평균 - 그 전 7일 평균 (기록이 있을 때만)
+    const t = today(), avg = (a,b) => { const v = wKeys().filter(k => k>=a && k<=b).map(k=>st.weight[k]); return v.length ? v.reduce((x,y)=>x+y,0)/v.length : null; };
+    const r = avg(addDays(t,-6), t), p = avg(addDays(t,-13), addDays(t,-7));
+    return r!==null && p!==null ? r - p : null;
+  }
+  function saveWeight(){
+    const raw = String($('wIn').value).replace(',', '.'), w = Math.round(Number(raw)*10)/10;
+    const d = today();
+    if(!raw){ if(st.weight[d]){ delete st.weight[d]; save(); render(); toast('오늘 체중 기록을 지웠어요.'); } return; }
+    if(!(w >= 20 && w <= 300)){ toast('체중을 kg 단위로 적어 주세요. (예: 62.4)'); return; }
+    st.weight[d] = w; save(); render(); toast(`${w}kg 기록했어요.`);
+  }
+  function renderWeight(){
+    const d = today(), keys = wKeys(), cur = st.weight[d];
+    const last = keys.filter(k => k<=today()).slice(-1)[0], first = keys[0];
+    const range = st.wRange, from = range ? addDays(today(), -(range-1)) : (first||today());
+    const pts = keys.filter(k => k>=from && k<=today()).map(k => ({k, w:st.weight[k]}));
+    const a7 = k => { const v = keys.filter(x => x>addDays(k,-7) && x<=k).map(x=>st.weight[x]); return v.reduce((a,b)=>a+b,0)/v.length; };
+    let chart = '';
+    if(pts.length >= 2){
+      const W = 320, H = 150, L = 34, R = 8, Tp = 12, B = 24;
+      const x0 = parseDate(pts[0].k).getTime(), x1 = Math.max(parseDate(pts[pts.length-1].k).getTime(), x0+86400000);
+      const ws = pts.map(p=>p.w).concat(pts.map(p=>a7(p.k)));
+      let lo = Math.min(...ws), hi = Math.max(...ws); if(hi-lo < 1){ const m = (hi+lo)/2; lo = m-0.5; hi = m+0.5; }
+      lo -= (hi-lo)*0.12; hi += (hi-lo)*0.12;
+      const X = k => L + (parseDate(k).getTime()-x0)/(x1-x0)*(W-L-R), Y = w => Tp + (hi-w)/(hi-lo)*(H-Tp-B);
+      const avgPath = pts.map((p,i) => `${i?'L':'M'}${X(p.k).toFixed(1)} ${Y(a7(p.k)).toFixed(1)}`).join(' ');
+      const grid = [hi-(hi-lo)*0.12, (hi+lo)/2, lo+(hi-lo)*0.12].map(v => `<line x1="${L}" x2="${W-R}" y1="${Y(v)}" y2="${Y(v)}" stroke="var(--line)"/><text x="${L-4}" y="${Y(v)+3}" text-anchor="end" font-size="9" fill="var(--muted)">${v.toFixed(1)}</text>`).join('');
+      const md2 = k => { const x = parseDate(k); return (x.getMonth()+1)+'/'+x.getDate(); };
+      chart = `<div class="wchart"><svg viewBox="0 0 ${W} ${H}" role="img" aria-label="체중 추이 그래프, ${pts[0].w}kg에서 ${pts[pts.length-1].w}kg">
+        ${grid}
+        ${pts.map(p => `<circle cx="${X(p.k).toFixed(1)}" cy="${Y(p.w).toFixed(1)}" r="3" fill="var(--weight)" opacity=".45"/>`).join('')}
+        <path d="${avgPath}" fill="none" stroke="var(--weight)" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
+        <circle cx="${X(pts[pts.length-1].k).toFixed(1)}" cy="${Y(pts[pts.length-1].w).toFixed(1)}" r="4.5" fill="var(--weight)"/>
+        <text x="${L}" y="${H-6}" font-size="10" fill="var(--muted)">${md2(pts[0].k)}</text>
+        <text x="${W-R}" y="${H-6}" font-size="10" fill="var(--muted)" text-anchor="end">${md2(pts[pts.length-1].k)}</text>
+      </svg><p class="small muted" style="margin:2px 0 0">점은 그날 체중, 선은 7일 평균이에요.</p></div>`;
+    } else chart = `<p class="small muted" style="margin:10px 0 0">${pts.length ? '하루만 더 적으면 그래프가 그려져요.' : '체중을 적으면 여기에 추이 그래프가 생겨요.'}</p>`;
+    const diff = last && first && last!==first ? Math.round((st.weight[last]-st.weight[first])*10)/10 : null;
+    const tr = weightTrend();
+    $('weight').innerHTML = `
+      <div class="wrow">
+        <label class="wnum"><input id="wIn" type="text" inputmode="decimal" placeholder="${last?st.weight[last]:'0.0'}" value="${cur??''}" aria-label="오늘 체중"><span class="muted">kg</span></label>
+        <button class="btn primary" data-act="wsave">${cur!=null?'고치기':'기록'}</button>
+      </div>
+      <p class="small muted" style="margin:6px 0 0">오늘 체중 · 매일 같은 시간(아침 화장실 다녀온 뒤)에 재면 추이가 더 정확해요.</p>
+      ${keys.length ? `<div class="wstats">
+        <div><span class="small muted">최근</span><b>${last?st.weight[last]+'kg':'-'}</b></div>
+        <div><span class="small muted">처음과 비교</span><b>${diff===null?'-':(diff>0?'+':'')+diff+'kg'}</b></div>
+        <div><span class="small muted">지난주 대비</span><b>${tr===null?'-':(tr>0?'+':'')+(Math.round(tr*10)/10)+'kg'}</b></div></div>
+        <div class="rng">${[[30,'30일'],[90,'90일'],[0,'전체']].map(([v,l]) => `<button class="wchip" data-wr="${v}" aria-pressed="${st.wRange===v}">${l}</button>`).join('')}</div>` : ''}
+      ${chart}
+      ${keys.length>=3 ? `<p class="small muted" style="margin:8px 0 0">체중은 하루에도 1~2kg씩 오르내려요. 하루 숫자보다 선의 방향을 봐 주세요.</p>` : ''}`;
+  }
+
   function renderBudget(){
     const d = today(), total = dayTotal(d), target = st.dailyTarget || 300, isCheat = !!st.cheat[d];
     const pct = Math.min(total/target,1)*100, over = !isCheat && total>target;
@@ -628,6 +708,7 @@ button,input,select{font:inherit;color:inherit}
   function render(){
     renderFace();
     renderBudget();
+    if(document.activeElement !== $('wIn')) renderWeight();
     renderCheatRow();
     renderPicker();
     renderBrag();
@@ -640,7 +721,7 @@ button,input,select{font:inherit;color:inherit}
   }
 
   async function backup(){
-    const text = JSON.stringify({app:'snack-kcal', v:1, exportedAt:new Date().toISOString(), items:st.items, dailyTarget:st.dailyTarget, log:st.log, cheat:st.cheat, setupDate:st.setupDate}, null, 1);
+    const text = JSON.stringify({app:'snack-kcal', v:1, exportedAt:new Date().toISOString(), items:st.items, dailyTarget:st.dailyTarget, log:st.log, cheat:st.cheat, weight:st.weight, wRange:st.wRange, setupDate:st.setupDate}, null, 1);
     const blob = new Blob([text], {type:'application/json'});
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a'); a.href = url; a.download = '간식칼로리-백업-'+today()+'.json';
@@ -659,6 +740,8 @@ button,input,select{font:inherit;color:inherit}
         if(d.dailyTarget) st.dailyTarget = d.dailyTarget;
         if(d.log) st.log = d.log;
         if(d.cheat) st.cheat = d.cheat;
+        if(d.weight) st.weight = d.weight;
+        if(d.wRange) st.wRange = d.wRange;
         if(d.setupDate) st.setupDate = d.setupDate;
         save(); render(); toast('백업을 불러왔어요.');
       }catch(e){ toast('간식 칼로리 백업 파일이 아니에요.'); }
@@ -707,6 +790,11 @@ button,input,select{font:inherit;color:inherit}
   $('targetSave').addEventListener('click', () => {
     setDailyTarget(num($('targetInput').value) || 300);
   });
+  $('weight').addEventListener('click', e => {
+    if(e.target.closest('[data-act="wsave"]')){ saveWeight(); return; }
+    const r = e.target.closest('[data-wr]'); if(r){ st.wRange = Number(r.dataset.wr); save(); renderWeight(); }
+  });
+  $('weight').addEventListener('keydown', e => { if(e.target.id==='wIn' && e.key==='Enter'){ e.preventDefault(); saveWeight(); } });
   $('timeline').addEventListener('click', e => {
     const b = e.target.closest('[data-del]'); if(!b) return;
     removeEntry(today(), b.dataset.del);
