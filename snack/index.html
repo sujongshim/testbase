@@ -60,6 +60,12 @@ button,input,select{font:inherit;color:inherit}
 .btn.ghost{background:var(--surface);border:1px solid var(--line)}
 .btn.small{padding:6px 10px;font-size:.82rem}
 
+/* face */
+.facewrap{text-align:center;margin-bottom:4px}
+.faceemoji{font-size:3.2rem;line-height:1;display:block;transition:transform .2s ease}
+.faceemoji.bump{transform:scale(1.15)}
+.facecap{font-size:.82rem;color:var(--muted);margin-top:2px}
+
 /* budget */
 .budget{background:var(--surface);border-radius:18px;padding:16px}
 .budget .top{display:flex;justify-content:space-between;align-items:baseline}
@@ -85,6 +91,7 @@ button,input,select{font:inherit;color:inherit}
 .chips{display:flex;flex-wrap:wrap;gap:8px}
 .chips button{border:1px solid var(--line);background:var(--bg);border-radius:12px;padding:9px 12px;font-size:.88rem;cursor:pointer;display:flex;align-items:center;gap:6px}
 .chips button.health{border-color:var(--ok);color:var(--ok)}
+.chips button.current{border-color:var(--accent);background:var(--accent);color:#fff;font-weight:600}
 .chips button .k{color:var(--muted);font-size:.78rem}
 .picker .cancel{margin-top:10px;background:transparent;border:0;color:var(--muted);font-size:.85rem;cursor:pointer;text-decoration:underline}
 .picker .addrow{margin-top:12px}
@@ -158,15 +165,19 @@ button,input,select{font:inherit;color:inherit}
     <p class="quote">"먹는 걸 조절할 줄 아는 사람이 성공한다"</p>
     <p class="quote2">한 순간에 모든 걸 놓는 것은 노노!</p>
     <p class="quote2">내가 먹는 것이 곧 나다. 깨끗하게 먹자!</p>
-    <h1>건강한 몸을 위해 우리 간식만 참아봐요.</h1>
+
+    <div class="facewrap" id="faceWrap"></div>
 
     <div class="budget">
       <div class="top"><span class="muted small">오늘 간식 칼로리</span><button type="button" class="target-btn" id="targetLabel" aria-label="하루 목표 칼로리 수정"></button></div>
       <div class="num d" id="todayNum">0kcal</div>
       <div class="bar"><i id="todayBar" style="width:0%"></i></div>
       <div class="targetedit" id="targetEdit" hidden>
-        <input id="targetInput" class="field" type="text" inputmode="numeric">
-        <button type="button" class="btn primary small" id="targetSave">저장</button>
+        <div class="chips" id="targetPresets" style="margin-bottom:8px"></div>
+        <div style="display:flex;gap:6px">
+          <input id="targetInput" class="field" type="text" inputmode="numeric">
+          <button type="button" class="btn primary small" id="targetSave">저장</button>
+        </div>
       </div>
       <div class="streak" id="streakLine"></div>
       <div class="healthline" id="healthLine"></div>
@@ -437,6 +448,41 @@ button,input,select{font:inherit;color:inherit}
   function renderSettingsItems(){ $('settingsItems').innerHTML = itemEditorHtml(); }
 
   // ---------- render ----------
+  // ---------- mascot face ----------
+  const FACES = {
+    cheat:   {e:'🎉', c:'오늘은 치팅 데이! 신나게 쉬어가요'},
+    healthy: {e:'🌿', c:'건강 간식만 먹었어요, 최고예요!'},
+    zero:    {e:'😊', c:'건강을 위해 간식만 참아봐요.'},
+    1: {e:'🙂', c:'좋아요, 이대로 쭉!'},
+    2: {e:'😐', c:'괜찮아요, 계속 지켜봐요'},
+    3: {e:'😟', c:'조금 아슬아슬해요'},
+    4: {e:'😢', c:'목표를 넘었어요...'},
+    5: {e:'😭', c:'많이 넘었어요'},
+    6: {e:'😵', c:'오늘은 완전히 무너졌어요'}
+  };
+  function faceState(){
+    const d = today();
+    if(st.cheat[d]) return 'cheat';
+    const total = dayTotal(d), target = st.dailyTarget || 300;
+    if(total===0) return 'zero';
+    if(dayAllHealthy(d)) return 'healthy';
+    const pct = total/target;
+    if(pct<0.3) return 1;
+    if(pct<0.6) return 2;
+    if(pct<0.9) return 3;
+    if(pct<1.2) return 4;
+    if(pct<1.6) return 5;
+    return 6;
+  }
+  let lastFaceState = null;
+  function renderFace(){
+    const s = faceState(), f = FACES[s];
+    const bump = lastFaceState !== null && lastFaceState !== s;
+    lastFaceState = s;
+    $('faceWrap').innerHTML = `<span class="faceemoji${bump?' bump':''}">${f.e}</span><span class="facecap">${f.c}</span>`;
+    if(bump){ const el = $('faceWrap').querySelector('.faceemoji'); setTimeout(()=>{ el && el.classList.remove('bump'); }, 220); }
+  }
+
   function renderBudget(){
     const d = today(), total = dayTotal(d), target = st.dailyTarget || 300, isCheat = !!st.cheat[d];
     const pct = Math.min(total/target,1)*100, over = !isCheat && total>target;
@@ -580,6 +626,7 @@ button,input,select{font:inherit;color:inherit}
   }
 
   function render(){
+    renderFace();
     renderBudget();
     renderCheatRow();
     renderPicker();
@@ -642,14 +689,23 @@ button,input,select{font:inherit;color:inherit}
     }
   });
 
-  $('targetLabel').addEventListener('click', () => {
-    $('targetInput').value = st.dailyTarget;
-    $('targetEdit').hidden = !$('targetEdit').hidden;
-  });
-  $('targetSave').addEventListener('click', () => {
-    st.dailyTarget = num($('targetInput').value) || 300;
+  const TARGET_PRESETS = [150, 200, 300, 400, 500];
+  function setDailyTarget(v){
+    st.dailyTarget = v;
     $('targetEdit').hidden = true;
     save(); render(); toast('오늘 목표를 바꿨어요.');
+  }
+  $('targetLabel').addEventListener('click', () => {
+    $('targetInput').value = st.dailyTarget;
+    $('targetPresets').innerHTML = TARGET_PRESETS.map(v => `<button type="button" class="${v===st.dailyTarget?'current':''}" data-tp="${v}">${v}kcal</button>`).join('');
+    $('targetEdit').hidden = !$('targetEdit').hidden;
+  });
+  $('targetPresets').addEventListener('click', e => {
+    const b = e.target.closest('[data-tp]'); if(!b) return;
+    setDailyTarget(Number(b.dataset.tp));
+  });
+  $('targetSave').addEventListener('click', () => {
+    setDailyTarget(num($('targetInput').value) || 300);
   });
   $('timeline').addEventListener('click', e => {
     const b = e.target.closest('[data-del]'); if(!b) return;
