@@ -314,12 +314,18 @@ button,input,select{font:inherit;color:inherit}
   function toast(msg){ $('toast').textContent = msg; $('toast').hidden = false; clearTimeout(toastTimer); toastTimer = setTimeout(()=>{ $('toast').hidden = true; }, 2600); }
 
   function dayTotal(d){ return (st.log[d]||[]).reduce((a,e)=>a+e.kcal,0); }
-  function dayHealthCount(d){ return (st.log[d]||[]).filter(e=>{ const it=st.items.find(x=>x.id===e.itemId); return it && it.cat==='health'; }).length; }
+  // 기록에 이름/이모지/분류가 직접 들어있으면 그대로, 옛날 기록(품목 참조 방식)이면 품목 목록에서 찾아와요.
+  function entryMeta(e){
+    if(e.n!=null) return e;
+    const it = st.items.find(x=>x.id===e.itemId);
+    return it ? {n:it.n, e:it.e, cat:it.cat||'snack'} : {n:'?', e:'🍪', cat:'snack'};
+  }
+  function dayHealthCount(d){ return (st.log[d]||[]).filter(e=>entryMeta(e).cat==='health').length; }
   // 그 날 기록한 항목이 하나 이상이고, 전부 '건강 간식'이면 정크 간식은 안 먹은 날로 쳐요.
   function dayAllHealthy(d){
     const list = st.log[d]||[];
     if(!list.length) return false;
-    return list.every(e => { const it = st.items.find(x=>x.id===e.itemId); return it && it.cat==='health'; });
+    return list.every(e => entryMeta(e).cat==='health');
   }
   function dayStatus(k){
     const t = today();
@@ -355,9 +361,22 @@ button,input,select{font:inherit;color:inherit}
   function logEntry(itemId){
     const it = st.items.find(x=>x.id===itemId); if(!it) return;
     const d = today();
-    st.log[d] = [...(st.log[d]||[]), {id:uid(), itemId, kcal:it.kcal, t:Date.now()}];
+    st.log[d] = [...(st.log[d]||[]), {id:uid(), n:it.n, e:it.e, kcal:it.kcal, cat:it.cat||'snack', t:Date.now()}];
     save(); render();
     toast(`${it.n} ${it.kcal}kcal 기록했어요.`);
+  }
+  // 목록에 저장하지 않고 그때그때 이름만 적어서 바로 기록해요.
+  function quickLog(name){
+    const n = name.trim();
+    if(!n) return;
+    const known = lookupFood(n);
+    const kcal = known ? known.kcal : 150, cat = known ? known.cat : 'snack', em = cat==='health' ? '🌿' : '🍪';
+    const d = today();
+    st.log[d] = [...(st.log[d]||[]), {id:uid(), n, e:em, kcal, cat, t:Date.now()}];
+    save();
+    pickerOpen = false;
+    render();
+    toast(known ? `${n} ${kcal}kcal 기록했어요.` : `${n}을(를) 150kcal(대략치)로 기록했어요.`);
   }
   function removeEntry(d, id){
     if(!st.log[d]) return;
@@ -410,20 +429,6 @@ button,input,select{font:inherit;color:inherit}
     save(); renderSettingsItems();
     toast(known ? `${n} · ${known.kcal}kcal · ${known.cat==='health'?'건강 간식':'간식'}으로 채웠어요.` : `${n}을(를) 간식 150kcal로 넣었어요. 이름표를 누르면 분류를 바꿀 수 있어요.`);
   }
-  function addAndLog(name){
-    const n = name.trim();
-    if(!n) return;
-    if(st.items.some(x=>x.n===n)){ toast('이미 있는 이름이에요.'); return; }
-    const known = lookupFood(n);
-    const item = {id:uid(), e: known && known.cat==='health' ? '🌿' : '🍪', n, kcal: known ? known.kcal : 150, cat: known ? known.cat : 'snack', gram: known ? known.gram : undefined, protein: known ? known.protein : undefined};
-    st.items.push(item);
-    const d = today();
-    st.log[d] = [...(st.log[d]||[]), {id:uid(), itemId:item.id, kcal:item.kcal, t:Date.now()}];
-    save();
-    pickerOpen = false;
-    render();
-    toast(`${n} ${item.kcal}kcal 추가하고 기록했어요.`);
-  }
   function renderSettingsItems(){ $('settingsItems').innerHTML = itemEditorHtml(); }
 
   // ---------- render ----------
@@ -462,13 +467,14 @@ button,input,select{font:inherit;color:inherit}
     const healthItems = st.items.filter(it=>it.cat==='health');
     const chip = it => `<button type="button" class="${it.cat==='health'?'health':''}" data-pick="${it.id}">${esc(it.e||'🍪')} ${foodLabel(it)} <span class="k">${it.kcal}kcal</span></button>`;
     $('picker').innerHTML = `<div class="picker">
-      <p>무슨 간식이었어요?</p>
+      <p>무슨 간식이었어요? 이름을 적고 바로 기록해요.</p>
+      <div class="addrow">
+        <input id="pickerNewItem" class="field" type="text" maxlength="20" placeholder="간식 이름 (예: 젤리)" list="foodList" autofocus>
+        <button type="button" class="btn primary small" id="pickerAddBtn">기록</button>
+      </div>
+      ${(snackItems.length || healthItems.length) ? `<p class="small muted" style="margin:12px 0 6px">자주 먹는 간식은 눌러서 바로 기록해요</p>` : ''}
       ${snackItems.length ? `<div class="grouplabel">간식</div><div class="chips">${snackItems.map(chip).join('')}</div>` : ''}
       ${healthItems.length ? `<div class="grouplabel health">건강 간식 🌿</div><div class="chips">${healthItems.map(chip).join('')}</div>` : ''}
-      <div class="addrow">
-        <input id="pickerNewItem" class="field" type="text" maxlength="10" placeholder="+ 목록에 없는 간식 추가" list="foodList">
-        <button type="button" class="btn ghost small" id="pickerAddBtn">추가</button>
-      </div>
       <button type="button" class="cancel" id="pickerCancel">취소</button>
     </div>`;
   }
@@ -549,10 +555,10 @@ button,input,select{font:inherit;color:inherit}
     const list = (st.log[d]||[]).slice().sort((a,b)=>b.t-a.t);
     if(!list.length){ $('timeline').innerHTML = `<li class="empty" style="border:0">오늘은 아직 기록이 없어요.</li>`; return; }
     $('timeline').innerHTML = list.map(e => {
-      const it = st.items.find(x=>x.id===e.itemId);
+      const m = entryMeta(e);
       const time = new Date(e.t); const hh = pad(time.getHours()), mm = pad(time.getMinutes());
-      const healthMark = it && it.cat==='health' ? '🌿 ' : '';
-      return `<li><span>${healthMark}${esc(it?.e||'🍪')} ${esc(it?.n||'?')} · ${e.kcal}kcal</span>
+      const healthMark = m.cat==='health' ? '🌿 ' : '';
+      return `<li><span>${healthMark}${esc(m.e||'🍪')} ${esc(m.n||'?')} · ${e.kcal}kcal</span>
         <span class="muted">${hh}:${mm}<button class="del" data-del="${e.id}" aria-label="지우기">×</button></span></li>`;
     }).join('');
   }
@@ -607,11 +613,11 @@ button,input,select{font:inherit;color:inherit}
   $('picker').addEventListener('click', e => {
     const b = e.target.closest('[data-pick]');
     if(b){ logEntry(b.dataset.pick); pickerOpen = false; renderPicker(); return; }
-    if(e.target.closest('#pickerAddBtn')){ addAndLog($('pickerNewItem').value); return; }
+    if(e.target.closest('#pickerAddBtn')){ quickLog($('pickerNewItem').value); return; }
     if(e.target.closest('#pickerCancel')){ pickerOpen = false; renderPicker(); }
   });
   $('picker').addEventListener('keydown', e => {
-    if(e.key==='Enter' && e.target.id==='pickerNewItem'){ e.preventDefault(); addAndLog(e.target.value); }
+    if(e.key==='Enter' && e.target.id==='pickerNewItem'){ e.preventDefault(); quickLog(e.target.value); }
   });
 
   $('targetLabel').addEventListener('click', () => {
