@@ -201,7 +201,8 @@ button,input,select{font:inherit;color:inherit}
       <details class="card">
         <summary style="cursor:pointer;font-weight:600">설정 · 백업</summary>
         <div class="set" style="margin-top:12px">
-          <div class="small muted">자주 먹는 간식을 미리 입력할 수 있어요.</div>
+          <div style="font-weight:600">기본 세팅</div>
+          <div class="small muted" style="margin-top:-6px">자주 먹는 간식을 미리 입력해 두면, 기록할 때 눌러서 바로 기록할 수 있어요.</div>
           <div id="settingsItems"></div>
           <div class="addrow">
             <input id="newItem2" class="field" type="text" maxlength="10" placeholder="+ 종류 추가" list="foodList">
@@ -294,7 +295,7 @@ button,input,select{font:inherit;color:inherit}
     calMonth: null,
     storageOk:true
   };
-  let toastTimer = null, pickerOpen = false;
+  let toastTimer = null, pickerOpen = false, pickerChipsOpen = false;
 
   function save(){
     try{ localStorage.setItem(KEY, JSON.stringify({v:1, items:st.items, dailyTarget:st.dailyTarget, log:st.log, cheat:st.cheat, setupDate:st.setupDate})); st.storageOk = true; }
@@ -485,9 +486,11 @@ button,input,select{font:inherit;color:inherit}
         <button type="button" class="btn primary small" id="pickerAddBtn">기록</button>
       </div>
       <p class="small muted" style="margin:-4px 0 0">칼로리를 비워두면 흔한 간식은 자동으로 채워 드려요.</p>
-      ${(snackItems.length || healthItems.length) ? `<p class="small muted" style="margin:12px 0 6px">자주 먹는 간식은 눌러서 바로 기록해요</p>` : ''}
+      ${(snackItems.length || healthItems.length) ? `<button type="button" class="cancel" id="pickerChipsToggle" style="margin-top:12px">${pickerChipsOpen?'자주 먹는 간식 접기 ▲':'자주 먹는 간식 보기 ▾'}</button>` : ''}
+      ${pickerChipsOpen ? `
       ${snackItems.length ? `<div class="grouplabel">간식</div><div class="chips">${snackItems.map(chip).join('')}</div>` : ''}
       ${healthItems.length ? `<div class="grouplabel health">건강 간식 🌿</div><div class="chips">${healthItems.map(chip).join('')}</div>` : ''}
+      ` : ''}
       <button type="button" class="cancel" id="pickerCancel">닫기</button>
     </div>`;
   }
@@ -622,14 +625,15 @@ button,input,select{font:inherit;color:inherit}
 
   bindItemEditor('settingsItems');
 
-  $('logBtn').addEventListener('click', () => { pickerOpen = !pickerOpen; renderPicker(); });
+  $('logBtn').addEventListener('click', () => { pickerOpen = !pickerOpen; if(!pickerOpen) pickerChipsOpen = false; renderPicker(); });
   $('picker').addEventListener('click', e => {
     const b = e.target.closest('[data-pick]');
     if(b){ logEntry(b.dataset.pick); return; }
     if(e.target.closest('#pickerAddBtn')){ quickLog($('pickerNewItem').value, $('pickerNewKcal').value); $('pickerNewItem').focus(); return; }
     const del = e.target.closest('[data-del]');
     if(del){ removeEntry(today(), del.dataset.del); return; }
-    if(e.target.closest('#pickerCancel')){ pickerOpen = false; renderPicker(); }
+    if(e.target.closest('#pickerChipsToggle')){ pickerChipsOpen = !pickerChipsOpen; renderPicker(); return; }
+    if(e.target.closest('#pickerCancel')){ pickerOpen = false; pickerChipsOpen = false; renderPicker(); }
   });
   $('picker').addEventListener('keydown', e => {
     if(e.key==='Enter' && (e.target.id==='pickerNewItem' || e.target.id==='pickerNewKcal')){
