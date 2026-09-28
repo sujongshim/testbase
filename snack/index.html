@@ -88,6 +88,10 @@ button,input,select{font:inherit;color:inherit}
 .chips button .k{color:var(--muted);font-size:.78rem}
 .picker .cancel{margin-top:10px;background:transparent;border:0;color:var(--muted);font-size:.85rem;cursor:pointer;text-decoration:underline}
 .picker .addrow{margin-top:12px}
+.todaymini{background:var(--bg);border-radius:12px;padding:10px 12px;margin-bottom:12px}
+.minilist{list-style:none;margin:0;padding:0;display:grid;gap:4px}
+.minilist li{display:flex;justify-content:space-between;align-items:center;font-size:.88rem}
+.minilist .del{border:0;background:transparent;color:var(--muted);cursor:pointer;font-size:1rem;padding:2px 6px}
 .target-btn{background:transparent;border:0;color:var(--muted);font-size:.82rem;cursor:pointer;text-decoration:underline;padding:2px}
 .targetedit{display:flex;gap:6px;margin-top:8px}
 .targetedit input{flex:1}
@@ -365,18 +369,18 @@ button,input,select{font:inherit;color:inherit}
     save(); render();
     toast(`${it.n} ${it.kcal}kcal 기록했어요.`);
   }
-  // 목록에 저장하지 않고 그때그때 이름만 적어서 바로 기록해요.
-  function quickLog(name){
+  // 목록에 저장하지 않고 그때그때 이름(+ 원하면 칼로리 직접)을 적어서 바로 기록해요.
+  function quickLog(name, kcalInput){
     const n = name.trim();
     if(!n) return;
     const known = lookupFood(n);
-    const kcal = known ? known.kcal : 150, cat = known ? known.cat : 'snack', em = cat==='health' ? '🌿' : '🍪';
+    const manual = num(kcalInput||'');
+    const kcal = manual>0 ? manual : (known ? known.kcal : 150), cat = known ? known.cat : 'snack', em = cat==='health' ? '🌿' : '🍪';
     const d = today();
     st.log[d] = [...(st.log[d]||[]), {id:uid(), n, e:em, kcal, cat, t:Date.now()}];
     save();
-    pickerOpen = false;
     render();
-    toast(known ? `${n} ${kcal}kcal 기록했어요.` : `${n}을(를) 150kcal(대략치)로 기록했어요.`);
+    toast(manual>0 ? `${n} ${kcal}kcal 기록했어요.` : known ? `${n} ${kcal}kcal 기록했어요.` : `${n}을(를) 150kcal(대략치)로 기록했어요.`);
   }
   function removeEntry(d, id){
     if(!st.log[d]) return;
@@ -466,16 +470,25 @@ button,input,select{font:inherit;color:inherit}
     const snackItems = st.items.filter(it=>(it.cat||'snack')==='snack');
     const healthItems = st.items.filter(it=>it.cat==='health');
     const chip = it => `<button type="button" class="${it.cat==='health'?'health':''}" data-pick="${it.id}">${esc(it.e||'🍪')} ${foodLabel(it)} <span class="k">${it.kcal}kcal</span></button>`;
+    const todayList = (st.log[today()]||[]).slice().sort((a,b)=>b.t-a.t);
+    const todayHtml = todayList.length ? `<div class="todaymini">
+        <p class="small muted" style="margin:0 0 6px">오늘 먹은 간식</p>
+        <ul class="minilist">${todayList.map(e => { const m = entryMeta(e); const mark = m.cat==='health' ? '🌿 ' : '';
+          return `<li><span>${mark}${esc(m.e||'🍪')} ${esc(m.n||'?')} · ${e.kcal}kcal</span><button class="del" data-del="${e.id}" aria-label="지우기">×</button></li>`; }).join('')}</ul>
+      </div>` : '';
     $('picker').innerHTML = `<div class="picker">
-      <p>무슨 간식이었어요? 이름을 적고 바로 기록해요.</p>
+      <p>무슨 간식이었어요? 이름과 칼로리를 적고 바로 기록해요.</p>
+      ${todayHtml}
       <div class="addrow">
         <input id="pickerNewItem" class="field" type="text" maxlength="20" placeholder="간식 이름 (예: 젤리)" list="foodList" autofocus>
+        <input id="pickerNewKcal" class="field" type="text" inputmode="numeric" placeholder="kcal" style="max-width:64px">
         <button type="button" class="btn primary small" id="pickerAddBtn">기록</button>
       </div>
+      <p class="small muted" style="margin:-4px 0 0">칼로리를 비워두면 흔한 간식은 자동으로 채워 드려요.</p>
       ${(snackItems.length || healthItems.length) ? `<p class="small muted" style="margin:12px 0 6px">자주 먹는 간식은 눌러서 바로 기록해요</p>` : ''}
       ${snackItems.length ? `<div class="grouplabel">간식</div><div class="chips">${snackItems.map(chip).join('')}</div>` : ''}
       ${healthItems.length ? `<div class="grouplabel health">건강 간식 🌿</div><div class="chips">${healthItems.map(chip).join('')}</div>` : ''}
-      <button type="button" class="cancel" id="pickerCancel">취소</button>
+      <button type="button" class="cancel" id="pickerCancel">닫기</button>
     </div>`;
   }
 
@@ -612,12 +625,17 @@ button,input,select{font:inherit;color:inherit}
   $('logBtn').addEventListener('click', () => { pickerOpen = !pickerOpen; renderPicker(); });
   $('picker').addEventListener('click', e => {
     const b = e.target.closest('[data-pick]');
-    if(b){ logEntry(b.dataset.pick); pickerOpen = false; renderPicker(); return; }
-    if(e.target.closest('#pickerAddBtn')){ quickLog($('pickerNewItem').value); return; }
+    if(b){ logEntry(b.dataset.pick); return; }
+    if(e.target.closest('#pickerAddBtn')){ quickLog($('pickerNewItem').value, $('pickerNewKcal').value); $('pickerNewItem').focus(); return; }
+    const del = e.target.closest('[data-del]');
+    if(del){ removeEntry(today(), del.dataset.del); return; }
     if(e.target.closest('#pickerCancel')){ pickerOpen = false; renderPicker(); }
   });
   $('picker').addEventListener('keydown', e => {
-    if(e.key==='Enter' && e.target.id==='pickerNewItem'){ e.preventDefault(); quickLog(e.target.value); }
+    if(e.key==='Enter' && (e.target.id==='pickerNewItem' || e.target.id==='pickerNewKcal')){
+      e.preventDefault(); quickLog($('pickerNewItem').value, $('pickerNewKcal').value);
+      $('pickerNewItem').focus();
+    }
   });
 
   $('targetLabel').addEventListener('click', () => {
