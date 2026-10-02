@@ -128,7 +128,7 @@ details.panel summary{cursor:pointer;font-weight:600}
 <main>
   <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin:0 0 14px">
     <p class="copyright" style="margin:0">© 2026 수쌤 · All rights reserved.</p>
-    <button type="button" id="resetBtn" style="border:0;background:transparent;color:var(--muted);text-decoration:underline;cursor:pointer;font-size:.78rem;padding:2px;white-space:nowrap">다시 시작하기</button>
+    <span style="display:flex;gap:12px;align-items:center"><button type="button" id="langBtn" style="border:1px solid var(--line);background:transparent;color:var(--muted);border-radius:999px;cursor:pointer;font-size:.78rem;padding:2px 10px;white-space:nowrap">English</button><button type="button" id="resetBtn" style="border:0;background:transparent;color:var(--muted);text-decoration:underline;cursor:pointer;font-size:.78rem;padding:2px;white-space:nowrap">다시 시작하기</button></span>
   </div>
   <div class="setup" id="setup" hidden>
     <h2 class="d">매일 최소 운동 정하기</h2>
@@ -311,9 +311,9 @@ details.panel summary{cursor:pointer;font-weight:600}
   function editorHtml(list){
     return list.map((it,i) => `<div class="erow">
       <input class="field" data-i="${i}" data-f="e" value="${esc(it.e)}" maxlength="4" aria-label="이모지" style="text-align:center">
-      <input class="field" data-i="${i}" data-f="n" value="${esc(it.n)}" maxlength="14" aria-label="운동 이름">
+      <input class="field" data-i="${i}" data-f="n" data-trv value="${esc(it.n)}" maxlength="14" aria-label="운동 이름">
       <input class="field" data-i="${i}" data-f="t" value="${it.t}" inputmode="numeric" aria-label="목표">
-      <select class="field" data-i="${i}" data-f="u" aria-label="단위">${['개','분','초','층','회','km'].map(u=>`<option ${u===it.u?'selected':''}>${u}</option>`).join('')}</select>
+      <select class="field" data-i="${i}" data-f="u" aria-label="단위">${['개','분','초','층','회','km'].map(u=>`<option value="${u}" ${u===it.u?'selected':''}>${u}</option>`).join('')}</select>
       <button class="x" data-rm="${i}" aria-label="빼기">×</button></div>`).join('');
   }
   function bindEditor(el){
@@ -592,6 +592,174 @@ details.panel summary{cursor:pointer;font-weight:600}
   load();
   if(!st.setup && !st.draft.length) st.draft = [PRESETS[0], PRESETS[1]].map(p => ({id:uid(), e:p.e, n:p.n, t:p.t, u:p.u}));
   render();
+})();
+</script>
+<script>
+/* i18n: Korean is the default. English is chosen with the top button (shared key sohwak-lang). */
+(function(){
+  var en = false;
+  try{ en = localStorage.getItem('sohwak-lang') === 'en'; }catch(e){}
+  if(/[?&]lang=en/.test(location.search)) en = true;
+  var btn = document.getElementById('langBtn');
+  if(btn){
+    btn.textContent = en ? '한국어' : 'English';
+    btn.addEventListener('click', function(){
+      try{ localStorage.setItem('sohwak-lang', en ? 'ko' : 'en'); }catch(e){}
+      var u = location.search.replace(/[?&]lang=en/, ''); if(en && /[?&]lang=en/.test(location.search)) location.search = u; else location.reload();
+    });
+  }
+  var MON = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  var WD = {'일':'Sun','월':'Mon','화':'Tue','수':'Wed','목':'Thu','금':'Fri','토':'Sat'};
+  var D = {
+    '다시 시작하기':'Start over', '정말요? 다시 누르면 전부 지워져요':'Sure? Tap again to erase everything',
+    '← 소확앱 다른 앱 보기':'← See other SohwakApp apps', '되돌리기':'Undo', '© 2026 수쌤 · All rights reserved.':'© 2026 Susaem · All rights reserved.',
+    '일':'Sun','월':'Mon','화':'Tue','수':'Wed','목':'Thu','금':'Fri','토':'Sat', '오늘':'Today', '저장':'Save', '취소':'Cancel', '닫기':'Close',
+    '백업':'Backup', '백업 파일 받기':'Download backup file', '백업 불러오기':'Restore backup',
+    '이전 달':'Previous month', '다음 달':'Next month', '지우기':'Delete', '삭제':'Delete', '빼기':'Remove', '이모지':'Emoji',
+    '백업 파일을 받았어요.':'Backup file downloaded.', '백업을 불러왔어요.':'Backup restored.',
+    '기록은 이 휴대폰 브라우저에만 있어요. 가끔 백업 파일을 받아 두세요.':'Records exist only in this phone\'s browser. Download a backup file once in a while.',
+    '기록은 이 휴대폰 브라우저에만 있어요. 가끔 백업 파일을 받아 두면 폰을 바꿔도 되살릴 수 있어요.':'Records exist only in this phone\'s browser. Keep a backup file and you can restore it even after changing phones.'
+  };
+  var P = [
+    [/^(\d+)월 (\d+)일 ([일월화수목금토])요일$/, function(m){ return WD[m[3]] + ', ' + MON[m[1]-1] + ' ' + m[2]; }],
+    [/^(\d{4})년 (\d+)월$/, function(m){ return MON[m[2]-1] + ' ' + m[1]; }],
+    [/^(\d+)\/(\d+)\(([일월화수목금토])\)$/, function(m){ return m[1] + '/' + m[2] + ' (' + WD[m[3]] + ')'; }],
+    [/^(오전|오후) (\d+):(\d+)$/, function(m){ return m[2] + ':' + m[3] + ' ' + (m[1]==='오전' ? 'AM' : 'PM'); }],
+    [/^(\d+)일 (\d+)번째$/, function(m){ return m[1]; }],
+    [/^(\d+)시간 (\d+)분$/, function(m){ return m[1] + 'h ' + m[2] + 'm'; }],
+    [/^(\d+)시간$/, function(m){ return m[1] + 'h'; }],
+    [/^(\d+)분$/, function(m){ return m[1] + ' min'; }],
+    [/^(\d+)일$/, function(m){ return m[1] + (m[1]==='1' ? ' day' : ' days'); }]
+  ];
+  var R = [
+    [/(오전|오후) (\d+):(\d+)/g, function(_, ap, h, mi){ return h + ':' + mi + ' ' + (ap==='오전' ? 'AM' : 'PM'); }],
+    [/(\d+)\/(\d+)\(([일월화수목금토])\)/g, function(_, a, b, w){ return a + '/' + b + ' (' + WD[w] + ')'; }],
+    [/(\d+)시간 (\d+)분/g, function(_, h, mi){ return h + 'h ' + mi + 'm'; }]
+  ];
+  var STRICT_WD = false;
+    (function(){
+    var NAMES = {'팔 들기':'Arm raises','러닝머신':'Treadmill','덤벨 컬':'Dumbbell curls','스쿼트':'Squats','스트레칭':'Stretching','걷기':'Walking','플랭크':'Plank','계단 오르기':'Stair climbing'};
+    var A = {
+      '매일 최소 운동':'Daily Minimum Workout', '매일 최소 운동 정하기':'Set your daily minimum workout',
+      '몸이 피곤한 날에도 할 수 있을 만큼만 정하세요. 적을수록 오래가요. 나중에 언제든 바꿀 수 있어요.':'Pick only what you can do even on tired days. The smaller, the longer it lasts. You can change it anytime.',
+      '골라 보세요 (최대 6개)':'Pick some (up to 6)', '+ 직접 추가':'+ Add your own', '이대로 시작하기':'Start with these',
+      '목표를 내 몸에 맞게 고쳐 보세요 (이모지 · 이름 · 목표 · 단위)':'Adjust the goals to your body (emoji · name · goal · unit)',
+      '체중':'Weight', '쌓인 기록':'Your records', '지금까지 한 운동':'Totals so far', '운동 목록 바꾸기 · 백업':'Edit exercises · Backup',
+      '이모지 · 이름 · 목표 · 단위':'Emoji · name · goal · unit', '+ 추가':'+ Add', '저장하기':'Save',
+      '운동 이름':'Exercise name', '목표':'Goal', '단위':'Unit', '개':'reps', '분':'min', '초':'sec', '층':'floors', '회':'times',
+      '이 브라우저에 저장하지 못했어요. 백업 파일을 받아 두세요.':'Could not save in this browser. Please download a backup file.',
+      '쉬는 날을 취소했어요.':'Rest day canceled.', '오늘은 쉬어요. 연속 기록은 그대로 이어져요 🛌':'Resting today. Your streak stays intact 🛌',
+      '1초가 안 돼서 기록하지 않았어요.':'Under 1 second, so nothing was logged.', '1분이 안 돼서 기록하지 않았어요.':'Under 1 minute, so nothing was logged.',
+      '파일을 받지 못했어요.':'Could not download the file.', '새로 더할 기록이 없어요.':'No new records to add.',
+      '매일 최소 운동 백업 파일이 아니에요.':'That is not a Daily Minimum Workout backup file.',
+      '오늘 최소 운동 완료! 🎉':'Today\'s minimum workout done! 🎉',
+      '오늘의 최소가 내일의 기본이 돼요.':'Today\'s minimum becomes tomorrow\'s baseline.', '완벽한 운동보다 계속하는 운동이 이겨요.':'A workout you keep beats a perfect one.',
+      '시작하는 데는 1분이면 충분해요.':'One minute is enough to get started.', '움직이면 기분이 따라와요. 먼저 몸을 움직여 봐요.':'Mood follows movement. Move first.',
+      '힘든 날 해낸 5분이 가장 값진 5분이에요.':'Five minutes on a hard day are the most valuable five minutes.', '동그라미 하나가 쌓여 달력이 바뀌어요.':'One circle at a time changes your calendar.',
+      '느려도 괜찮아요. 멈추지만 않으면 돼요.':'Slow is fine. Just don\'t stop.', '오늘도 나와의 약속을 지키러 가 볼까요?':'Shall we keep our promise to ourselves today?',
+      '숫자는 오르내려도 습관은 쌓여요.':'Numbers go up and down, but habits add up.', '땀 한 방울이 자신감 한 스푼이 돼요.':'One drop of sweat becomes a spoonful of confidence.',
+      '지금 여기까지 온 나를 먼저 칭찬해 주세요.':'First, praise yourself for coming this far.', '10개가 모이면 100개가 돼요.':'Ten adds up to a hundred.',
+      '어제의 나보다 딱 한 번만 더.':'Just one more than yesterday.', '몸은 오늘 한 만큼을 기억해요.':'Your body remembers what you did today.',
+      '쉬어 가도 괜찮아요. 다시 돌아오면 돼요.':'Resting is okay. Just come back.', '작게 시작해서 오래 가는 사람이 결국 멀리 가요.':'Those who start small and last long go the farthest.',
+      '하기 싫은 날의 한 세트가 진짜 실력이에요.':'One set on a day you don\'t want to is real strength.', '오늘의 나에게 동그라미를 선물해요.':'Give today\'s you a circle.',
+      '천천히, 꾸준히, 나답게.':'Slowly, steadily, in your own way.', '가장 좋은 운동은 오늘 하는 운동이에요.':'The best workout is the one you do today.',
+      '오늘 약속 지켰어요! 동그라미 하나 추가예요.':'Promise kept today! One more circle.', '오늘은 푹 쉬는 날. 회복도 운동의 일부예요.':'A full rest day. Recovery is part of training.',
+      '어제는 쉬었으니 오늘 가볍게 다시 시작해요. 하나만 해도 동그라미 반은 그린 거예요.':'You rested yesterday, so ease back in today. Even just one thing draws half a circle.',
+      '벌써 시작했네요! 남은 것만 채우면 오늘도 동그라미예요.':'You already started! Finish the rest and today gets a circle.',
+      '하루가 끝나기 전에 딱 하나만 해 볼까요? 가장 쉬운 것부터요.':'Before the day ends, how about just one? Start with the easiest.',
+      '꾸준함이 숫자로도 보이기 시작했어요. 지금처럼만 가요.':'Your consistency is starting to show in the numbers. Keep it up.',
+      '이날 체중 기록을 지웠어요.':'Deleted that day\'s weight.', '체중을 kg 단위로 적어 주세요. (예: 62.4)':'Enter your weight in kg (e.g. 62.4).',
+      '점은 그날 체중, 선은 7일 평균이에요.':'Dots are daily weight; the line is the 7-day average.',
+      '하루만 더 적으면 그래프가 그려져요.':'Log one more day and the chart appears.', '체중을 적으면 여기에 추이 그래프가 생겨요.':'Log your weight and a trend chart will appear here.',
+      '체중은 하루에도 1~2kg씩 오르내려요. 하루 숫자보다 선의 방향을 봐 주세요.':'Weight can move 1–2kg in a day. Watch the direction of the line, not a single number.',
+      '고치기':'Edit', '기록':'Log', '최근':'Latest', '처음과 비교':'Since start', '지난주 대비':'Vs last week', '30일':'30 days', '90일':'90 days', '전체':'All',
+      '쉬는 날이에요. 푹 쉬는 것도 운동의 일부예요.':'It\'s a rest day. Resting well is part of training too.', '다 했어요! 내일도 이만큼만 하면 돼요.':'All done! Just do the same tomorrow.',
+      '오늘의 최소만 하면 돼요. 가볍게 시작해 볼까요?':'Just today\'s minimum is enough. Start light?', '이날은 기록이 없어요. 했던 게 있으면 채워 주세요.':'No record for this day. Fill in anything you did.',
+      '시작했으면 절반은 한 거예요.':'Starting is half the work.', '거의 다 왔어요. 조금만 더!':'Almost there. A little more!',
+      '이 브라우저는 기록을 저장하지 못하고 있어요. 시크릿 모드라면 일반 창으로 열어 주세요.':'This browser cannot save your records. If you are in private mode, open a normal window.',
+      '지금 백업하기':'Back up now', '아직 백업한 적이 없어요.':'You have never backed up.',
+      '멈추고 기록':'Stop and log', '⏱ 스탑와치':'⏱ Stopwatch', '⏱ 타이머':'⏱ Timer', '완료됨':'Done', '✓ 다 했어요':'✓ Mark done', '처음으로':'Reset',
+      '쉬는 날 취소':'Cancel rest day', '🛌 쉬는 날':'🛌 Rest day', '오늘의 응원':'Today\'s cheer',
+      '연속':'Streak', '최고 연속':'Best streak', '이번 달':'This month', '지금까지 최소 운동을 채운 날':'Days you completed your minimum', '미션 완료':'Mission done', '일부':'Partial', '쉬는 날':'Rest day', '완료!':'Done!',
+      '완료':'Done', '기록 없음':'No record', '전날':'Previous day', '다음날':'Next day',
+      '기록은 이 기기의 브라우저에만 저장돼요. 로그인은 필요 없어요.':'Records are stored only in this device\'s browser. No login needed.', '지금은 저장이 되지 않는 상태예요.':'Nothing is being saved right now.',
+      '최대 6개까지예요. 적을수록 오래가요.':'Up to 6. Fewer lasts longer.', '최대 6개까지예요.':'Up to 6.', '운동을 하나 이상 골라 주세요.':'Please pick at least one exercise.',
+      '운동을 하나 이상 남겨 주세요.':'Please keep at least one exercise.', '운동 목록을 바꿨어요. 지난 기록은 그대로예요.':'Exercise list updated. Past records are unchanged.', '처음으로 돌렸어요.':'Reset to zero.'
+    };
+    for(var k in A) D[k] = A[k];
+    for(var n in NAMES) D[n] = NAMES[n];
+    var UNIT = {'개':' reps','분':' min','초':' sec','층':' floors','회':' times'};
+    var NM = Object.keys(NAMES).sort(function(a,b){ return b.length - a.length; });
+    R.push([new RegExp(NM.join('|'), 'g'), function(m){ return NAMES[m]; }]);
+    R.push([/(\d[\d,]*)(개|분|초|층|회)/g, function(_, n, u){ return n + UNIT[u]; }]);
+    R.push([/(\d+)일 연속/g, function(_, n){ return n + '-day streak'; }]);
+    R.push([/ 중$/, function(){ return ' in progress'; }]);
+    P = [
+      [/^(.+) 체중 · 매일 같은 시간\(아침 화장실 다녀온 뒤\)에 재면 추이가 더 정확해요\.$/, function(m){ return (m[1]==='오늘' ? 'Today\'s' : tr(m[1])) + ' weight · Weigh yourself at the same time every day (e.g. morning after the bathroom) for a more accurate trend.'; }],
+      [/^(.+) 체중$/, function(m){ return (m[1]==='오늘' ? 'Today\'s' : tr(m[1])) + ' weight'; }],
+      [/^오늘 최소 운동 완료! (\d+)일째 이어가고 있어요 🔥$/, function(m){ return 'Today\'s minimum workout done! Day ' + m[1] + ' in a row 🔥'; }],
+      [/^(.+) 기록을 채웠어요\.$/, function(m){ return 'Filled in the record for ' + tr(m[1]) + '.'; }],
+      [/^이번 달 쉬는 날 카드 (\d+)장을 다 썼어요\.$/, function(m){ return 'You used all ' + m[1] + ' rest-day cards this month.'; }],
+      [/^아프거나 정말 힘든 날엔 쉬어도 돼요\. 이번 달 쉬는 날 카드 (\d+)장 남음$/, function(m){ return 'You can rest when sick or truly exhausted. Rest-day cards left this month: ' + m[1]; }],
+      [/^([\d,]+)(개|분|초|층|회) 기록했어요\.$/, function(m){ return m[1] + UNIT[m[2]] + ' logged.'; }],
+      [/^기록 (\d+)건을 되살렸어요\.$/, function(m){ return 'Restored ' + m[1] + ' records.'; }],
+      [/^([\d.]+)kg 기록했어요\.$/, function(m){ return m[1] + 'kg logged.'; }],
+      [/^(\d+)일 연속 달성! 이건 정말 대단한 기록이에요\. 오늘의 나를 마음껏 자랑하세요\.$/, function(m){ return m[1] + '-day streak! That is a truly great record. Be proud of today\'s you.'; }],
+      [/^오늘 약속 지켰어요! (\d+)일째 이어 가는 중이에요\. 내일도 딱 이만큼만\.$/, function(m){ return 'Promise kept today! Day ' + m[1] + ' in a row. Just this much tomorrow too.'; }],
+      [/^마지막 백업이 (\d+)일 전이에요\. 기록이 이 폰에만 있어요\.$/, function(m){ return 'Your last backup was ' + m[1] + ' days ago. Your records exist only on this phone.'; }],
+      [/^총 (\d+)일$/, function(m){ return 'Total ' + m[1] + ' days'; }],
+      [/^최근 (\d+)일은 눌러서 고칠 수 있어요$/, function(m){ return 'Tap any of the last ' + m[1] + ' days to edit'; }],
+      [/^(.+) (\d+)개 중 (\d+)개 완료$/, function(m){ return tr(m[1]) + ': ' + m[3] + ' of ' + m[2] + ' done'; }],
+      [/^(\d+)일 (완료|일부|쉬는 날|기록 없음)$/, function(m){ return 'Day ' + m[1] + ': ' + tr(m[2]); }],
+      [/^(\d+) 빼기$/, function(m){ return 'Remove ' + m[1]; }],
+      [/^(\d+)(개|분|초|층|회|km) 빼기$/, function(m){ return 'Remove ' + m[1] + (UNIT[m[2]] || ' ' + m[2]); }],
+      [/^체중 추이 그래프, ([\d.]+)kg에서 ([\d.]+)kg$/, function(m){ return 'Weight trend chart, from ' + m[1] + 'kg to ' + m[2] + 'kg'; }],
+      [/^([\d.]+)에서 ([\d.]+)$/, function(m){ return m[1] + ' to ' + m[2]; }]
+    ].concat(P);
+  })();
+
+  function tr(s){
+    var t = s.trim(); if(!t || !/[가-힣]/.test(t)) return s;
+    var r = D[t];
+    if(r === undefined){ for(var i=0;i<P.length;i++){ var m = t.match(P[i][0]); if(m){ r = P[i][1](m); break; } } }
+    if(r === undefined){ var o = t; for(var j=0;j<R.length;j++) o = o.replace(R[j][0], R[j][1]); if(o !== t) r = o; }
+    return r === undefined ? s : s.replace(t, r);
+  }
+  var ATTRS = ['aria-label','title','placeholder','alt'];
+  function fixNode(n){
+    var p = n.parentNode; if(!p || /^(SCRIPT|STYLE|TEXTAREA)$/.test(p.nodeName)) return;
+    if(p.id === 'langBtn') return;
+    var v = n.nodeValue;
+    if(STRICT_WD && /^\s*[일월화수목금토]\s*$/.test(v) && !(p.classList && p.classList.contains('wd'))) return;
+    var r = tr(v); if(r !== v) n.nodeValue = r;
+  }
+  function fixAttrs(el){
+    if(el.id === 'langBtn') return;
+    if(el.hasAttribute && el.hasAttribute('data-trv') && document.activeElement !== el){ var cv = el.value, cr = tr(cv); if(cr !== cv) el.value = cr; }
+    for(var i=0;i<ATTRS.length;i++){ var a = ATTRS[i]; if(el.hasAttribute && el.hasAttribute(a)){ var v = el.getAttribute(a), r = tr(v); if(r !== v) el.setAttribute(a, r); } }
+  }
+  function walk(root){
+    if(root.nodeType === 3){ fixNode(root); return; }
+    if(root.nodeType !== 1) return;
+    fixAttrs(root);
+    var w = document.createTreeWalker(root, 5), n;
+    while((n = w.nextNode())){ if(n.nodeType === 3) fixNode(n); else fixAttrs(n); }
+  }
+  function enable(){
+    document.documentElement.lang = 'en';
+    window.__sohwakTr = tr;
+    document.title = tr(document.title);
+    walk(document.body);
+    new MutationObserver(function(ms){
+      ms.forEach(function(m){
+        if(m.type === 'childList') m.addedNodes.forEach(walk);
+        else if(m.type === 'characterData') fixNode(m.target);
+        else if(m.type === 'attributes') fixAttrs(m.target);
+      });
+    }).observe(document.body, {childList:true, subtree:true, characterData:true, attributes:true, attributeFilter:ATTRS});
+  }
+  window.__sohwakEn = enable;
+  if(en) enable();
 })();
 </script>
 </body>

@@ -85,7 +85,7 @@ details.card summary{cursor:pointer;font-weight:600}
 <main>
   <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin:0 0 14px">
     <p class="copyright" style="margin:0">© 2026 수쌤 · All rights reserved.</p>
-    <button type="button" id="resetBtn" style="border:0;background:transparent;color:var(--muted);text-decoration:underline;cursor:pointer;font-size:.78rem;padding:2px;white-space:nowrap">다시 시작하기</button>
+    <span style="display:flex;gap:12px;align-items:center"><button type="button" id="langBtn" style="border:1px solid var(--line);background:transparent;color:var(--muted);border-radius:999px;cursor:pointer;font-size:.78rem;padding:2px 10px;white-space:nowrap">English</button><button type="button" id="resetBtn" style="border:0;background:transparent;color:var(--muted);text-decoration:underline;cursor:pointer;font-size:.78rem;padding:2px;white-space:nowrap">다시 시작하기</button></span>
   </div>
   <h1>공복 타이머</h1>
   <div class="card timer" id="timer"></div>
@@ -364,6 +364,134 @@ details.card summary{cursor:pointer;font-weight:600}
   setInterval(tick, 1000);
   document.addEventListener('visibilitychange', () => { if(document.visibilityState==='visible') renderAll(); });
   init();
+})();
+</script>
+<script>
+/* i18n: Korean is the default. English is chosen with the top button (shared key sohwak-lang). */
+(function(){
+  var en = false;
+  try{ en = localStorage.getItem('sohwak-lang') === 'en'; }catch(e){}
+  if(/[?&]lang=en/.test(location.search)) en = true;
+  var btn = document.getElementById('langBtn');
+  if(btn){
+    btn.textContent = en ? '한국어' : 'English';
+    btn.addEventListener('click', function(){
+      try{ localStorage.setItem('sohwak-lang', en ? 'ko' : 'en'); }catch(e){}
+      var u = location.search.replace(/[?&]lang=en/, ''); if(en && /[?&]lang=en/.test(location.search)) location.search = u; else location.reload();
+    });
+  }
+  var MON = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  var WD = {'일':'Sun','월':'Mon','화':'Tue','수':'Wed','목':'Thu','금':'Fri','토':'Sat'};
+  var D = {
+    '다시 시작하기':'Start over', '정말요? 다시 누르면 전부 지워져요':'Sure? Tap again to erase everything',
+    '← 소확앱 다른 앱 보기':'← See other SohwakApp apps', '되돌리기':'Undo', '© 2026 수쌤 · All rights reserved.':'© 2026 Susaem · All rights reserved.',
+    '일':'Sun','월':'Mon','화':'Tue','수':'Wed','목':'Thu','금':'Fri','토':'Sat', '오늘':'Today', '저장':'Save', '취소':'Cancel', '닫기':'Close',
+    '백업':'Backup', '백업 파일 받기':'Download backup file', '백업 불러오기':'Restore backup',
+    '이전 달':'Previous month', '다음 달':'Next month', '지우기':'Delete', '삭제':'Delete', '빼기':'Remove', '이모지':'Emoji',
+    '백업 파일을 받았어요.':'Backup file downloaded.', '백업을 불러왔어요.':'Backup restored.',
+    '기록은 이 휴대폰 브라우저에만 있어요. 가끔 백업 파일을 받아 두세요.':'Records exist only in this phone\'s browser. Download a backup file once in a while.',
+    '기록은 이 휴대폰 브라우저에만 있어요. 가끔 백업 파일을 받아 두면 폰을 바꿔도 되살릴 수 있어요.':'Records exist only in this phone\'s browser. Keep a backup file and you can restore it even after changing phones.'
+  };
+  var P = [
+    [/^(\d+)월 (\d+)일 ([일월화수목금토])요일$/, function(m){ return WD[m[3]] + ', ' + MON[m[1]-1] + ' ' + m[2]; }],
+    [/^(\d{4})년 (\d+)월$/, function(m){ return MON[m[2]-1] + ' ' + m[1]; }],
+    [/^(\d+)\/(\d+)\(([일월화수목금토])\)$/, function(m){ return m[1] + '/' + m[2] + ' (' + WD[m[3]] + ')'; }],
+    [/^(오전|오후) (\d+):(\d+)$/, function(m){ return m[2] + ':' + m[3] + ' ' + (m[1]==='오전' ? 'AM' : 'PM'); }],
+    [/^(\d+)일 (\d+)번째$/, function(m){ return m[1]; }],
+    [/^(\d+)시간 (\d+)분$/, function(m){ return m[1] + 'h ' + m[2] + 'm'; }],
+    [/^(\d+)시간$/, function(m){ return m[1] + 'h'; }],
+    [/^(\d+)분$/, function(m){ return m[1] + ' min'; }],
+    [/^(\d+)일$/, function(m){ return m[1] + (m[1]==='1' ? ' day' : ' days'); }]
+  ];
+  var R = [
+    [/(오전|오후) (\d+):(\d+)/g, function(_, ap, h, mi){ return h + ':' + mi + ' ' + (ap==='오전' ? 'AM' : 'PM'); }],
+    [/(\d+)\/(\d+)\(([일월화수목금토])\)/g, function(_, a, b, w){ return a + '/' + b + ' (' + WD[w] + ')'; }],
+    [/(\d+)시간 (\d+)분/g, function(_, h, mi){ return h + 'h ' + mi + 'm'; }]
+  ];
+  var STRICT_WD = false;
+    (function(){
+    var A = {
+      '공복 타이머':'Fasting Timer', '누적 기록':'Totals', '최근 7일':'Last 7 days',
+      '점선은 목표 시간이에요. 하루에 끝난 공복을 기준으로 보여요.':'The dashed line is your goal time. Shows the fasts that ended each day.',
+      '공복 일지':'Fasting log', '지난 공복 직접 추가':'Add a past fast', '시작':'Start', '끝':'End', '기록 추가':'Add record',
+      '공복 중':'Fasting', '식사 시간':'Eating time', '공복 시작':'Start fast', '공복 끝내기':'End fast',
+      '시작 시각 고치기':'Edit start time', '끝난 시각 지정해서 끝내기':'End at a specific time',
+      '이미 시작했어요 (시각 지정)':'Already started (set time)', '시작 시각':'Start time', '끝난 시각':'End time', '끝내기':'End', '시작한 시각':'Started at',
+      '목표':'Goal', '목표 시각':'Goal time', '달성 시각':'Reached at', '지난 공복':'Last fast', '다음 시작 추천':'Next start (suggested)',
+      '마지막 공복이 끝난 뒤':'Since your last fast ended', '시작 버튼을 눌러 보세요':'Tap Start to begin',
+      '목표를 채웠어요. 준비되면 편하게 식사하세요.':'Goal reached. Eat whenever you are ready.',
+      '마지막 구간이에요. 거의 다 왔어요.':'Final stretch. Almost there.', '절반을 넘었어요.':'Past halfway.', '공복 목표':'Fasting goal',
+      '연속 달성':'Streak', '이번 7일':'This week', '7일 평균':'7-day avg', '지금까지 쌓은 공복':'Fasts so far',
+      '아직 기록이 없어요. 첫 공복을 시작해 보세요.':'No records yet. Start your first fast.', '불러오는 중…':'Loading…',
+      '이 기록 지우기':'Delete this record', '식사 시간':'Eating time',
+      '기록은 내 계정에만 보여요. 폰과 PC에서 이어져요.':'Records are visible only to your account and sync across phone and PC.',
+      '지금은 이 기기에만 저장돼요.':'Saved only on this device for now.',
+      '이 기기에 저장하지 못했어요.':'Could not save on this device.', '저장 공간이 가득 찼어요.':'Storage is full.',
+      '저장하지 못했어요. 잠시 뒤 다시 해 주세요.':'Could not save. Please try again in a moment.',
+      '공복을 시작했어요. 물은 편하게 드세요.':'Fast started. Drink water freely.',
+      '끝 시각이 시작보다 빨라요.':'The end time is earlier than the start.', '지웠어요.':'Deleted.',
+      '모든 기록을 초기화했어요.':'All records were reset.', '지금보다 이전 시각으로 골라 주세요.':'Please pick a time before now.',
+      '시작 시각을 고쳤어요.':'Start time updated.', '공복 기록을 이어서 시작했어요.':'Continuing your fast record.',
+      '끝 시각이 시작보다 늦어야 해요.':'The end time must be later than the start.',
+      '끝 시각은 지금보다 이전이어야 해요.':'The end time must be before now.',
+      '72시간이 넘는 기록은 넣을 수 없어요.':'Records longer than 72 hours cannot be added.', '지난 공복을 기록했어요.':'Past fast recorded.',
+      '최근 7일 공복 시간 막대그래프':'Bar chart of fasting hours over the last 7 days'
+    };
+    for(var k in A) D[k] = A[k];
+    P = [
+      [/^(\d+)% · 목표 (\d+)시간$/, function(m){ return m[1] + '% · goal ' + m[2] + 'h'; }],
+      [/^목표보다 (.+) 더$/, function(m){ return tr(m[1]) + ' over goal'; }],
+      [/^(\d+)시간 공복$/, function(m){ return m[1] + '-hour fast'; }],
+      [/^(\d+)번 · 총 (\d+)시간$/, function(m){ return m[1] + (m[1]==='1' ? ' fast' : ' fasts') + ' · total ' + m[2] + 'h'; }],
+      [/^공복 진행률 (\d+)퍼센트$/, function(m){ return 'Fasting progress ' + m[1] + ' percent'; }],
+      [/^(.+)! 목표 달성이에요\.$/, function(m){ return tr(m[1]) + '! Goal reached.'; }],
+      [/^(.+) 기록했어요\. 오늘도 한 걸음이에요\.$/, function(m){ return tr(m[1]) + ' recorded. One more step today.'; }]
+    ].concat(P);
+    R.push([/ · 목표 (\d+)h/g, function(_, h){ return ' · goal ' + h + 'h'; }]);
+  })();
+
+  function tr(s){
+    var t = s.trim(); if(!t || !/[가-힣]/.test(t)) return s;
+    var r = D[t];
+    if(r === undefined){ for(var i=0;i<P.length;i++){ var m = t.match(P[i][0]); if(m){ r = P[i][1](m); break; } } }
+    if(r === undefined){ var o = t; for(var j=0;j<R.length;j++) o = o.replace(R[j][0], R[j][1]); if(o !== t) r = o; }
+    return r === undefined ? s : s.replace(t, r);
+  }
+  var ATTRS = ['aria-label','title','placeholder','alt'];
+  function fixNode(n){
+    var p = n.parentNode; if(!p || /^(SCRIPT|STYLE|TEXTAREA)$/.test(p.nodeName)) return;
+    if(p.id === 'langBtn') return;
+    var v = n.nodeValue;
+    if(STRICT_WD && /^\s*[일월화수목금토]\s*$/.test(v) && !(p.classList && p.classList.contains('wd'))) return;
+    var r = tr(v); if(r !== v) n.nodeValue = r;
+  }
+  function fixAttrs(el){
+    if(el.id === 'langBtn') return;
+    if(el.hasAttribute && el.hasAttribute('data-trv') && document.activeElement !== el){ var cv = el.value, cr = tr(cv); if(cr !== cv) el.value = cr; }
+    for(var i=0;i<ATTRS.length;i++){ var a = ATTRS[i]; if(el.hasAttribute && el.hasAttribute(a)){ var v = el.getAttribute(a), r = tr(v); if(r !== v) el.setAttribute(a, r); } }
+  }
+  function walk(root){
+    if(root.nodeType === 3){ fixNode(root); return; }
+    if(root.nodeType !== 1) return;
+    fixAttrs(root);
+    var w = document.createTreeWalker(root, 5), n;
+    while((n = w.nextNode())){ if(n.nodeType === 3) fixNode(n); else fixAttrs(n); }
+  }
+  function enable(){
+    document.documentElement.lang = 'en';
+    window.__sohwakTr = tr;
+    document.title = tr(document.title);
+    walk(document.body);
+    new MutationObserver(function(ms){
+      ms.forEach(function(m){
+        if(m.type === 'childList') m.addedNodes.forEach(walk);
+        else if(m.type === 'characterData') fixNode(m.target);
+        else if(m.type === 'attributes') fixAttrs(m.target);
+      });
+    }).observe(document.body, {childList:true, subtree:true, characterData:true, attributes:true, attributeFilter:ATTRS});
+  }
+  window.__sohwakEn = enable;
+  if(en) enable();
 })();
 </script>
 </body>

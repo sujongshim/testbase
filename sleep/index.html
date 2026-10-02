@@ -111,7 +111,7 @@ details.panel summary{cursor:pointer;font-weight:600}
 <main>
   <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin:0 0 14px">
     <p class="copyright" style="margin:0">© 2026 수쌤 · All rights reserved.</p>
-    <button type="button" id="resetBtn" style="border:0;background:transparent;color:var(--muted);text-decoration:underline;cursor:pointer;font-size:.78rem;padding:2px;white-space:nowrap">다시 시작하기</button>
+    <span style="display:flex;gap:12px;align-items:center"><button type="button" id="langBtn" style="border:1px solid var(--line);background:transparent;color:var(--muted);border-radius:999px;cursor:pointer;font-size:.78rem;padding:2px 10px;white-space:nowrap">English</button><button type="button" id="resetBtn" style="border:0;background:transparent;color:var(--muted);text-decoration:underline;cursor:pointer;font-size:.78rem;padding:2px;white-space:nowrap">다시 시작하기</button></span>
   </div>
   <div class="setup" id="setup" hidden>
     <h2 class="d">잘 자요 · 수면 목표 정하기</h2>
@@ -247,7 +247,7 @@ details.panel summary{cursor:pointer;font-weight:600}
     if(!st.active) return;
     const end = Math.min(at || Date.now(), Date.now());
     if(end <= st.active.start){ toast('일어난 시각이 잠든 시각보다 빨라요.'); return; }
-    if(end - st.active.start > 20*HR && !confirm(`${hm(end-st.active.start)}로 기록돼요. '잠든 시각 고치기'를 먼저 하시겠어요? 확인을 누르면 그대로 저장해요.`)) return;
+    if(end - st.active.start > 20*HR && !confirm((window.__sohwakTr||(s=>s))(`${hm(end-st.active.start)}로 기록돼요. '잠든 시각 고치기'를 먼저 하시겠어요? 확인을 누르면 그대로 저장해요.`))) return;
     const n = {id:uid(), start:st.active.start, end};
     st.nights.push(n); st.active = null; st.editing = false; save(); render();
     const j = judge(n);
@@ -466,6 +466,155 @@ details.panel summary{cursor:pointer;font-weight:600}
   setTimeSelect('uBedH','uBedM','23:00'); setTimeSelect('uWakeH','uWakeM','06:00');
 
   load(); render();
+})();
+</script>
+<script>
+/* i18n: Korean is the default. English is chosen with the top button (shared key sohwak-lang). */
+(function(){
+  var en = false;
+  try{ en = localStorage.getItem('sohwak-lang') === 'en'; }catch(e){}
+  if(/[?&]lang=en/.test(location.search)) en = true;
+  var btn = document.getElementById('langBtn');
+  if(btn){
+    btn.textContent = en ? '한국어' : 'English';
+    btn.addEventListener('click', function(){
+      try{ localStorage.setItem('sohwak-lang', en ? 'ko' : 'en'); }catch(e){}
+      var u = location.search.replace(/[?&]lang=en/, ''); if(en && /[?&]lang=en/.test(location.search)) location.search = u; else location.reload();
+    });
+  }
+  var MON = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  var WD = {'일':'Sun','월':'Mon','화':'Tue','수':'Wed','목':'Thu','금':'Fri','토':'Sat'};
+  var D = {
+    '다시 시작하기':'Start over', '정말요? 다시 누르면 전부 지워져요':'Sure? Tap again to erase everything',
+    '← 소확앱 다른 앱 보기':'← See other SohwakApp apps', '되돌리기':'Undo', '© 2026 수쌤 · All rights reserved.':'© 2026 Susaem · All rights reserved.',
+    '일':'Sun','월':'Mon','화':'Tue','수':'Wed','목':'Thu','금':'Fri','토':'Sat', '오늘':'Today', '저장':'Save', '취소':'Cancel', '닫기':'Close',
+    '백업':'Backup', '백업 파일 받기':'Download backup file', '백업 불러오기':'Restore backup',
+    '이전 달':'Previous month', '다음 달':'Next month', '지우기':'Delete', '삭제':'Delete', '빼기':'Remove', '이모지':'Emoji',
+    '백업 파일을 받았어요.':'Backup file downloaded.', '백업을 불러왔어요.':'Backup restored.',
+    '기록은 이 휴대폰 브라우저에만 있어요. 가끔 백업 파일을 받아 두세요.':'Records exist only in this phone\'s browser. Download a backup file once in a while.',
+    '기록은 이 휴대폰 브라우저에만 있어요. 가끔 백업 파일을 받아 두면 폰을 바꿔도 되살릴 수 있어요.':'Records exist only in this phone\'s browser. Keep a backup file and you can restore it even after changing phones.'
+  };
+  var P = [
+    [/^(\d+)월 (\d+)일 ([일월화수목금토])요일$/, function(m){ return WD[m[3]] + ', ' + MON[m[1]-1] + ' ' + m[2]; }],
+    [/^(\d{4})년 (\d+)월$/, function(m){ return MON[m[2]-1] + ' ' + m[1]; }],
+    [/^(\d+)\/(\d+)\(([일월화수목금토])\)$/, function(m){ return m[1] + '/' + m[2] + ' (' + WD[m[3]] + ')'; }],
+    [/^(오전|오후) (\d+):(\d+)$/, function(m){ return m[2] + ':' + m[3] + ' ' + (m[1]==='오전' ? 'AM' : 'PM'); }],
+    [/^(\d+)일 (\d+)번째$/, function(m){ return m[1]; }],
+    [/^(\d+)시간 (\d+)분$/, function(m){ return m[1] + 'h ' + m[2] + 'm'; }],
+    [/^(\d+)시간$/, function(m){ return m[1] + 'h'; }],
+    [/^(\d+)분$/, function(m){ return m[1] + ' min'; }],
+    [/^(\d+)일$/, function(m){ return m[1] + (m[1]==='1' ? ' day' : ' days'); }]
+  ];
+  var R = [
+    [/(오전|오후) (\d+):(\d+)/g, function(_, ap, h, mi){ return h + ':' + mi + ' ' + (ap==='오전' ? 'AM' : 'PM'); }],
+    [/(\d+)\/(\d+)\(([일월화수목금토])\)/g, function(_, a, b, w){ return a + '/' + b + ' (' + WD[w] + ')'; }],
+    [/(\d+)시간 (\d+)분/g, function(_, h, mi){ return h + 'h ' + mi + 'm'; }]
+  ];
+  var STRICT_WD = false;
+    (function(){
+    var A = {
+      '잘 자요 · 수면 기록':'Sleep Well · Sleep log', '잘 자요 · 수면 목표 정하기':'Sleep Well · Set your sleep goal',
+      '매일 같은 시간에 자고 일어나는 게 가장 중요해요. 나중에 바꿀 수 있어요.':'Sleeping and waking at the same time every day matters most. You can change this later.',
+      '잠자리에 들 시각':'Bedtime', '일어날 시각':'Wake-up time', '최소 수면 (시간)':'Minimum sleep (hours)', '적정 최대 (시간)':'Healthy maximum (hours)', '시작하기':'Get started',
+      '쌓인 기록':'Your records', '최근 7일 잠':'Sleep, last 7 days', '연한 띠가 목표 시간이에요. 막대가 띠 안에 들어올수록 좋아요.':'The pale band is your target window. The closer the bars are to it, the better.',
+      '수면 일지':'Sleep log', '목표 바꾸기 · 지난 잠 추가 · 백업':'Edit goal · Add past sleep · Backup', '목표 저장':'Save goal', '지난 잠 직접 추가':'Add past sleep manually',
+      '잠든 시각':'Fell asleep', '일어난 시각':'Woke up', '기록 추가':'Add record',
+      '이 브라우저에 저장하지 못했어요. 백업 파일을 받아 두세요.':'Could not save in this browser. Please download a backup file.',
+      '잘 자요 🌙 휴대폰은 내려놓고 푹 쉬세요.':'Good night 🌙 Put your phone down and rest well.',
+      '일어난 시각이 잠든 시각보다 빨라요.':'The wake-up time is earlier than the time you fell asleep.',
+      '일어난 시각이 잠든 시각보다 늦어야 해요.':'The wake-up time must be later than the time you fell asleep.',
+      '일어난 시각은 지금보다 이전이어야 해요.':'The wake-up time must be before now.', '20시간이 넘는 잠은 넣을 수 없어요.':'Sleep longer than 20 hours cannot be added.',
+      '이미 기록된 잠과 시간이 겹쳐요.':'This overlaps with sleep that is already logged.', '지난 잠을 기록했어요.':'Past sleep recorded.', '지웠어요.':'Deleted.',
+      '백업 파일을 받았어요.':'Backup file downloaded.', '파일을 받지 못했어요.':'Could not download the file.', '새로 더할 기록이 없어요.':'No new records to add.', '잘 자요 백업 파일이 아니에요.':'That is not a Sleep Well backup file.',
+      '매일 같은 시각에 일어나면 밤에 잠드는 시각도 자연스럽게 맞춰져요.':'If you wake at the same time every day, your bedtime naturally falls into place.',
+      '잠들기 1시간 전부터는 화면 밝기를 낮추고 조명을 어둡게 해 보세요.':'From one hour before bed, lower your screen brightness and dim the lights.',
+      '오후 늦게 마신 커피는 밤잠을 방해할 수 있어요.':'Coffee late in the afternoon can disturb your night\'s sleep.', '침실은 조금 서늘하고 어둡게, 조용하게.':'Keep the bedroom slightly cool, dark and quiet.',
+      '아침에 일어나 햇빛을 쬐면 밤에 잠이 더 잘 와요.':'Getting sunlight in the morning helps you fall asleep at night.',
+      '잠이 안 오면 억지로 누워 있기보다 잠깐 일어나 조용한 일을 해 보세요.':'If you can\'t sleep, don\'t force it — get up for a bit and do something quiet.',
+      '주말에도 평소와 비슷한 시각에 일어나면 월요일이 덜 힘들어요.':'Waking at a similar time on weekends makes Monday easier.', '잠들기 직전의 과식과 음주는 깊은 잠을 방해해요.':'Overeating or drinking right before bed disturbs deep sleep.',
+      '목표만큼 잤어요. 일어나면 "일어났어요"를 눌러 주세요.':'You\'ve slept your goal. When you wake up, tap "I\'m up".', '푹 자고 있는 중이에요. 내일의 나를 위한 가장 좋은 투자예요.':'You\'re sleeping soundly. It\'s the best investment for tomorrow\'s you.',
+      '어젯밤은 목표에 조금 못 미쳤어요. 괜찮아요, 오늘 밤 다시 맞추면 돼요.':'Last night fell a little short of your goal. That\'s okay — just reset tonight.',
+      '🌙 자는 중':'🌙 Sleeping', '☀️ 깨어 있음':'☀️ Awake', '지금!':'Now!', '목표 기상':'Goal wake-up', '목표':'Goal', '지난 잠':'Last sleep',
+      '✓ 제시간 취침':'✓ On-time bedtime', '· 제시간 취침':'· On-time bedtime', '✓ 제시간 기상':'✓ On-time wake-up', '· 제시간 기상':'· On-time wake-up',
+      '☀️ 일어났어요':'☀️ I\'m up', '잠든 시각 고치기':'Edit sleep time', '일어난 시각 지정':'Set wake-up time', '🌙 잠자리에 들기':'🌙 Go to bed', '이미 잠들었었어요 (시각 지정)':'I was already asleep (set time)',
+      '저장':'Save', '기록':'Log', '시작':'Start', '수면 진행':'Sleep progress', '취침까지 남은 시간':'Time until bedtime', '잘 자요':'Sleep well', '오늘의 한마디':'Today\'s tip',
+      '이 브라우저는 기록을 저장하지 못하고 있어요. 시크릿 모드라면 일반 창으로 열어 주세요.':'This browser cannot save your records. If you are in private mode, open a normal window.',
+      '지금 백업하기':'Back up now', '아직 백업한 적이 없어요.':'You have never backed up.',
+      '연속 달성':'Streak', '7일 중 달성':'Goals met (of 7)', '7일 평균':'7-day avg', '평균 취침':'Avg bedtime', '평균 기상':'Avg wake-up', '주간 부족 잠':'Weekly sleep debt', '없음 👍':'None 👍',
+      '최근 7일 잠든 시각과 일어난 시각':'Bedtime and wake-up time over the last 7 days', '목표 달성':'Goal met', '아쉬운 날':'Missed', '기록 있음':'Has record', '기록 없음':'No record', '기록만 있음':'Record only',
+      '짧은 잠':'Short nap', '이 기록 지우기':'Delete this record',
+      '아직 기록이 없어요. 오늘 밤 \'잠자리에 들기\'를 눌러 보세요.':'No records yet. Tap \'Go to bed\' tonight.',
+      '기록은 이 기기의 브라우저에만 저장돼요. 로그인은 필요 없어요.':'Records are stored only in this device\'s browser. No login needed.', '지금은 저장이 되지 않는 상태예요.':'Nothing is being saved right now.',
+      '시각을 모두 정해 주세요.':'Please set all the times.', '수면 시간은 4~12시간, 최대는 최소보다 크게 적어 주세요.':'Sleep must be 4–12 hours, with the maximum above the minimum.',
+      '목표를 바꿨어요.':'Goal updated.', '지금보다 이전 시각으로 골라 주세요.':'Please pick a time before now.', '잠든 시각을 고쳤어요.':'Sleep time updated.'
+    };
+    for(var k in A) D[k] = A[k];
+    var times = function(s){ return tr(s); };
+    R.push([/ · 너무 길게 잤어요/g, function(){ return ' · slept too long'; }]);
+    P = [
+      [/^(\d+)시$/, function(m){ return m[1] + 'h'; }],
+      [/^(.+) 짧은 잠으로 기록했어요\.$/, function(m){ return tr(m[1]) + ' recorded as a short nap.'; }],
+      [/^(.+) 잤어요\. 목표 달성 ⭕$/, function(m){ return 'Slept ' + tr(m[1]) + '. Goal met ⭕'; }],
+      [/^(.+) 잤어요\. 좋은 아침이에요!$/, function(m){ return 'Slept ' + tr(m[1]) + '. Good morning!'; }],
+      [/^잠 기록 (\d+)개를 되살렸어요\.$/, function(m){ return 'Restored ' + m[1] + ' sleep records.'; }],
+      [/^(\d+)일 연속 목표 달성! 몸이 먼저 고마워하고 있을 거예요\.$/, function(m){ return m[1] + '-day streak of meeting your goal! Your body is probably thanking you first.'; }],
+      [/^어젯밤 목표 달성! (\d+)일째 규칙적으로 자고 있어요\. 오늘 밤도 (.+)에 만나요\.$/, function(m){ return 'Goal met last night! Day ' + m[1] + ' of sleeping regularly. See you at ' + tr(m[2]) + ' tonight.'; }],
+      [/^어젯밤 목표 달성! 오늘 밤도 (.+)에 만나요\.$/, function(m){ return 'Goal met last night! See you at ' + tr(m[1]) + ' tonight.'; }],
+      [/^잠자리까지 (\d+)분\. 화면을 내려놓고 씻고, 불을 조금씩 어둡게 해 볼까요\?$/, function(m){ return m[1] + ' minutes to bed. Put the screen down, wash up, and dim the lights a little?'; }],
+      [/^지금 자면 (\d+)시간 (\d+)분 잘 수 있어요\. 오늘 할 일은 내일의 나에게 맡겨요\.$/, function(m){ return 'If you sleep now you can get ' + m[1] + 'h ' + m[2] + 'm. Leave today\'s to-dos to tomorrow\'s you.'; }],
+      [/^목표 (\d+(?:\.\d)?)시간 · (\d+)%$/, function(m){ return 'Goal ' + m[1] + 'h · ' + m[2] + '%'; }],
+      [/^잠자리까지 \((.+)\)$/, function(m){ return 'Until bedtime (' + tr(m[1]) + ')'; }],
+      [/^목표 시각이 (.+) 지났어요$/, function(m){ return 'Past your goal time by ' + tr(m[1]); }],
+      [/^([✓·]) (\d+(?:\.\d)?)시간 이상$/, function(m){ return m[1] + ' ' + m[2] + 'h or more'; }],
+      [/^(.+) → (.+)$/, function(m){ var a = tr(m[1]), b = tr(m[2]); return (a !== m[1] || b !== m[2]) ? a + ' → ' + b : m[0]; }],
+      [/^(\d+)일 (목표 달성|기록 있음|기록 없음)$/, function(m){ return 'Day ' + m[1] + ': ' + tr(m[2]); }],
+      [/^목표 달성 \((\d+(?:\.\d)?)시간 이상 \+ 제시간 취침\)$/, function(m){ return 'Goal met (' + m[1] + 'h or more + on-time bedtime)'; }],
+      [/^(.+)로 기록돼요\. '잠든 시각 고치기'를 먼저 하시겠어요\? 확인을 누르면 그대로 저장해요\.$/, function(m){ return 'This will be recorded as ' + tr(m[1]) + '. Edit the sleep time first? Press OK to save as is.'; }]
+    ].concat(P);
+  })();
+
+  function tr(s){
+    var t = s.trim(); if(!t || !/[가-힣]/.test(t)) return s;
+    var r = D[t];
+    if(r === undefined){ for(var i=0;i<P.length;i++){ var m = t.match(P[i][0]); if(m){ r = P[i][1](m); break; } } }
+    if(r === undefined){ var o = t; for(var j=0;j<R.length;j++) o = o.replace(R[j][0], R[j][1]); if(o !== t) r = o; }
+    return r === undefined ? s : s.replace(t, r);
+  }
+  var ATTRS = ['aria-label','title','placeholder','alt'];
+  function fixNode(n){
+    var p = n.parentNode; if(!p || /^(SCRIPT|STYLE|TEXTAREA)$/.test(p.nodeName)) return;
+    if(p.id === 'langBtn') return;
+    var v = n.nodeValue;
+    if(STRICT_WD && /^\s*[일월화수목금토]\s*$/.test(v) && !(p.classList && p.classList.contains('wd'))) return;
+    var r = tr(v); if(r !== v) n.nodeValue = r;
+  }
+  function fixAttrs(el){
+    if(el.id === 'langBtn') return;
+    if(el.hasAttribute && el.hasAttribute('data-trv') && document.activeElement !== el){ var cv = el.value, cr = tr(cv); if(cr !== cv) el.value = cr; }
+    for(var i=0;i<ATTRS.length;i++){ var a = ATTRS[i]; if(el.hasAttribute && el.hasAttribute(a)){ var v = el.getAttribute(a), r = tr(v); if(r !== v) el.setAttribute(a, r); } }
+  }
+  function walk(root){
+    if(root.nodeType === 3){ fixNode(root); return; }
+    if(root.nodeType !== 1) return;
+    fixAttrs(root);
+    var w = document.createTreeWalker(root, 5), n;
+    while((n = w.nextNode())){ if(n.nodeType === 3) fixNode(n); else fixAttrs(n); }
+  }
+  function enable(){
+    document.documentElement.lang = 'en';
+    window.__sohwakTr = tr;
+    document.title = tr(document.title);
+    walk(document.body);
+    new MutationObserver(function(ms){
+      ms.forEach(function(m){
+        if(m.type === 'childList') m.addedNodes.forEach(walk);
+        else if(m.type === 'characterData') fixNode(m.target);
+        else if(m.type === 'attributes') fixAttrs(m.target);
+      });
+    }).observe(document.body, {childList:true, subtree:true, characterData:true, attributes:true, attributeFilter:ATTRS});
+  }
+  window.__sohwakEn = enable;
+  if(en) enable();
 })();
 </script>
 </body>

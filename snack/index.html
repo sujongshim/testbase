@@ -172,7 +172,7 @@ button,input,select{font:inherit;color:inherit}
 <main>
   <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin:0 0 14px">
     <p class="copyright" style="margin:0">© 2026 수쌤 · All rights reserved.</p>
-    <button type="button" id="resetBtn" style="border:0;background:transparent;color:var(--muted);text-decoration:underline;cursor:pointer;font-size:.78rem;padding:2px;white-space:nowrap">다시 시작하기</button>
+    <span style="display:flex;gap:12px;align-items:center"><button type="button" id="langBtn" style="border:1px solid var(--line);background:transparent;color:var(--muted);border-radius:999px;cursor:pointer;font-size:.78rem;padding:2px 10px;white-space:nowrap">English</button><button type="button" id="resetBtn" style="border:0;background:transparent;color:var(--muted);text-decoration:underline;cursor:pointer;font-size:.78rem;padding:2px;white-space:nowrap">다시 시작하기</button></span>
   </div>
 
   <div id="app">
@@ -293,7 +293,11 @@ button,input,select{font:inherit;color:inherit}
     '삶은계란':{kcal:80,gram:50,protein:6,cat:'health'},'치즈스틱':{kcal:100,gram:20,protein:6,cat:'health'},
     '과일':{kcal:60,gram:100,protein:1,cat:'health'}
   };
+  const IS_EN = (() => { try{ return localStorage.getItem('sohwak-lang')==='en'; }catch(e){ return false; } })() || /[?&]lang=en/.test(location.search);
+  // 영어 모드에서 영어 이름으로 입력해도 같은 칼로리 목록을 쓰도록 연결해요.
+  const FOOD_EN = {'chips':'과자','biscuit':'과자','candy':'사탕','bread':'빵','ice cream':'아이스크림','chocolate':'초콜릿','choco pie':'초코파이','potato chips':'감자칩','jelly':'젤리','gum':'껌','macaron':'마카롱','donut':'도넛','doughnut':'도넛','cookie':'쿠키','cookies':'쿠키','crackers':'크래커','pudding':'푸딩','latte':'라떼','cola':'콜라','soda':'사이다','fish cake':'어묵','tteokbokki':'떡볶이','hot dog':'핫도그','waffle':'와플','ramen':'라면','instant noodles':'라면','yogurt':'요거트','greek yogurt':'그릭요거트','almond':'아몬드','almonds':'아몬드','cherry tomato':'방울토마토','cherry tomatoes':'방울토마토','nuts':'견과류','banana':'바나나','apple':'사과','tangerine':'귤','orange':'귤','strawberry':'딸기','strawberries':'딸기','milk':'우유','soy milk':'두유','egg':'계란','boiled egg':'삶은계란','cheese stick':'치즈스틱','fruit':'과일','pepero':'빼빼로','roll cake':'롤케이크','custard cake':'커스타드'};
   function lookupFood(name){
+    if(IS_EN && FOOD_EN[name.trim().toLowerCase()]) name = FOOD_EN[name.trim().toLowerCase()];
     if(FOOD_KCAL[name] != null) return FOOD_KCAL[name];
     const hit = Object.keys(FOOD_KCAL).find(k => name.includes(k) || k.includes(name));
     return hit ? FOOD_KCAL[hit] : null;
@@ -644,9 +648,10 @@ button,input,select{font:inherit;color:inherit}
   }
   async function shareBrag(msg){
     const url = location.origin + location.pathname;
-    const text = `${msg} 나도 간식 칼로리를 가볍게 기록해보는 중이에요.`;
+    const shown = IS_EN ? ((($('bragCard').querySelector('p')||{}).textContent) || msg) : msg;
+    const text = IS_EN ? `${shown} I'm casually tracking my snack calories too.` : `${msg} 나도 간식 칼로리를 가볍게 기록해보는 중이에요.`;
     if(navigator.share){
-      try{ await navigator.share({title:'간식만 참아봐요', text, url}); return; }
+      try{ await navigator.share({title: IS_EN ? 'Just Skip the Snacks' : '간식만 참아봐요', text, url}); return; }
       catch(e){ if(e && e.name==='AbortError') return; }
     }
     const btn = $('bragBtn'); const prev = btn ? btn.textContent : '';
@@ -829,10 +834,159 @@ button,input,select{font:inherit;color:inherit}
     });
   })();
 
-  $('foodList').innerHTML = Object.keys(FOOD_KCAL).map(n => `<option value="${esc(n)}">`).join('');
+  $('foodList').innerHTML = (IS_EN ? Object.keys(FOOD_EN) : Object.keys(FOOD_KCAL)).map(n => `<option value="${esc(n)}">`).join('');
 
   load();
   render();
+})();
+</script>
+<script>
+/* i18n: Korean is the default. English is chosen with the top button (shared key sohwak-lang). */
+(function(){
+  var en = false;
+  try{ en = localStorage.getItem('sohwak-lang') === 'en'; }catch(e){}
+  if(/[?&]lang=en/.test(location.search)) en = true;
+  var btn = document.getElementById('langBtn');
+  if(btn){
+    btn.textContent = en ? '한국어' : 'English';
+    btn.addEventListener('click', function(){
+      try{ localStorage.setItem('sohwak-lang', en ? 'ko' : 'en'); }catch(e){}
+      var u = location.search.replace(/[?&]lang=en/, ''); if(en && /[?&]lang=en/.test(location.search)) location.search = u; else location.reload();
+    });
+  }
+  var MON = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  var WD = {'일':'Sun','월':'Mon','화':'Tue','수':'Wed','목':'Thu','금':'Fri','토':'Sat'};
+  var D = {
+    '다시 시작하기':'Start over', '정말요? 다시 누르면 전부 지워져요':'Sure? Tap again to erase everything',
+    '← 소확앱 다른 앱 보기':'← See other SohwakApp apps', '되돌리기':'Undo', '© 2026 수쌤 · All rights reserved.':'© 2026 Susaem · All rights reserved.',
+    '일':'Sun','월':'Mon','화':'Tue','수':'Wed','목':'Thu','금':'Fri','토':'Sat', '오늘':'Today', '저장':'Save', '취소':'Cancel', '닫기':'Close',
+    '백업':'Backup', '백업 파일 받기':'Download backup file', '백업 불러오기':'Restore backup',
+    '이전 달':'Previous month', '다음 달':'Next month', '지우기':'Delete', '삭제':'Delete', '빼기':'Remove', '이모지':'Emoji',
+    '백업 파일을 받았어요.':'Backup file downloaded.', '백업을 불러왔어요.':'Backup restored.',
+    '기록은 이 휴대폰 브라우저에만 있어요. 가끔 백업 파일을 받아 두세요.':'Records exist only in this phone\'s browser. Download a backup file once in a while.',
+    '기록은 이 휴대폰 브라우저에만 있어요. 가끔 백업 파일을 받아 두면 폰을 바꿔도 되살릴 수 있어요.':'Records exist only in this phone\'s browser. Keep a backup file and you can restore it even after changing phones.'
+  };
+  var P = [
+    [/^(\d+)월 (\d+)일 ([일월화수목금토])요일$/, function(m){ return WD[m[3]] + ', ' + MON[m[1]-1] + ' ' + m[2]; }],
+    [/^(\d{4})년 (\d+)월$/, function(m){ return MON[m[2]-1] + ' ' + m[1]; }],
+    [/^(\d+)\/(\d+)\(([일월화수목금토])\)$/, function(m){ return m[1] + '/' + m[2] + ' (' + WD[m[3]] + ')'; }],
+    [/^(오전|오후) (\d+):(\d+)$/, function(m){ return m[2] + ':' + m[3] + ' ' + (m[1]==='오전' ? 'AM' : 'PM'); }],
+    [/^(\d+)일 (\d+)번째$/, function(m){ return m[1]; }],
+    [/^(\d+)시간 (\d+)분$/, function(m){ return m[1] + 'h ' + m[2] + 'm'; }],
+    [/^(\d+)시간$/, function(m){ return m[1] + 'h'; }],
+    [/^(\d+)분$/, function(m){ return m[1] + ' min'; }],
+    [/^(\d+)일$/, function(m){ return m[1] + (m[1]==='1' ? ' day' : ' days'); }]
+  ];
+  var R = [
+    [/(오전|오후) (\d+):(\d+)/g, function(_, ap, h, mi){ return h + ':' + mi + ' ' + (ap==='오전' ? 'AM' : 'PM'); }],
+    [/(\d+)\/(\d+)\(([일월화수목금토])\)/g, function(_, a, b, w){ return a + '/' + b + ' (' + WD[w] + ')'; }],
+    [/(\d+)시간 (\d+)분/g, function(_, h, mi){ return h + 'h ' + mi + 'm'; }]
+  ];
+  var STRICT_WD = false;
+    (function(){
+    var FOODS = {'과자':'Chips & biscuits','사탕':'Candy','빵':'Bread','아이스크림':'Ice cream','초콜릿':'Chocolate','초코파이':'Choco Pie','감자칩':'Potato chips','포카칩':'Potato chips','새우깡':'Shrimp crackers','꼬북칩':'Turtle chips','수미칩':'Sumi chips','젤리':'Jelly','껌':'Gum','마카롱':'Macaron','도넛':'Donut','쿠키':'Cookie','크래커':'Crackers','푸딩':'Pudding','커피믹스':'Instant coffee','라떼':'Latte','콜라':'Cola','사이다':'Soda','어묵':'Fish cake','떡볶이':'Tteokbokki','순대':'Sundae (blood sausage)','튀김':'Fried snack','핫도그':'Hot dog','붕어빵':'Fish-shaped pastry','초코송이':'Choco Songi','홈런볼':'Homerun Ball','몽쉘':'Mon Cher','빼빼로':'Pepero','커스타드':'Custard cake','롤케이크':'Roll cake','약과':'Yakgwa (honey cookie)','와플':'Waffle','라면':'Instant noodles','요거트':'Yogurt','그릭요거트':'Greek yogurt','아몬드':'Almonds','방울토마토':'Cherry tomatoes','견과류':'Mixed nuts','바나나':'Banana','사과':'Apple','귤':'Tangerine','딸기':'Strawberries','우유':'Milk','두유':'Soy milk','삶은계란':'Boiled egg','계란':'Egg','치즈스틱':'Cheese stick','과일':'Fruit','기타':'Other'};
+    var A = {
+      '간식만 참아봐요':'Just Skip the Snacks',
+      '"먹는 걸 조절할 줄 아는 사람이 성공한다"':'"People who can control what they eat succeed."',
+      '한 순간에 모든 걸 놓는 것은 노노!':'Giving up everything in one moment? No, no!',
+      '내가 먹는 것이 곧 나다. 깨끗하게 먹자!':'You are what you eat. Eat clean!',
+      '오늘 간식 칼로리':'Today\'s snack calories', '하루 목표 칼로리 수정':'Edit daily calorie goal', '체중':'Weight',
+      '🍽️ 간식 먹었어요':'🍽️ I ate a snack', '연속 무간식일':'Snack-free streak', '누적 무간식일':'Total snack-free days',
+      '최근 7일':'Last 7 days', '달력으로 보기':'Calendar', '오늘 기록':'Today\'s log', '설정 · 백업':'Settings · Backup',
+      '기본 세팅':'Default setup',
+      '자주 먹는 간식을 미리 입력해 두면, 기록할 때 눌러서 바로 기록할 수 있어요.':'Add snacks you eat often in advance, then just tap them when logging.',
+      '+ 종류 추가':'+ Add item', '추가':'Add', '하루 간식 칼로리 목표':'Daily snack calorie goal', '설정 저장하기':'Save settings',
+      '간식':'Snacks', '건강 간식 🌿':'Healthy snacks 🌿', '🌿 건강':'🌿 Healthy', '건강':'Healthy',
+      '건강을 위해 간식만 참아봐요.':'For your health, skip just the snacks.', '오늘은 치팅 데이! 신나게 쉬어가요':'Cheat day today! Enjoy the break',
+      '건강 간식만 먹었어요, 최고예요!':'Only healthy snacks today — great!',
+      '좋아요, 이대로 쭉!':'Nice, keep going!', '괜찮아요, 계속 지켜봐요':'It\'s fine, keep watching', '조금 아슬아슬해요':'Getting a little close',
+      '목표를 넘었어요...':'Over the goal...', '많이 넘었어요':'Way over', '오늘은 완전히 무너졌어요':'Today completely fell apart',
+      '🎉 오늘은 치팅 데이예요. 내일 다시 이어가요.':'🎉 Today is a cheat day. Pick it back up tomorrow.',
+      '🔥 목표 이내로':'🔥 Within goal for', '이어가는 중':'and counting', '오늘부터 시작해봐요':'Start from today',
+      '가끔은 계획된 치팅 데이도 괜찮아요':'A planned cheat day now and then is okay', '치팅 데이 취소':'Cancel cheat day', '🎉 오늘은 치팅 데이':'🎉 Cheat day today',
+      '오늘 먹은 간식':'Eaten today', '무슨 간식이었어요? 이름과 칼로리를 적고 바로 기록해요.':'What did you eat? Type the name and calories to log it right away.',
+      '간식 이름 (예: 젤리)':'Snack name (e.g. jelly)', '기록':'Log', 'kcal':'kcal',
+      '칼로리를 비워두면 흔한 간식은 자동으로 채워 드려요.':'Leave calories blank and common snacks are filled in automatically.',
+      '자주 먹는 간식 접기 ▲':'Hide frequent snacks ▲', '자주 먹는 간식 보기 ▾':'Show frequent snacks ▾',
+      '🔗 친구에게 자랑하기':'🔗 Brag to a friend', '✅ 복사했어요':'✅ Copied',
+      '오늘은 아직 기록이 없어요.':'Nothing logged today yet.', '무간식일':'Snack-free', '건강 간식으로 대체':'Healthy swap', '목표 이내':'Within goal', '목표 초과':'Over goal', '치팅 데이':'Cheat day',
+      '오늘 체중':'Today\'s weight', '고치기':'Edit', '최근':'Latest', '처음과 비교':'Since start', '지난주 대비':'Vs last week', '30일':'30 days', '90일':'90 days', '전체':'All',
+      '점은 그날 체중, 선은 7일 평균이에요.':'Dots are daily weight; the line is the 7-day average.',
+      '하루만 더 적으면 그래프가 그려져요.':'Log one more day and the chart appears.', '체중을 적으면 여기에 추이 그래프가 생겨요.':'Log your weight and a trend chart will appear here.',
+      '오늘 체중 · 매일 같은 시간(아침 화장실 다녀온 뒤)에 재면 추이가 더 정확해요.':'Today\'s weight · Weigh yourself at the same time every day (e.g. morning after the bathroom) for a more accurate trend.',
+      '체중은 하루에도 1~2kg씩 오르내려요. 하루 숫자보다 선의 방향을 봐 주세요.':'Weight can move 1–2kg in a day. Watch the direction of the line, not a single number.',
+      '저장하지 못했어요. 이 브라우저 저장공간을 확인해 주세요.':'Could not save. Please check this browser\'s storage.',
+      '이미 있는 이름이에요.':'That name already exists.', '오늘 체중 기록을 지웠어요.':'Deleted today\'s weight.',
+      '체중을 kg 단위로 적어 주세요. (예: 62.4)':'Enter your weight in kg (e.g. 62.4).',
+      '백업 파일을 받았어요.':'Backup file downloaded.', '백업을 불러왔어요.':'Backup restored.', '간식 칼로리 백업 파일이 아니에요.':'That is not a snack calorie backup file.',
+      '오늘 목표를 바꿨어요.':'Daily goal updated.', '설정을 저장했어요.':'Settings saved.',
+      '간식 달력':'Snack calendar'
+    };
+    for(var k in A) D[k] = A[k];
+    for(var f in FOODS) D[f] = FOODS[f];
+    var NAMES = Object.keys(FOODS).filter(function(x){ return x.length >= 2 || x === '빵' || x === '껌'; }).sort(function(a,b){ return b.length - a.length; });
+    R.push([new RegExp(NAMES.join('|'), 'g'), function(m){ return FOODS[m]; }]);
+    R.push([/\(단백질 (\d+)g\)/g, function(_, g){ return '(protein ' + g + 'g)'; }]);
+    R.push([/목표 ([\d,]+)kcal/g, function(_, k){ return 'Goal ' + k + 'kcal'; }]);
+    P = [
+      [/^([\d.]+)kg 기록했어요\.$/, function(m){ return m[1] + 'kg logged.'; }],
+      [/^(\d+)일째$/, function(m){ return m[1] + ' days'; }],
+      [/^목표 ([\d,]+)kcal$/, function(m){ return 'Goal ' + m[1] + 'kcal'; }],
+      [/^(.+) (\d+)kcal 기록했어요\.$/, function(m){ return tr(m[1]) + ' ' + m[2] + 'kcal logged.'; }],
+      [/^(.+)을\(를\) 150kcal\(대략치\)로 기록했어요\.$/, function(m){ return m[1] + ' logged at about 150kcal (rough estimate).'; }],
+      [/^(.+) · (\d+)kcal · (건강 간식|간식)으로 채웠어요\.$/, function(m){ return tr(m[1]) + ' · ' + m[2] + 'kcal · filled in as ' + (m[3]==='간식' ? 'a snack' : 'a healthy snack') + '.'; }],
+      [/^(.+)을\(를\) 간식 150kcal로 넣었어요\. 이름표를 누르면 분류를 바꿀 수 있어요\.$/, function(m){ return m[1] + ' added as a 150kcal snack. Tap the tag to change its category.'; }],
+      [/^🌿 오늘 건강 간식으로 (\d+)번 골랐어요$/, function(m){ return '🌿 Chose a healthy snack ' + m[1] + (m[1]==='1' ? ' time' : ' times') + ' today'; }],
+      [/^이번 주 하루 평균 간식 칼로리를 지난주보다 (\d+)kcal 줄였어요! 🎉$/, function(m){ return 'You cut your daily average snack calories by ' + m[1] + 'kcal compared with last week! 🎉'; }],
+      [/^간식 목표 이내로 (\d+)일째 이어가는 중이에요! 🔥$/, function(m){ return 'Within your snack goal for ' + m[1] + ' days and counting! 🔥'; }],
+      [/^(.+) 삭제$/, function(m){ return 'Delete ' + tr(m[1]); }],
+      [/^(\d+)일 (.+)$/, function(m){ return 'Day ' + m[1] + ': ' + tr(m[2]); }],
+      [/^체중 추이 그래프, ([\d.]+)kg에서 ([\d.]+)kg$/, function(m){ return 'Weight trend chart, from ' + m[1] + 'kg to ' + m[2] + 'kg'; }]
+    ].concat(P);
+  })();
+
+  function tr(s){
+    var t = s.trim(); if(!t || !/[가-힣]/.test(t)) return s;
+    var r = D[t];
+    if(r === undefined){ for(var i=0;i<P.length;i++){ var m = t.match(P[i][0]); if(m){ r = P[i][1](m); break; } } }
+    if(r === undefined){ var o = t; for(var j=0;j<R.length;j++) o = o.replace(R[j][0], R[j][1]); if(o !== t) r = o; }
+    return r === undefined ? s : s.replace(t, r);
+  }
+  var ATTRS = ['aria-label','title','placeholder','alt'];
+  function fixNode(n){
+    var p = n.parentNode; if(!p || /^(SCRIPT|STYLE|TEXTAREA)$/.test(p.nodeName)) return;
+    if(p.id === 'langBtn') return;
+    var v = n.nodeValue;
+    if(STRICT_WD && /^\s*[일월화수목금토]\s*$/.test(v) && !(p.classList && p.classList.contains('wd'))) return;
+    var r = tr(v); if(r !== v) n.nodeValue = r;
+  }
+  function fixAttrs(el){
+    if(el.id === 'langBtn') return;
+    if(el.hasAttribute && el.hasAttribute('data-trv') && document.activeElement !== el){ var cv = el.value, cr = tr(cv); if(cr !== cv) el.value = cr; }
+    for(var i=0;i<ATTRS.length;i++){ var a = ATTRS[i]; if(el.hasAttribute && el.hasAttribute(a)){ var v = el.getAttribute(a), r = tr(v); if(r !== v) el.setAttribute(a, r); } }
+  }
+  function walk(root){
+    if(root.nodeType === 3){ fixNode(root); return; }
+    if(root.nodeType !== 1) return;
+    fixAttrs(root);
+    var w = document.createTreeWalker(root, 5), n;
+    while((n = w.nextNode())){ if(n.nodeType === 3) fixNode(n); else fixAttrs(n); }
+  }
+  function enable(){
+    document.documentElement.lang = 'en';
+    window.__sohwakTr = tr;
+    document.title = tr(document.title);
+    walk(document.body);
+    new MutationObserver(function(ms){
+      ms.forEach(function(m){
+        if(m.type === 'childList') m.addedNodes.forEach(walk);
+        else if(m.type === 'characterData') fixNode(m.target);
+        else if(m.type === 'attributes') fixAttrs(m.target);
+      });
+    }).observe(document.body, {childList:true, subtree:true, characterData:true, attributes:true, attributeFilter:ATTRS});
+  }
+  window.__sohwakEn = enable;
+  if(en) enable();
 })();
 </script>
 </body>

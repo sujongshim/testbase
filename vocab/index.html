@@ -133,7 +133,7 @@ button,input{font:inherit;color:inherit}
 </head>
 <body>
 <main>
-  <p class="copyright">© 2026 수쌤 · All rights reserved.</p>
+  <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin:0 0 14px"><p class="copyright" style="margin:0">© 2026 수쌤 · All rights reserved.</p><button type="button" id="langBtn" style="border:1px solid var(--line);background:transparent;color:var(--muted);border-radius:999px;cursor:pointer;font-size:.78rem;padding:2px 10px;white-space:nowrap">English</button></div>
   <div class="top">
     <h1>💜 2027 수능완성 단어장</h1>
     <div class="status" id="status"><span id="statusMsg">노션 불러오는 중…</span><button class="iconbtn" id="syncBtn" type="button">↻ 동기화</button></div>
@@ -424,6 +424,149 @@ button,input{font:inherit;color:inherit}
   }
   if(TTS){ try{ speechSynthesis.getVoices(); speechSynthesis.onvoiceschanged = () => {}; }catch(e){} }
   init();
+})();
+</script>
+<script>
+/* i18n: Korean is the default. English is chosen with the top button (shared key sohwak-lang). */
+(function(){
+  var en = false;
+  try{ en = localStorage.getItem('sohwak-lang') === 'en'; }catch(e){}
+  if(/[?&]lang=en/.test(location.search)) en = true;
+  var btn = document.getElementById('langBtn');
+  if(btn){
+    btn.textContent = en ? '한국어' : 'English';
+    btn.addEventListener('click', function(){
+      try{ localStorage.setItem('sohwak-lang', en ? 'ko' : 'en'); }catch(e){}
+      var u = location.search.replace(/[?&]lang=en/, ''); if(en && /[?&]lang=en/.test(location.search)) location.search = u; else location.reload();
+    });
+  }
+  var MON = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  var WD = {'일':'Sun','월':'Mon','화':'Tue','수':'Wed','목':'Thu','금':'Fri','토':'Sat'};
+  var D = {
+    '다시 시작하기':'Start over', '정말요? 다시 누르면 전부 지워져요':'Sure? Tap again to erase everything',
+    '← 소확앱 다른 앱 보기':'← See other SohwakApp apps', '되돌리기':'Undo', '© 2026 수쌤 · All rights reserved.':'© 2026 Susaem · All rights reserved.',
+    '일':'Sun','월':'Mon','화':'Tue','수':'Wed','목':'Thu','금':'Fri','토':'Sat', '오늘':'Today', '저장':'Save', '취소':'Cancel', '닫기':'Close',
+    '백업':'Backup', '백업 파일 받기':'Download backup file', '백업 불러오기':'Restore backup',
+    '이전 달':'Previous month', '다음 달':'Next month', '지우기':'Delete', '삭제':'Delete', '빼기':'Remove', '이모지':'Emoji',
+    '백업 파일을 받았어요.':'Backup file downloaded.', '백업을 불러왔어요.':'Backup restored.',
+    '기록은 이 휴대폰 브라우저에만 있어요. 가끔 백업 파일을 받아 두세요.':'Records exist only in this phone\'s browser. Download a backup file once in a while.',
+    '기록은 이 휴대폰 브라우저에만 있어요. 가끔 백업 파일을 받아 두면 폰을 바꿔도 되살릴 수 있어요.':'Records exist only in this phone\'s browser. Keep a backup file and you can restore it even after changing phones.'
+  };
+  var P = [
+    [/^(\d+)월 (\d+)일 ([일월화수목금토])요일$/, function(m){ return WD[m[3]] + ', ' + MON[m[1]-1] + ' ' + m[2]; }],
+    [/^(\d{4})년 (\d+)월$/, function(m){ return MON[m[2]-1] + ' ' + m[1]; }],
+    [/^(\d+)\/(\d+)\(([일월화수목금토])\)$/, function(m){ return m[1] + '/' + m[2] + ' (' + WD[m[3]] + ')'; }],
+    [/^(오전|오후) (\d+):(\d+)$/, function(m){ return m[2] + ':' + m[3] + ' ' + (m[1]==='오전' ? 'AM' : 'PM'); }],
+    [/^(\d+)일 (\d+)번째$/, function(m){ return m[1]; }],
+    [/^(\d+)시간 (\d+)분$/, function(m){ return m[1] + 'h ' + m[2] + 'm'; }],
+    [/^(\d+)시간$/, function(m){ return m[1] + 'h'; }],
+    [/^(\d+)분$/, function(m){ return m[1] + ' min'; }],
+    [/^(\d+)일$/, function(m){ return m[1] + (m[1]==='1' ? ' day' : ' days'); }]
+  ];
+  var R = [
+    [/(오전|오후) (\d+):(\d+)/g, function(_, ap, h, mi){ return h + ':' + mi + ' ' + (ap==='오전' ? 'AM' : 'PM'); }],
+    [/(\d+)\/(\d+)\(([일월화수목금토])\)/g, function(_, a, b, w){ return a + '/' + b + ' (' + WD[w] + ')'; }],
+    [/(\d+)시간 (\d+)분/g, function(_, h, mi){ return h + 'h ' + mi + 'm'; }]
+  ];
+  var STRICT_WD = false;
+    (function(){
+    STRICT_WD = true;
+    var A = {
+      '💜 2027 수능완성 단어장':'💜 2027 CSAT Finish Vocab', '노션 불러오는 중…':'Loading from Notion…', '↻ 동기화':'↻ Sync', '화면':'Screens',
+      '오늘':'Today', '단어':'Words', '기록':'Records',
+      '노션 연동이 아직 설정되지 않았어요. 저장된 단어로 공부할 수 있어요.':'Notion is not connected yet. You can study with the saved words.',
+      '노션이 요청을 거절했어요. 잠시 뒤 다시 해 주세요.':'Notion rejected the request. Please try again in a moment.',
+      '노션과 연결하지 못했어요. 저장된 단어로 공부할 수 있어요.':'Could not connect to Notion. You can study with the saved words.',
+      '노션에서 단어를 못 읽어서 저장된 단어를 써요.':'Could not read words from Notion, so the saved words are used.',
+      '지금 공부할 단어가 없어요.':'No words to study right now.', '이 화면에서는 소리 듣기가 안 돼요.':'Listening is not available in this view.', '소리를 재생하지 못했어요.':'Could not play the sound.',
+      '학습 기록을 저장하지 못했어요.':'Could not save your study record.',
+      '노션에서 단어를 가져오는 중이에요…':'Fetching words from Notion…',
+      '단어가 아직 없어요. 노션 💜 수능 단어장에 단어를 넣고 ↻ 동기화를 눌러 주세요.':'No words yet. Add words to your Notion 💜 CSAT vocab list and tap ↻ Sync.',
+      '복습할 단어':'Words to review', '새 단어':'New words', '외운 단어':'Learned words', '공부 방식':'Study mode', '🃏 카드 넘기기':'🃏 Flip cards', '✅ 뜻 고르기':'✅ Pick the meaning',
+      '오늘 몫 끝! 🎉':'Today\'s share done! 🎉', '오늘은 공부할 단어가 없어요':'No words to study today', '골라서 공부하기':'Study by choice',
+      '🎲 아무거나 20개':'🎲 Any 20 words', '자주 틀림':'Often missed', '단어 듣기':'Hear the word', '예문 듣기':'Hear the example', '별표':'Star', '뜻을 떠올린 뒤 눌러서 확인':'Recall the meaning, then tap to check',
+      '모르겠어요':'Don\'t know', '곧 다시':'Again soon', '헷갈려요':'Not sure', '내일':'Tomorrow', '알아요':'I know it',
+      '맞았어요! 다음 →':'Correct! Next →', '다시 나와요. 다음 →':'It will come back. Next →', '그만하기':'Quit', '오늘 공부':'Today\'s study', '최근 단어':'Recent words', '자주 틀린 단어':'Often-missed words', '별표 단어':'Starred words', '아무거나 20개':'Any 20 words', '고른 목록':'Chosen list',
+      '참 잘했어요':'Great job', '완료':'Done', '남은 복습이 있어요. 한 번 더 해 볼까요?':'There\'s more to review. One more round?', '처음으로':'Back to start',
+      '단어·뜻·예문 검색':'Search words, meanings, examples', '검색':'Search', '전체':'All', '공부 중':'Studying', '외움':'Learned', '★':'★',
+      '찾는 단어가 없어요.':'No matching words.', '해당하는 단어가 없어요.':'No words in this group.', '🔊 단어':'🔊 Word', '🔊 예문':'🔊 Example', '노션 ↗':'Notion ↗', '별표':'Star',
+      '연속':'Streak', '총 복습':'Total reviews', '그날 복습 다 끝냄':'Finished that day\'s review', '• 조금 함':'• Did a little', '하루 새 단어 수':'New words per day',
+      '복습할 단어가 많은 날엔 새 단어를 줄이는 게 오래 가요. 알아요 → 1·3·7·14·30·60일 뒤에 다시 나와요.':'On days with many reviews, fewer new words lasts longer. "I know it" brings a word back after 1·3·7·14·30·60 days.',
+      '단어는 노션 💜 수능 단어장에서 읽어 오고, 학습 기록은 내 계정에만 저장돼요.':'Words are read from your Notion 💜 CSAT vocab list, and your study records are stored only in your own account.',
+      '이전 달':'Previous month', '다음 달':'Next month'
+    };
+    for(var k in A) D[k] = A[k];
+    P = [
+      [/^노션 (\d+)개 · (.+)$/, function(m){ return 'Notion ' + m[1] + ' words · ' + tr(m[2]); }],
+      [/^노션에서 새 단어 (\d+)개를 가져왔어요\.$/, function(m){ return 'Fetched ' + m[1] + ' new words from Notion.'; }],
+      [/^오늘 공부 시작 \((\d+)개\)$/, function(m){ return 'Start today\'s study (' + m[1] + ' words)'; }],
+      [/^⭕ (\d+)일 연속$/, function(m){ return '⭕ ' + m[1] + '-day streak'; }],
+      [/^🆕 최근 7일에 넣은 단어 \((\d+)개\)$/, function(m){ return '🆕 Words added in the last 7 days (' + m[1] + ')'; }],
+      [/^🔥 자주 틀린 단어 \((\d+)개\)$/, function(m){ return '🔥 Often-missed words (' + m[1] + ')'; }],
+      [/^★ 별표 단어 \((\d+)개\)$/, function(m){ return '★ Starred words (' + m[1] + ')'; }],
+      [/^(\d+)번$/, function(m){ return '#' + m[1]; }],
+      [/^(\d{2})\/(\d{2}) 추가$/, function(m){ return 'Added ' + m[1] + '/' + m[2]; }],
+      [/^(\d+)일 뒤$/, function(m){ return 'in ' + m[1] + (m[1]==='1' ? ' day' : ' days'); }],
+      [/^(.+) · (\d+) \/ (\d+)$/, function(m){ return tr(m[1]) + ' · ' + m[2] + ' / ' + m[3]; }],
+      [/^(\d+)개 끝!$/, function(m){ return m[1] + ' done!'; }],
+      [/^오늘 복습을 다 마쳐서 달력에 동그라미를 그렸어요\.( (\d+)일째예요\.)?$/, function(m){ return 'You finished today\'s review, so a circle is drawn on the calendar.' + (m[2] ? ' Day ' + m[2] + '.' : ''); }],
+      [/^(\d+)개 · 단어를 누르면 예문이 보여요$/, function(m){ return m[1] + ' words · Tap a word to see an example'; }],
+      [/^이 목록으로 공부하기 \((\d+)개\)$/, function(m){ return 'Study this list (' + m[1] + ' words)'; }],
+      [/^새 단어$/, function(){ return 'New word'; }],
+      [/^상자 (\d+)$/, function(m){ return 'Box ' + m[1]; }],
+      [/^(\d+)개$/, function(m){ return m[1] + (m[1]==='1' ? ' word' : ' words'); }],
+      [/^단어 (\d+)개의 상태$/, function(m){ return 'Status of ' + m[1] + ' words'; }],
+      [/^⚪ 새 단어 (\d+)$/, function(m){ return '⚪ New ' + m[1]; }],
+      [/^● 익히는 중 (\d+)$/, function(m){ return '● Learning ' + m[1]; }],
+      [/^● 거의 외움 (\d+)$/, function(m){ return '● Almost learned ' + m[1]; }],
+      [/^● 외움 (\d+)$/, function(m){ return '● Learned ' + m[1]; }],
+      [/^(\d+)일 (\d+)번 복습$/, function(m){ return 'Day ' + m[1] + ': ' + m[2] + ' reviews'; }],
+      [/^(\d+)일 기록 없음$/, function(m){ return 'Day ' + m[1] + ': no record'; }]
+    ].concat(P);
+  })();
+
+  function tr(s){
+    var t = s.trim(); if(!t || !/[가-힣]/.test(t)) return s;
+    var r = D[t];
+    if(r === undefined){ for(var i=0;i<P.length;i++){ var m = t.match(P[i][0]); if(m){ r = P[i][1](m); break; } } }
+    if(r === undefined){ var o = t; for(var j=0;j<R.length;j++) o = o.replace(R[j][0], R[j][1]); if(o !== t) r = o; }
+    return r === undefined ? s : s.replace(t, r);
+  }
+  var ATTRS = ['aria-label','title','placeholder','alt'];
+  function fixNode(n){
+    var p = n.parentNode; if(!p || /^(SCRIPT|STYLE|TEXTAREA)$/.test(p.nodeName)) return;
+    if(p.id === 'langBtn') return;
+    var v = n.nodeValue;
+    if(STRICT_WD && /^\s*[일월화수목금토]\s*$/.test(v) && !(p.classList && p.classList.contains('wd'))) return;
+    var r = tr(v); if(r !== v) n.nodeValue = r;
+  }
+  function fixAttrs(el){
+    if(el.id === 'langBtn') return;
+    if(el.hasAttribute && el.hasAttribute('data-trv') && document.activeElement !== el){ var cv = el.value, cr = tr(cv); if(cr !== cv) el.value = cr; }
+    for(var i=0;i<ATTRS.length;i++){ var a = ATTRS[i]; if(el.hasAttribute && el.hasAttribute(a)){ var v = el.getAttribute(a), r = tr(v); if(r !== v) el.setAttribute(a, r); } }
+  }
+  function walk(root){
+    if(root.nodeType === 3){ fixNode(root); return; }
+    if(root.nodeType !== 1) return;
+    fixAttrs(root);
+    var w = document.createTreeWalker(root, 5), n;
+    while((n = w.nextNode())){ if(n.nodeType === 3) fixNode(n); else fixAttrs(n); }
+  }
+  function enable(){
+    document.documentElement.lang = 'en';
+    window.__sohwakTr = tr;
+    document.title = tr(document.title);
+    walk(document.body);
+    new MutationObserver(function(ms){
+      ms.forEach(function(m){
+        if(m.type === 'childList') m.addedNodes.forEach(walk);
+        else if(m.type === 'characterData') fixNode(m.target);
+        else if(m.type === 'attributes') fixAttrs(m.target);
+      });
+    }).observe(document.body, {childList:true, subtree:true, characterData:true, attributes:true, attributeFilter:ATTRS});
+  }
+  window.__sohwakEn = enable;
+  if(en) enable();
 })();
 </script>
 </body>

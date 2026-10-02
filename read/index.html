@@ -149,7 +149,7 @@ textarea.field{resize:vertical;min-height:64px}
 <main>
   <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin:0 0 14px">
     <p class="copyright" style="margin:0">© 2026 수쌤 · All rights reserved.</p>
-    <button type="button" id="resetBtn" style="border:0;background:transparent;color:var(--muted);text-decoration:underline;cursor:pointer;font-size:.78rem;padding:2px;white-space:nowrap">다시 시작하기</button>
+    <span style="display:flex;gap:12px;align-items:center"><button type="button" id="langBtn" style="border:1px solid var(--line);background:transparent;color:var(--muted);border-radius:999px;cursor:pointer;font-size:.78rem;padding:2px 10px;white-space:nowrap">English</button><button type="button" id="resetBtn" style="border:0;background:transparent;color:var(--muted);text-decoration:underline;cursor:pointer;font-size:.78rem;padding:2px;white-space:nowrap">다시 시작하기</button></span>
   </div>
   <div class="setup" id="setup" hidden>
     <h2 class="d">한 쪽 독서 시작하기</h2>
@@ -207,6 +207,7 @@ textarea.field{resize:vertical;min-height:64px}
   const esc = s => String(s??'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const uid = () => Date.now().toString(36)+Math.random().toString(36).slice(2,6);
   const int = v => Math.max(0, Math.floor(Number(v)||0));
+  const L = s => window.__sohwakTr ? window.__sohwakTr(s) : s;
   const dayLabel = s => { const d = parse(s); return `${d.getMonth()+1}월 ${d.getDate()}일 ${'일월화수목금토'[d.getDay()]}요일`; };
   const hash = s => { let h = 0; for(const c of String(s)) h = (h*31 + c.charCodeAt(0)) >>> 0; return h; };
   const coverHtml = b => `<div class="cover serif" style="background:${COVERS[hash(b.title)%COVERS.length]}" aria-hidden="true">${esc(b.title.slice(0,18))}</div>`;
@@ -261,7 +262,7 @@ textarea.field{resize:vertical;min-height:64px}
     const b = book(bookId); if(!b) return;
     let p = int(page); if(b.total) p = Math.min(p, b.total);
     if(p === b.cur){ toast('지금 쪽수와 같아요.'); return; }
-    if(p < b.cur && !confirm(`${b.cur}쪽 → ${p}쪽으로 줄일까요? 오늘 기록에서도 빠져요.`)) return;
+    if(p < b.cur && !confirm(L(`${b.cur}쪽 → ${p}쪽으로 줄일까요? 오늘 기록에서도 빠져요.`))) return;
     addPages(bookId, p - b.cur);
   }
   function finishBook(id, rating, review){
@@ -279,7 +280,7 @@ textarea.field{resize:vertical;min-height:64px}
   }
   function removeBook(id){
     const b = book(id); if(!b) return;
-    if(!confirm(`'${b.title}'을(를) 책장에서 뺄까요? 이 책의 구절도 함께 지워져요. 날짜별 읽은 쪽수 기록은 남아요.`)) return;
+    if(!confirm(L(`'${b.title}'을(를) 책장에서 뺄까요? 이 책의 구절도 함께 지워져요. 날짜별 읽은 쪽수 기록은 남아요.`))) return;
     st.notes.filter(n => n.bookId===id && n.photo).forEach(n => delPhoto(n.id));
     st.books = st.books.filter(x => x.id!==id); st.notes = st.notes.filter(n => n.bookId!==id); st.editBook = null; save(); render(); toast('책장에서 뺐어요.');
   }
@@ -367,8 +368,8 @@ textarea.field{resize:vertical;min-height:64px}
     g.fillStyle = th.ink; g.font = `600 36px ${SANS}`;
     g.fillText(b ? b.title : '', P, H-150, W - P*2);
     g.fillStyle = th.sub; g.font = `30px ${SANS}`;
-    g.fillText([b && b.author, n.page ? n.page+'쪽' : ''].filter(Boolean).join(' · '), P, H-105, W - P*2);
-    g.font = `26px ${SANS}`; g.textAlign = 'right'; g.fillText('한 쪽 독서', W-P, H-105); g.textAlign = 'left';
+    g.fillText([b && b.author, n.page ? L(n.page+'쪽') : ''].filter(Boolean).join(' · '), P, H-105, W - P*2);
+    g.font = `26px ${SANS}`; g.textAlign = 'right'; g.fillText(L('한 쪽 독서'), W-P, H-105); g.textAlign = 'left';
     return await new Promise(res => c.toBlob(res, 'image/png'));
   }
   async function openCard(id){
@@ -752,6 +753,183 @@ textarea.field{resize:vertical;min-height:64px}
   document.addEventListener('visibilitychange', () => { if(document.visibilityState==='visible' && st.tab==='today'){ const t = today(); if(st.day > t || (st.day !== t && !document.activeElement)) st.day = t; render(); } });
 
   load(); render();
+})();
+</script>
+<script>
+/* i18n: Korean is the default. English is chosen with the top button (shared key sohwak-lang). */
+(function(){
+  var en = false;
+  try{ en = localStorage.getItem('sohwak-lang') === 'en'; }catch(e){}
+  if(/[?&]lang=en/.test(location.search)) en = true;
+  var btn = document.getElementById('langBtn');
+  if(btn){
+    btn.textContent = en ? '한국어' : 'English';
+    btn.addEventListener('click', function(){
+      try{ localStorage.setItem('sohwak-lang', en ? 'ko' : 'en'); }catch(e){}
+      var u = location.search.replace(/[?&]lang=en/, ''); if(en && /[?&]lang=en/.test(location.search)) location.search = u; else location.reload();
+    });
+  }
+  var MON = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  var WD = {'일':'Sun','월':'Mon','화':'Tue','수':'Wed','목':'Thu','금':'Fri','토':'Sat'};
+  var D = {
+    '다시 시작하기':'Start over', '정말요? 다시 누르면 전부 지워져요':'Sure? Tap again to erase everything',
+    '← 소확앱 다른 앱 보기':'← See other SohwakApp apps', '되돌리기':'Undo', '© 2026 수쌤 · All rights reserved.':'© 2026 Susaem · All rights reserved.',
+    '일':'Sun','월':'Mon','화':'Tue','수':'Wed','목':'Thu','금':'Fri','토':'Sat', '오늘':'Today', '저장':'Save', '취소':'Cancel', '닫기':'Close',
+    '백업':'Backup', '백업 파일 받기':'Download backup file', '백업 불러오기':'Restore backup',
+    '이전 달':'Previous month', '다음 달':'Next month', '지우기':'Delete', '삭제':'Delete', '빼기':'Remove', '이모지':'Emoji',
+    '백업 파일을 받았어요.':'Backup file downloaded.', '백업을 불러왔어요.':'Backup restored.',
+    '기록은 이 휴대폰 브라우저에만 있어요. 가끔 백업 파일을 받아 두세요.':'Records exist only in this phone\'s browser. Download a backup file once in a while.',
+    '기록은 이 휴대폰 브라우저에만 있어요. 가끔 백업 파일을 받아 두면 폰을 바꿔도 되살릴 수 있어요.':'Records exist only in this phone\'s browser. Keep a backup file and you can restore it even after changing phones.'
+  };
+  var P = [
+    [/^(\d+)월 (\d+)일 ([일월화수목금토])요일$/, function(m){ return WD[m[3]] + ', ' + MON[m[1]-1] + ' ' + m[2]; }],
+    [/^(\d{4})년 (\d+)월$/, function(m){ return MON[m[2]-1] + ' ' + m[1]; }],
+    [/^(\d+)\/(\d+)\(([일월화수목금토])\)$/, function(m){ return m[1] + '/' + m[2] + ' (' + WD[m[3]] + ')'; }],
+    [/^(오전|오후) (\d+):(\d+)$/, function(m){ return m[2] + ':' + m[3] + ' ' + (m[1]==='오전' ? 'AM' : 'PM'); }],
+    [/^(\d+)일 (\d+)번째$/, function(m){ return m[1]; }],
+    [/^(\d+)시간 (\d+)분$/, function(m){ return m[1] + 'h ' + m[2] + 'm'; }],
+    [/^(\d+)시간$/, function(m){ return m[1] + 'h'; }],
+    [/^(\d+)분$/, function(m){ return m[1] + ' min'; }],
+    [/^(\d+)일$/, function(m){ return m[1] + (m[1]==='1' ? ' day' : ' days'); }]
+  ];
+  var R = [
+    [/(오전|오후) (\d+):(\d+)/g, function(_, ap, h, mi){ return h + ':' + mi + ' ' + (ap==='오전' ? 'AM' : 'PM'); }],
+    [/(\d+)\/(\d+)\(([일월화수목금토])\)/g, function(_, a, b, w){ return a + '/' + b + ' (' + WD[w] + ')'; }],
+    [/(\d+)시간 (\d+)분/g, function(_, h, mi){ return h + 'h ' + mi + 'm'; }]
+  ];
+  var STRICT_WD = false;
+    (function(){
+    var A = {
+      '한 쪽 독서':'One-Page Reading', '한 쪽 독서 시작하기':'Start One-Page Reading', '바쁜 날에도 읽을 수 있을 만큼만 정하세요. 한 쪽이라도 매일 읽는 게 이겨요.':'Pick only what you can read even on busy days. Reading even one page every day wins.',
+      '하루 최소 몇 쪽?':'Minimum pages per day?', '올해 몇 권 읽을까요?':'How many books this year?', '지금 읽는 책 (나중에 넣어도 돼요)':'What you\'re reading now (you can add it later)',
+      '제목':'Title', '저자':'Author', '전체 쪽수':'Total pages', '시작하기':'Get started', '화면':'Screens',
+      '사진 크게 보기':'View photo larger', '구절 사진':'Quote photo', '구절 이미지 만들기':'Create quote image', '구절 이미지 미리보기':'Quote image preview', '고른 사진':'Chosen photo', '사진을 찾을 수 없어요':'Photo not found',
+      '이 브라우저에 저장하지 못했어요. 백업 파일을 받아 두세요.':'Could not save in this browser. Please download a backup file.',
+      '이미 마지막 쪽이에요.':'You are already on the last page.', '바꿀 쪽수가 없어요.':'There is no page change to apply.',
+      '마지막 쪽까지 읽었어요! 별점과 한 줄 평을 남겨 볼까요?':'You reached the last page! Want to leave a star rating and one-line review?',
+      '오늘 몫 완료! 📖':'Today\'s pages done! 📖', '지금 쪽수와 같아요.':'That is the same as the current page.', '제목을 적어 주세요.':'Please enter a title.', '책장에서 뺐어요.':'Removed from the shelf.',
+      '■ 다 읽었으면 눌러서 멈추기':'■ Tap to stop when you are done', '🎤 말하면 글자로 적혀요':'🎤 Speak and it turns into text', '말로 입력 멈추기':'Stop voice input', '말로 입력':'Voice input',
+      '이 화면에서는 말로 적기가 안 돼요. 크롬이나 사파리에서 직접 열거나, 키보드의 🎤 버튼을 써 주세요.':'Voice input is not available in this view. Open it directly in Chrome or Safari, or use the 🎤 button on your keyboard.',
+      '듣는 중…':'Listening…', '듣는 중… 구절을 또박또박 읽어 주세요.':'Listening… Please read the quote clearly.',
+      '마이크 사용이 막혀 있어요. 브라우저 설정에서 마이크를 허용해 주세요.':'Microphone access is blocked. Please allow the microphone in your browser settings.',
+      '소리가 들리지 않았어요. 다시 눌러 읽어 주세요.':'I could not hear anything. Tap again and read aloud.', '음성 인식은 인터넷 연결이 필요해요.':'Voice recognition needs an internet connection.',
+      '음성 인식이 멈췄어요. 다시 눌러 주세요.':'Voice recognition stopped. Please tap again.', '음성 입력을 시작하지 못했어요.':'Could not start voice input.',
+      '종이':'Paper', '밤':'Night', '책 색':'Book color', '하양':'White',
+      '이미지를 만드는 중…':'Creating the image…', '이미지를 만들지 못했어요.':'Could not create the image.', '내 생각 한 줄도 넣기':'Also include my one-line thought', '닫기':'Close',
+      '공유·저장':'Share · Save', '이미지 저장':'Save image', '인스타 게시물 비율(4:5)이에요. 저장해서 카톡·인스타·블로그에 올릴 수 있어요.':'It\'s in Instagram post ratio (4:5). Save it and share it on chat, Instagram or your blog.',
+      '이미지를 저장했어요.':'Image saved.', '저장이 안 되면 미리보기 이미지를 길게 눌러 저장해 주세요.':'If saving fails, long-press the preview image to save it.',
+      '사진 파일을 골라 주세요.':'Please choose a photo file.', '사진을 불러오지 못했어요. 다른 사진으로 해 주세요.':'Could not load the photo. Please try another one.',
+      '문장을 적거나 사진을 넣어 주세요.':'Please type a quote or add a photo.', '책을 골라 주세요.':'Please pick a book.',
+      '사진을 저장하지 못했어요. 휴대폰 저장 공간이나 브라우저 설정을 확인해 주세요.':'Could not save the photo. Check your phone storage or browser settings.',
+      '쉬는 날을 취소했어요.':'Rest day canceled.', '오늘은 쉬어요. 연속 기록은 이어져요 🌙':'Resting today. Your streak continues 🌙', '파일을 받지 못했어요.':'Could not download the file.',
+      '백업 파일을 받았어요.':'Backup file downloaded.', '새로 더할 기록이 없어요.':'No new records to add.', '한 쪽 독서 백업 파일이 아니에요.':'That is not a One-Page Reading backup file.',
+      '오늘':'Today', '책장':'Shelf', '구절':'Quotes', '기록':'Records',
+      '이 브라우저는 기록을 저장하지 못하고 있어요. 시크릿 모드라면 일반 창으로 열어 주세요.':'This browser cannot save your records. If you are in private mode, open a normal window.',
+      '지금 백업하기':'Back up now', '아직 백업한 적이 없어요.':'You have never backed up.',
+      '기록과 사진은 이 기기의 브라우저에만 저장돼요. 로그인은 필요 없어요.':'Records and photos are stored only in this device\'s browser. No login needed.', '지금은 저장이 되지 않는 상태예요.':'Nothing is being saved right now.',
+      '몇 쪽까지 읽었나요?':'Which page did you reach?', '✕ 구절 적기 닫기':'✕ Close quote form', '✍️ 인상 깊은 구절 남기기':'✍️ Save a memorable quote',
+      '어떤 책?':'Which book?', '📷 사진 찍기':'📷 Take photo', '🖼️ 앨범에서':'🖼️ From album', '사진 빼기':'Remove photo', '인상 깊은 구절':'A memorable quote', '(사진만 저장해도 돼요)':'(saving only a photo is fine)',
+      '💡 문장을 옮겨 적기 번거로우면, 휴대폰 카메라의 글자 인식(아이폰 \'라이브 텍스트\', 안드로이드 \'구글 렌즈\')으로 복사해 붙여 넣으세요.':'💡 If typing out a sentence is a hassle, use your phone camera\'s text recognition (iPhone \'Live Text\', Android \'Google Lens\') to copy and paste it.',
+      '내 생각 한 줄 (선택)':'My one-line thought (optional)', '생각을 말로 입력':'Voice input for thought', '쪽':'page', '구절 저장':'Save quote',
+      '지운 책':'Deleted book', '이미지로 만들기':'Make into image', '복사':'Copy', '지우기':'Delete',
+      '쉬는 날이에요. 내일 다시 펼치면 돼요.':'It\'s a rest day. Open the book again tomorrow.', '오늘은 두 배로 읽었어요!':'You read double today!', '오늘 몫 완료! 더 읽으면 보너스예요.':'Today\'s pages done! Anything more is a bonus.',
+      '이날은 기록이 없어요. 읽었다면 채워 주세요.':'No record for this day. Fill it in if you read.', '전날':'Previous day', '다음날':'Next day', '쉬는 날':'Rest day', '완료!':'Done!', '읽는 중':'Reading',
+      '읽는 책이 없어요.':'No book in progress.', '+ 책 추가':'+ Add book', '쉬는 날로 표시했어요.':'Marked as a rest day.', '취소':'Cancel', '🌙 쉬는 날':'🌙 Rest day', '오늘 다시 보는 구절':'A quote to revisit today',
+      '읽고 싶은':'Want to read', '다 읽음':'Finished', '완독':'finished', '읽기 시작':'Start reading', '다 읽었어요':'I finished it', '잠시 멈춤':'Pause', '평 고치기':'Edit review',
+      '읽는 중인 책이 없어요.':'No book in progress.', '읽고 싶은 책을 모아 두세요.':'Collect books you want to read.', '아직 완독한 책이 없어요. 곧 생길 거예요!':'No finished books yet. Soon there will be!',
+      '지금 몇 쪽?':'Current page?', '상태':'Status', '책장에 넣기':'Add to shelf', '별점과 한 줄 평을 남겨 주세요.':'Please leave a star rating and a one-line review.',
+      '이 책을 한 줄로 말하면?':'Describe this book in one line?', '나중에':'Later', '완독으로 저장':'Save as finished',
+      '책을 읽다 마음에 남은 구절을 글, 사진, 말로 모아요.':'Collect quotes that stay with you as text, photos or voice.', '닫기':'Close', '아직 모은 구절이 없어요.':'No quotes collected yet.',
+      '연속':'Streak', '최고 연속':'Best streak', '이번 달':'This month', '지금까지 읽은 쪽':'Pages read so far', '목표 달성':'Goal met', '조금 읽음':'Read a little',
+      '목표 · 백업':'Goal · Backup', '하루 최소 쪽':'Minimum pages per day', '올해 목표 권수':'Books goal this year', '목표 저장':'Save goal',
+      '기록은 이 휴대폰 브라우저에만 있어요. 가끔 백업 파일을 받아 두세요.':'Records exist only in this phone\'s browser. Download a backup file once in a while.',
+      '하루 쪽수와 올해 권수를 1 이상으로 적어 주세요.':'Enter daily pages and yearly books of 1 or more.', '몇 쪽까지 읽었는지 적어 주세요.':'Please enter the page you reached.',
+      '구절을 저장했어요 ✍️':'Quote saved ✍️', '읽는 중으로 옮겼어요.':'Moved to Reading.', '읽고 싶은 책으로 옮겼어요.':'Moved to Want to read.', '구절을 지웠어요.':'Quote deleted.',
+      '문장을 복사했어요.':'Sentence copied.', '복사가 안 돼요. 길게 눌러 복사해 주세요.':'Copy did not work. Long-press to copy.', '책장에 넣었어요.':'Added to the shelf.',
+      '1 이상으로 적어 주세요.':'Please enter 1 or more.', '목표를 바꿨어요.':'Goal updated.'
+    };
+    for(var k in A) D[k] = A[k];
+    var PG = function(n){ return n + (n==='1' ? ' page' : ' pages'); };
+    R.push([/(\d[\d,]*)쪽/g, function(_, n){ return PG(n); }]);
+    R.push([/ 완독/g, function(){ return ' finished'; }]);
+    R.push([/이날 \+/g, function(){ return 'that day +'; }]);
+    R.push([/(\d+)일 연속/g, function(_, n){ return n + '-day streak'; }]);
+    P = [
+      [/^(읽는 중|읽고 싶은|다 읽음) (\d+)$/, function(m){ return tr(m[1]) + ' ' + m[2]; }],
+      [/^오늘 몫 완료! (\d+)일째 읽고 있어요 📖$/, function(m){ return 'Today\'s pages done! Day ' + m[1] + ' of reading in a row 📖'; }],
+      [/^([+-]?\d+)쪽 기록했어요\.$/, function(m){ return m[1] + ' pages logged.'; }],
+      [/^(\d+)쪽 → (\d+)쪽으로 줄일까요\? 오늘 기록에서도 빠져요\.$/, function(m){ return 'Reduce from page ' + m[1] + ' to page ' + m[2] + '? It will be removed from today\'s record too.'; }],
+      [/^완독 축하해요! 올해 (\d+)권째예요 🎉$/, function(m){ return 'Congratulations on finishing! That\'s book number ' + m[1] + ' this year 🎉'; }],
+      [/^'(.+)'을\(를\) 책장에서 뺄까요\? 이 책의 구절도 함께 지워져요\. 날짜별 읽은 쪽수 기록은 남아요\.$/, function(m){ return 'Remove \'' + m[1] + '\' from the shelf? Its quotes will be deleted too. Daily page records stay.'; }],
+      [/^이번 달 쉬는 날 카드 (\d+)장을 다 썼어요\.$/, function(m){ return 'You used all ' + m[1] + ' rest-day cards this month.'; }],
+      [/^사진 (\d+)장까지 함께 백업했어요\.$/, function(m){ return 'Backed up with ' + m[1] + ' photos.'; }],
+      [/^(\d+)개 항목을 되살렸어요\.$/, function(m){ return 'Restored ' + m[1] + ' items.'; }],
+      [/^마지막 백업이 (\d+)일 전이에요\. 기록이 이 폰에만 있어요\.$/, function(m){ return 'Your last backup was ' + m[1] + ' days ago. Your records exist only on this phone.'; }],
+      [/^아직 백업한 적이 없어요\. 기록이 이 폰에만 있어요\.$/, function(m){ return 'You have never backed up. Your records exist only on this phone.'; }],
+      [/^(\d+) \/ (\d+)쪽$/, function(m){ return m[1] + ' / ' + m[2] + ' pages'; }],
+      [/^(\d+)쪽까지$/, function(m){ return 'Up to page ' + m[1]; }],
+      [/^이날 \+(\d+)쪽$/, function(m){ return 'That day +' + m[1] + ' pages'; }],
+      [/^(.+) 읽은 쪽$/, function(m){ return tr(m[1]) + ' pages read'; }],
+      [/^오늘 최소 (\d+)쪽만 읽으면 돼요\.$/, function(m){ return 'Just read at least ' + m[1] + ' pages today.'; }],
+      [/^(\d+)쪽 남았어요\.$/, function(m){ return m[1] + ' pages left.'; }],
+      [/^(.+) (\d+)쪽 읽음, 목표 (\d+)쪽$/, function(m){ return tr(m[1]) + ': ' + m[2] + ' pages read, goal ' + m[3] + ' pages'; }],
+      [/^(\d+) \/ (\d+)쪽$/, function(m){ return m[1] + ' / ' + m[2] + ' pages'; }],
+      [/^정말 못 읽는 날엔 쉬어도 돼요\. 이번 달 쉬는 날 카드 (\d+)장$/, function(m){ return 'You can rest on days you truly can\'t read. Rest-day cards this month: ' + m[1]; }],
+      [/^구절 (\d+)$/, function(m){ return 'Quotes ' + m[1]; }],
+      [/^(.+) 빼기$/, function(m){ return 'Remove ' + tr(m[1]); }],
+      [/^(\d+)점$/, function(m){ return m[1] + ' stars'; }],
+      [/^(\d+)일 (\d+)쪽$/, function(m){ return 'Day ' + m[1] + ': ' + m[2] + ' pages'; }],
+      [/^(\d{4})년 완독 목표$/, function(m){ return m[1] + ' finishing goal'; }],
+      [/^(\d+) \/ (\d+)권$/, function(m){ return m[1] + ' / ' + m[2] + ' books'; }],
+      [/^([\d,]+)쪽 · 구절 (\d+)개$/, function(m){ return m[1] + ' pages · ' + m[2] + ' quotes'; }],
+      [/^최근 (\d+)일은 눌러서 고칠 수 있어요$/, function(m){ return 'Tap any of the last ' + m[1] + ' days to edit'; }],
+      [/^인상 깊은 구절 ?(.*)$/, function(m){ return 'A memorable quote ' + tr(m[1]); }],
+      [/^(.+) 읽음 · (.+)$/, function(m){ return m[0]; }]
+    ].concat(P);
+  })();
+
+  function tr(s){
+    var t = s.trim(); if(!t || !/[가-힣]/.test(t)) return s;
+    var r = D[t];
+    if(r === undefined){ for(var i=0;i<P.length;i++){ var m = t.match(P[i][0]); if(m){ r = P[i][1](m); break; } } }
+    if(r === undefined){ var o = t; for(var j=0;j<R.length;j++) o = o.replace(R[j][0], R[j][1]); if(o !== t) r = o; }
+    return r === undefined ? s : s.replace(t, r);
+  }
+  var ATTRS = ['aria-label','title','placeholder','alt'];
+  function fixNode(n){
+    var p = n.parentNode; if(!p || /^(SCRIPT|STYLE|TEXTAREA)$/.test(p.nodeName)) return;
+    if(p.id === 'langBtn') return;
+    var v = n.nodeValue;
+    if(STRICT_WD && /^\s*[일월화수목금토]\s*$/.test(v) && !(p.classList && p.classList.contains('wd'))) return;
+    var r = tr(v); if(r !== v) n.nodeValue = r;
+  }
+  function fixAttrs(el){
+    if(el.id === 'langBtn') return;
+    if(el.hasAttribute && el.hasAttribute('data-trv') && document.activeElement !== el){ var cv = el.value, cr = tr(cv); if(cr !== cv) el.value = cr; }
+    for(var i=0;i<ATTRS.length;i++){ var a = ATTRS[i]; if(el.hasAttribute && el.hasAttribute(a)){ var v = el.getAttribute(a), r = tr(v); if(r !== v) el.setAttribute(a, r); } }
+  }
+  function walk(root){
+    if(root.nodeType === 3){ fixNode(root); return; }
+    if(root.nodeType !== 1) return;
+    fixAttrs(root);
+    var w = document.createTreeWalker(root, 5), n;
+    while((n = w.nextNode())){ if(n.nodeType === 3) fixNode(n); else fixAttrs(n); }
+  }
+  function enable(){
+    document.documentElement.lang = 'en';
+    window.__sohwakTr = tr;
+    document.title = tr(document.title);
+    walk(document.body);
+    new MutationObserver(function(ms){
+      ms.forEach(function(m){
+        if(m.type === 'childList') m.addedNodes.forEach(walk);
+        else if(m.type === 'characterData') fixNode(m.target);
+        else if(m.type === 'attributes') fixAttrs(m.target);
+      });
+    }).observe(document.body, {childList:true, subtree:true, characterData:true, attributes:true, attributeFilter:ATTRS});
+  }
+  window.__sohwakEn = enable;
+  if(en) enable();
 })();
 </script>
 </body>

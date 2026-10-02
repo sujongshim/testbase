@@ -134,7 +134,7 @@ details.panel summary{cursor:pointer;font-weight:600}
 <main>
   <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin:0 0 14px">
     <p class="copyright" style="margin:0">© 2026 수쌤 · All rights reserved.</p>
-    <button type="button" id="resetBtn" style="border:0;background:transparent;color:var(--muted);text-decoration:underline;cursor:pointer;font-size:.78rem;padding:2px;white-space:nowrap">다시 시작하기</button>
+    <span style="display:flex;gap:12px;align-items:center"><button type="button" id="langBtn" style="border:1px solid var(--line);background:transparent;color:var(--muted);border-radius:999px;cursor:pointer;font-size:.78rem;padding:2px 10px;white-space:nowrap">English</button><button type="button" id="resetBtn" style="border:0;background:transparent;color:var(--muted);text-decoration:underline;cursor:pointer;font-size:.78rem;padding:2px;white-space:nowrap">다시 시작하기</button></span>
   </div>
   <div id="incoming"></div>
 
@@ -270,6 +270,7 @@ details.panel summary{cursor:pointer;font-weight:600}
   const toNum = s => Number(String(s||'').replace(/[^0-9]/g,'')) || 0;
   const esc = s => String(s??'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,7);
+  const L = s => window.__sohwakTr ? window.__sohwakTr(s) : s;
   const md = s => { const d = parse(s); return (d.getMonth()+1)+'/'+d.getDate(); };
   function weekStart(s){ const d = parse(s); d.setDate(d.getDate()-((d.getDay()+6)%7)); return ymd(d); }
   const allEntries = () => Object.values(state.months).flat();
@@ -348,10 +349,10 @@ details.panel summary{cursor:pointer;font-weight:600}
   function cheer(p){ return p<=50 ? '이번 주 순항 중! 🙌' : p<=100 ? '한도 안에서 잘 버티는 중 💪' : '이번 주는 넘었지만 월요일에 새로 시작 🌱'; }
   function shareText(){
     const x = snapshot();
-    return [`🫙 ${x.n}의 ${x.f} 항아리 (${md(x.w)} 주)`,
-      `이번 주 ${x.f} 한도 ${x.p}% 사용${x.m ? ` (${won(x.m.s)} / ${won(x.m.l)})` : ''}`,
-      `이번 달 참은 ${x.f} ${x.k}번${x.m && x.m.v ? ` · ${won(x.m.v)} 모음` : ''}`,
-      `먹는 돈 중 ${x.f} 비율 ${x.r}%`, cheer(x.p)].join('\n');
+    return [L(`🫙 ${x.n}의 ${x.f} 항아리 (${md(x.w)} 주)`),
+      L(`이번 주 ${x.f} 한도 ${x.p}% 사용${x.m ? ` (${won(x.m.s)} / ${won(x.m.l)})` : ''}`),
+      L(`이번 달 참은 ${x.f} ${x.k}번${x.m && x.m.v ? ` · ${won(x.m.v)} 모음` : ''}`),
+      L(`먹는 돈 중 ${x.f} 비율 ${x.r}%`), L(cheer(x.p))].join('\n');
   }
 
   // ---------- image card ----------
@@ -374,15 +375,15 @@ details.panel summary{cursor:pointer;font-weight:600}
     g.lineWidth = 2.5; g.strokeStyle = ink; g.stroke(jar);
     g.restore();
     // text
-    g.fillStyle = muted; g.font = `500 40px ${P}`; g.fillText(`${x.n}의 ${x.f} 항아리`, 520, 250, 460);
-    g.font = `400 34px ${P}`; g.fillText(`${md(x.w)} 주`, 520, 302);
+    g.fillStyle = muted; g.font = `500 40px ${P}`; g.fillText(L(`${x.n}의 ${x.f} 항아리`), 520, 250, 460);
+    g.font = `400 34px ${P}`; g.fillText(L(`${md(x.w)} 주`), 520, 302);
     g.fillStyle = x.p>100 ? warn : ink; g.font = `170px ${D}`; g.fillText(`${x.p}%`, 510, 480, 470);
-    g.fillStyle = muted; g.font = `400 36px ${P}`; g.fillText(`이번 주 ${x.f} 한도 사용`, 520, 540, 460);
+    g.fillStyle = muted; g.font = `400 36px ${P}`; g.fillText(L(`이번 주 ${x.f} 한도 사용`), 520, 540, 460);
     g.strokeStyle = '#DCE1E8'; g.lineWidth = 2; g.beginPath(); g.moveTo(120,760); g.lineTo(960,760); g.stroke();
     g.fillStyle = ink; g.font = `44px ${D}`;
-    g.fillText(`참은 ${x.f} ${x.k}번${x.m && x.m.v ? ` · ${won(x.m.v)} 모음` : ''}`, 120, 830, 840);
-    g.fillText(`먹는 돈 중 ${x.f} ${x.r}%${x.m ? ` · ${won(x.m.s)} / ${won(x.m.l)}` : ''}`, 120, 895, 840);
-    g.fillStyle = pink; g.font = `500 36px ${P}`; g.fillText(cheer(x.p), 120, 960, 840);
+    g.fillText(L(`참은 ${x.f} ${x.k}번${x.m && x.m.v ? ` · ${won(x.m.v)} 모음` : ''}`), 120, 830, 840);
+    g.fillText(L(`먹는 돈 중 ${x.f} ${x.r}%${x.m ? ` · ${won(x.m.s)} / ${won(x.m.l)}` : ''}`), 120, 895, 840);
+    g.fillStyle = pink; g.font = `500 36px ${P}`; g.fillText(L(cheer(x.p)), 120, 960, 840);
     return await new Promise(res => c.toBlob(res, 'image/png'));
   }
 
@@ -445,8 +446,8 @@ details.panel summary{cursor:pointer;font-weight:600}
   async function sendLink(){
     const url = shareUrl();
     if(!url){ toast('링크 보내기는 앱을 웹 주소로 열었을 때만 돼요. 이미지나 글로 보내 주세요.'); return; }
-    const text = `${state.settings.name||'친구'}의 이번 주 ${F()} 항아리예요. 눌러서 보고 친구 보드에 추가해 줘!`;
-    if(navigator.share){ try{ await navigator.share({title:'항아리 가계부', text, url}); return; }catch(e){ if(e && e.name==='AbortError') return; } }
+    const text = L(`${state.settings.name||'친구'}의 이번 주 ${F()} 항아리예요. 눌러서 보고 친구 보드에 추가해 줘!`);
+    if(navigator.share){ try{ await navigator.share({title:L('항아리 가계부'), text, url}); return; }catch(e){ if(e && e.name==='AbortError') return; } }
     copy(text + '\n' + url, '링크를 복사했어요. 원하는 곳에 붙여넣어 보내세요.');
   }
   async function sendImage(){
@@ -736,6 +737,188 @@ details.panel summary{cursor:pointer;font-weight:600}
   readIncoming();
   render();
   if(window.claude && typeof window.claude.use==='function') window.claude.use('downloads').then(d => { downloads = d; }).catch(()=>{});
+})();
+</script>
+<script>
+/* i18n: Korean is the default. English is chosen with the top button (shared key sohwak-lang). */
+(function(){
+  var en = false;
+  try{ en = localStorage.getItem('sohwak-lang') === 'en'; }catch(e){}
+  if(/[?&]lang=en/.test(location.search)) en = true;
+  var btn = document.getElementById('langBtn');
+  if(btn){
+    btn.textContent = en ? '한국어' : 'English';
+    btn.addEventListener('click', function(){
+      try{ localStorage.setItem('sohwak-lang', en ? 'ko' : 'en'); }catch(e){}
+      var u = location.search.replace(/[?&]lang=en/, ''); if(en && /[?&]lang=en/.test(location.search)) location.search = u; else location.reload();
+    });
+  }
+  var MON = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  var WD = {'일':'Sun','월':'Mon','화':'Tue','수':'Wed','목':'Thu','금':'Fri','토':'Sat'};
+  var D = {
+    '다시 시작하기':'Start over', '정말요? 다시 누르면 전부 지워져요':'Sure? Tap again to erase everything',
+    '← 소확앱 다른 앱 보기':'← See other SohwakApp apps', '되돌리기':'Undo', '© 2026 수쌤 · All rights reserved.':'© 2026 Susaem · All rights reserved.',
+    '일':'Sun','월':'Mon','화':'Tue','수':'Wed','목':'Thu','금':'Fri','토':'Sat', '오늘':'Today', '저장':'Save', '취소':'Cancel', '닫기':'Close',
+    '백업':'Backup', '백업 파일 받기':'Download backup file', '백업 불러오기':'Restore backup',
+    '이전 달':'Previous month', '다음 달':'Next month', '지우기':'Delete', '삭제':'Delete', '빼기':'Remove', '이모지':'Emoji',
+    '백업 파일을 받았어요.':'Backup file downloaded.', '백업을 불러왔어요.':'Backup restored.',
+    '기록은 이 휴대폰 브라우저에만 있어요. 가끔 백업 파일을 받아 두세요.':'Records exist only in this phone\'s browser. Download a backup file once in a while.',
+    '기록은 이 휴대폰 브라우저에만 있어요. 가끔 백업 파일을 받아 두면 폰을 바꿔도 되살릴 수 있어요.':'Records exist only in this phone\'s browser. Keep a backup file and you can restore it even after changing phones.'
+  };
+  var P = [
+    [/^(\d+)월 (\d+)일 ([일월화수목금토])요일$/, function(m){ return WD[m[3]] + ', ' + MON[m[1]-1] + ' ' + m[2]; }],
+    [/^(\d{4})년 (\d+)월$/, function(m){ return MON[m[2]-1] + ' ' + m[1]; }],
+    [/^(\d+)\/(\d+)\(([일월화수목금토])\)$/, function(m){ return m[1] + '/' + m[2] + ' (' + WD[m[3]] + ')'; }],
+    [/^(오전|오후) (\d+):(\d+)$/, function(m){ return m[2] + ':' + m[3] + ' ' + (m[1]==='오전' ? 'AM' : 'PM'); }],
+    [/^(\d+)일 (\d+)번째$/, function(m){ return m[1]; }],
+    [/^(\d+)시간 (\d+)분$/, function(m){ return m[1] + 'h ' + m[2] + 'm'; }],
+    [/^(\d+)시간$/, function(m){ return m[1] + 'h'; }],
+    [/^(\d+)분$/, function(m){ return m[1] + ' min'; }],
+    [/^(\d+)일$/, function(m){ return m[1] + (m[1]==='1' ? ' day' : ' days'); }]
+  ];
+  var R = [
+    [/(오전|오후) (\d+):(\d+)/g, function(_, ap, h, mi){ return h + ':' + mi + ' ' + (ap==='오전' ? 'AM' : 'PM'); }],
+    [/(\d+)\/(\d+)\(([일월화수목금토])\)/g, function(_, a, b, w){ return a + '/' + b + ' (' + WD[w] + ')'; }],
+    [/(\d+)시간 (\d+)분/g, function(_, h, mi){ return h + 'h ' + mi + 'm'; }]
+  ];
+  var STRICT_WD = false;
+    (function(){
+    var CAT = {'식비':'Food','간식':'Snack','생활':'Living','여가':'Leisure'};
+    var C = '(식비|간식|생활|여가)';
+    var A = {
+      '간식 항아리 가계부':'Snack Jar Budget', '항아리 가계부 시작하기':'Start your Jar Budget', '30초면 끝나요.':'Takes 30 seconds.',
+      '내 이름(친구에게 이 이름으로 결과를 공유할 수 있어요)':'Your name (shown to friends when you share results)', '예: 지수':'e.g. Jisoo',
+      '항아리에 표시할 분류는?(내가 특히 집중 관리하고 싶은 분류를 선택하세요)':'Which category goes in the jar? (Pick the one you most want to manage)',
+      '한 달 식비 예산 (위 항목 포함)':'Monthly food budget (including the category above)', '시작하기':'Get started',
+      '항아리 가계부':'Jar Budget', '기록하기':'Add entry', '금액':'Amount', '원':'KRW', '분류':'Category', '세부 분류':'Subcategory',
+      '무엇을? (예: 아이스 라떼)':'What for? (e.g. iced latte)', '날짜':'Date', '지출 기록하기':'Log spending', '참았어요':'I held back',
+      '사려다 참은 것을 저금으로 기록해요':'Log something you almost bought as savings', '이번 달':'This month', '주별로 보기':'By week',
+      '주별 그래프 종류':'Weekly chart type', '친구와 나누기':'Share with friends', '친구 보드':'Friends board', '이번 달 기록':'This month\'s entries', '목록 필터':'List filter',
+      '설정 · 백업':'Settings · Backup', '내 이름':'Your name', '항아리에 표시할 분류':'Category shown in the jar', '한 달 식비 예산':'Monthly food budget', '설정 저장하기':'Save settings',
+      '엑셀용 CSV 받기':'Download CSV for Excel', '식비':'Food', '간식':'Snack', '생활':'Living', '여가':'Leisure', '합계':'Total',
+      '장보기':'Groceries', '외식':'Eating out', '배달':'Delivery', '구내식당':'Cafeteria', '카페·음료':'Cafe · Drinks', '빵·디저트':'Bakery · Dessert', '과자·편의점':'Chips · Convenience store', '아이스크림':'Ice cream',
+      '생필품':'Household goods', '쇼핑':'Shopping', '교통':'Transport', '기타':'Other', '문화':'Culture', '취미':'Hobbies', '선물':'Gifts',
+      '이번 주':'This week', '전체':'All', '참은 것':'Held back',
+      '이번 주는 아직 비어 있어요.':'This week\'s jar is still empty.', '여유 있어요. 즐길 건 즐겁게요.':'Plenty of room. Enjoy what you enjoy.',
+      '절반을 넘었어요. 남은 날을 생각하며 골라 보세요.':'Past halfway. Choose with the remaining days in mind.', '거의 찼어요. 오늘 하나쯤 참아 볼까요?':'Almost full. Shall we skip one today?',
+      '한도를 넘었어요. 괜찮아요, 월요일에 새 항아리로 시작해요.':'Over the limit. It\'s okay — start a fresh jar on Monday.',
+      '이번 주 순항 중! 🙌':'Smooth sailing this week! 🙌', '한도 안에서 잘 버티는 중 💪':'Holding up well within the limit 💪', '이번 주는 넘었지만 월요일에 새로 시작 🌱':'Over this week, but a fresh start on Monday 🌱',
+      '이번 달 전체 지출':'Total spending this month', '식비':'Food', '참아서 모은 돈':'Saved by holding back', '기록하면 여기에 모여요.':'They gather here once you log.',
+      '🔒 비공개':'🔒 Private', '🙌 친구에게 공개':'🙌 Public to friends', '친구 공개 설정':'Friend visibility', '내 카드 미리보기':'My card preview', '금액도 함께 보여 주기':'Also show amounts',
+      '🖼️ 이미지':'🖼️ Image', '🔗 링크':'🔗 Link', '💬 글':'💬 Text',
+      '이미지는 인스타 스토리·카톡·문자 어디든, 링크는 받은 친구가 눌러서 자기 친구 보드에 추가할 수 있어요.':'Send the image anywhere — Instagram Stories, chat, texts. With the link, your friend can tap it to add you to their board.',
+      ' (링크는 웹 주소로 열었을 때만 돼요)':' (Links only work when opened from a web address)',
+      '지금은 아무것도 친구에게 보이지 않아요. 공개로 바꾸면 이번 주 요약만 골라서 보낼 수 있어요. 자세한 기록은 절대 나가지 않아요.':'Nothing is visible to friends right now. Switch to public to send only this week\'s summary. Detailed records never leave your phone.',
+      '친구가 새 링크를 보내 주면 최신 카드로 바뀌어요.':'When a friend sends a new link, their card updates.',
+      '친구가 보낸 🔗 링크를 누르면 여기에 친구 카드가 모여요. 서로 링크를 주고받으면 같이 하는 느낌이 나요.':'Friends\' cards gather here when you tap a 🔗 link they send. Swapping links makes it feel like a shared challenge.',
+      '아직 기록이 없어요. 위에서 첫 지출을 적어 보세요.':'No entries yet. Log your first spending above.', '기록 지우기':'Delete entry',
+      '내가 보낸 카드예요':'This is a card I sent', '친구가 보낸 항아리 카드':'A jar card from a friend', '친구 보드에 추가':'Add to friends board',
+      '나도 해 보고 싶다면 아래에서 시작해 보세요.':'Want to try it too? Start below.', '자주 쓰는 것':'Frequently used',
+      '이 브라우저에 저장하지 못했어요. 백업 파일을 받아 두세요.':'Could not save in this browser. Please download a backup file.',
+      '친구 카드를 읽지 못했어요. 링크가 잘렸는지 확인해 주세요.':'Could not read the friend card. Check whether the link was cut off.',
+      '파일을 받지 못했어요.':'Could not download the file.', '새로 더할 기록이 없어요.':'No new records to add.', '항아리 가계부 백업 파일이 아니에요.':'That is not a Jar Budget backup file.',
+      '파일을 읽지 못했어요.':'Could not read the file.', '자동 복사가 안 돼요. 미리보기 글을 길게 눌러 복사해 주세요.':'Auto-copy did not work. Long-press the preview text to copy it.',
+      '복사했어요. 원하는 앱에 붙여넣어 보내세요.':'Copied. Paste it into any app to send.', '링크 보내기는 앱을 웹 주소로 열었을 때만 돼요. 이미지나 글로 보내 주세요.':'Sending a link only works when the app is opened from a web address. Please send an image or text.',
+      '링크를 복사했어요. 원하는 곳에 붙여넣어 보내세요.':'Link copied. Paste it wherever you like.', '이미지를 만들지 못했어요.':'Could not create the image.',
+      '이미지를 저장했어요. 사진첩에서 골라 보내세요.':'Image saved. Pick it from your photos to send.', '금액을 먼저 적어 주세요.':'Please enter an amount first.', '기록했어요.':'Logged.',
+      '지웠어요.':'Deleted.', '두 한도 모두 0보다 큰 금액으로 적어 주세요.':'Please enter amounts above 0 for both limits.', '설정을 저장했어요.':'Settings saved.',
+      '한도와 예산을 0보다 크게 적어 주세요.':'Please enter a limit and budget above 0.', '친구 보드에서 뺐어요.':'Removed from the friends board.',
+      '지금 백업하기':'Back up now', '이 브라우저는 기록을 저장하지 못하고 있어요. 시크릿 모드라면 일반 창으로 열어 주세요.':'This browser cannot save your records. If you are in private mode, open a normal window.',
+      '아직 백업한 적이 없어요.':'You have never backed up.', '기록은 이 기기의 브라우저에만 저장돼요. 로그인은 필요 없어요.':'Records are stored only in this device\'s browser. No login needed.',
+      '지금은 저장이 되지 않는 상태예요.':'Nothing is being saved right now.', '기록은 이 휴대폰 브라우저에만 있어요. 가끔 백업 파일을 받아 두면 폰을 바꿔도 되살릴 수 있어요.':'Records exist only in this phone\'s browser. Keep a backup file and you can restore it even after changing phones.',
+      '이번 주':'This week', '친구':'Friend'
+    };
+    for(var k in A) D[k] = A[k];
+    R.push([/([\d,]+)원/g, function(_, n){ return '₩' + n; }]);
+    R.push([/이번 주 (\d+)일 남음/g, function(_, n){ return n + ' days left this week'; }]);
+    R.push([/ 모음/g, function(){ return ' saved'; }]);
+    R.push([/ · 참음/g, function(){ return ' · held back'; }]);
+    R.push([/ \(지난 주\)/g, function(){ return ' (last week)'; }]);
+    R.push([/(\d+\/\d+) 주/g, function(_, d){ return 'week of ' + d; }]);
+    R.push([/먹는 돈 중 (\d+)%/g, function(_, n){ return n + '% of food money'; }]);
+    var SUBS = {'장보기':'Groceries','외식':'Eating out','배달':'Delivery','구내식당':'Cafeteria','카페·음료':'Cafe · Drinks','빵·디저트':'Bakery · Dessert','과자·편의점':'Chips · Convenience store','아이스크림':'Ice cream','생필품':'Household goods','쇼핑':'Shopping','교통':'Transport','문화':'Culture','취미':'Hobbies','선물':'Gifts'};
+    R.push([new RegExp(Object.keys(SUBS).join('|'), 'g'), function(m){ return SUBS[m]; }]);
+    R.push([/(식비|간식|생활|여가)/g, function(m){ return CAT[m]; }]);
+    D['한 주 한도'] = 'Weekly limit';
+    D['이미지는 인스타 스토리·카톡·문자 어디든, 링크는 받은 친구가 눌러서 자기 친구 보드에 추가할 수 있어요. (링크는 웹 주소로 열었을 때만 돼요)'] = 'Send the image anywhere — Instagram Stories, chat, texts. With the link, your friend can tap it to add you to their board. (Links only work when opened from a web address)';
+    var cat = function(x){ return CAT[x] || x; };
+    P = [
+      [/^(.+)의 (식비|간식|생활|여가) 항아리$/, function(m){ return m[1] + '\'s ' + cat(m[2]) + ' jar'; }],
+      [/^(식비|간식|생활|여가) 항아리 가계부$/, function(m){ return cat(m[1]) + ' Jar Budget'; }],
+      [/^한 주 (식비|간식|생활|여가) 한도$/, function(m){ return 'Weekly ' + cat(m[1]) + ' limit'; }],
+      [/^이번 주 (식비|간식|생활|여가) 한도 사용$/, function(m){ return 'of this week\'s ' + cat(m[1]) + ' limit used'; }],
+      [/^이번 주 (식비|간식|생활|여가), (남은 한도|한도 초과)$/, function(m){ return 'This week\'s ' + cat(m[1]) + ', ' + (m[2]==='남은 한도' ? 'limit left' : 'over limit'); }],
+      [/^(.+)의 항아리$/, function(m){ return m[1] + '\'s jar'; }],
+      [/^🫙 (.+)의 (식비|간식|생활|여가) 항아리 \((\d+\/\d+) 주\)$/, function(m){ return '🫙 ' + m[1] + '\'s ' + cat(m[2]) + ' jar (week of ' + m[3] + ')'; }],
+      [/^이번 주 (식비|간식|생활|여가) 한도 (\d+)% 사용(.*)$/, function(m){ return 'Used ' + m[2] + '% of this week\'s ' + cat(m[1]) + ' limit' + tr(m[3]); }],
+      [/^이번 주 (식비|간식|생활|여가) 한도 (\d+)퍼센트 사용$/, function(m){ return 'This week\'s ' + cat(m[1]) + ' limit ' + m[2] + ' percent used'; }],
+      [/^이번 달 참은 (식비|간식|생활|여가) (\d+)번(.*)$/, function(m){ return 'Held back on ' + cat(m[1]) + ' ' + m[2] + (m[2]==='1' ? ' time' : ' times') + ' this month' + tr(m[3]); }],
+      [/^참은 (식비|간식|생활|여가) (\d+)번(.*)$/, function(m){ return 'Held back on ' + cat(m[1]) + ' ' + m[2] + (m[2]==='1' ? ' time' : ' times') + tr(m[3]); }],
+      [/^먹는 돈 중 (식비|간식|생활|여가) 비율 (\d+)%$/, function(m){ return cat(m[1]) + ' share of food money: ' + m[2] + '%'; }],
+      [/^먹는 돈 중 (식비|간식|생활|여가) (\d+)%(.*)$/, function(m){ return cat(m[1]) + ' share of food money: ' + m[2] + '%' + tr(m[3]); }],
+      [/^이번 달 참아서 모은 돈 (.+)$/, function(m){ return 'Saved this month by holding back: ' + tr(m[1]); }],
+      [/^먹는 데 쓴 돈 \(식비 \+ (식비|간식|생활|여가)\)$/, function(m){ return 'Spent on eating (Food + ' + cat(m[1]) + ')'; }],
+      [/^하루 평균 (식비|간식|생활|여가)$/, function(m){ return 'Daily average ' + cat(m[1]); }],
+      [/^점선은 주간 (식비|간식|생활|여가) 한도\((.+)\)예요\.$/, function(m){ return 'The dashed line is the weekly ' + cat(m[1]) + ' limit (' + tr(m[2]) + ').'; }],
+      [/^점선은 한 주 식비 기준\((.+)\)이에요\. 월 예산을 주 단위로 나누고 (식비|간식|생활|여가) 한도를 뺀 금액이에요\.$/, function(m){ return 'The dashed line is the weekly food guide (' + tr(m[1]) + '): monthly budget split by week, minus the ' + cat(m[2]) + ' limit.'; }],
+      [/^초록은 식비, 분홍은 (식비|간식|생활|여가)이에요\. 점선은 한 주 먹는 돈 기준\((.+)\)이에요\.$/, function(m){ return 'Green is food, pink is ' + cat(m[1]) + '. The dashed line is the weekly eating-money guide (' + tr(m[2]) + ').'; }],
+      [/^최근 6주 (.+) 막대그래프$/, function(m){ return 'Bar chart of ' + tr(m[1]) + ' over the last 6 weeks'; }],
+      [/^이번 달 (먹는 데|식비에|간식에|생활에|여가에) 가장 많이 쓴 곳$/, function(m){ return 'Top places this month for ' + (m[1]==='먹는 데' ? 'eating' : cat(m[1].replace('에',''))); }],
+      [/^(\d+)번$/, function(m){ return m[1] + '×'; }],
+      [/^(\d+(?:\.\d)?)(만|천)$/, function(m){ return (m[2]==='만' ? Math.round(Number(m[1])*10) : m[1]) + 'k'; }],
+      [/^(.+)님을 친구 보드에 추가했어요\.$/, function(m){ return 'Added ' + m[1] + ' to your friends board.'; }],
+      [/^(.+) 보드에서 빼기$/, function(m){ return 'Remove ' + m[1] + ' from the board'; }],
+      [/^기록 (\d+)건을 되살렸어요\.$/, function(m){ return 'Restored ' + m[1] + ' records.'; }],
+      [/^(.+)을 항아리 대신 저금했어요\.$/, function(m){ return tr(m[1]) + ' saved instead of going in the jar.'; }],
+      [/^(.+)의 이번 주 (식비|간식|생활|여가) 항아리예요\. 눌러서 보고 친구 보드에 추가해 줘!$/, function(m){ return m[1] + '\'s jar for this week (' + cat(m[2]) + '). Tap to view and add it to your friends board!'; }],
+      [/^마지막 백업이 (\d+)일 전이에요\. 기록이 이 폰에만 있으니 한 번 받아 두면 안심이에요\.$/, function(m){ return 'Your last backup was ' + m[1] + ' days ago. Your records exist only on this phone, so a backup gives peace of mind.'; }],
+      [/^아직 백업한 적이 없어요\. 기록이 이 폰에만 있으니 한 번 받아 두면 안심이에요\.$/, function(m){ return 'You have never backed up. Your records exist only on this phone, so a backup gives peace of mind.'; }],
+      [/^(.+) 보드에서 빼기$/, function(m){ return 'Remove ' + m[1]; }]
+    ].concat(P);
+  })();
+
+  function tr(s){
+    var t = s.trim(); if(!t || !/[가-힣]/.test(t)) return s;
+    var r = D[t];
+    if(r === undefined){ for(var i=0;i<P.length;i++){ var m = t.match(P[i][0]); if(m){ r = P[i][1](m); break; } } }
+    if(r === undefined){ var o = t; for(var j=0;j<R.length;j++) o = o.replace(R[j][0], R[j][1]); if(o !== t) r = o; }
+    return r === undefined ? s : s.replace(t, r);
+  }
+  var ATTRS = ['aria-label','title','placeholder','alt'];
+  function fixNode(n){
+    var p = n.parentNode; if(!p || /^(SCRIPT|STYLE|TEXTAREA)$/.test(p.nodeName)) return;
+    if(p.id === 'langBtn') return;
+    var v = n.nodeValue;
+    if(STRICT_WD && /^\s*[일월화수목금토]\s*$/.test(v) && !(p.classList && p.classList.contains('wd'))) return;
+    var r = tr(v); if(r !== v) n.nodeValue = r;
+  }
+  function fixAttrs(el){
+    if(el.id === 'langBtn') return;
+    if(el.hasAttribute && el.hasAttribute('data-trv') && document.activeElement !== el){ var cv = el.value, cr = tr(cv); if(cr !== cv) el.value = cr; }
+    for(var i=0;i<ATTRS.length;i++){ var a = ATTRS[i]; if(el.hasAttribute && el.hasAttribute(a)){ var v = el.getAttribute(a), r = tr(v); if(r !== v) el.setAttribute(a, r); } }
+  }
+  function walk(root){
+    if(root.nodeType === 3){ fixNode(root); return; }
+    if(root.nodeType !== 1) return;
+    fixAttrs(root);
+    var w = document.createTreeWalker(root, 5), n;
+    while((n = w.nextNode())){ if(n.nodeType === 3) fixNode(n); else fixAttrs(n); }
+  }
+  function enable(){
+    document.documentElement.lang = 'en';
+    window.__sohwakTr = tr;
+    document.title = tr(document.title);
+    walk(document.body);
+    new MutationObserver(function(ms){
+      ms.forEach(function(m){
+        if(m.type === 'childList') m.addedNodes.forEach(walk);
+        else if(m.type === 'characterData') fixNode(m.target);
+        else if(m.type === 'attributes') fixAttrs(m.target);
+      });
+    }).observe(document.body, {childList:true, subtree:true, characterData:true, attributes:true, attributeFilter:ATTRS});
+  }
+  window.__sohwakEn = enable;
+  if(en) enable();
 })();
 </script>
 </body>
