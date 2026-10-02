@@ -930,7 +930,7 @@ button,input,select{font:inherit;color:inherit}
     R.push([/목표 ([\d,]+)kcal/g, function(_, k){ return 'Goal ' + k + 'kcal'; }]);
     P = [
       [/^([\d.]+)kg 기록했어요\.$/, function(m){ return m[1] + 'kg logged.'; }],
-      [/^(\d+)일째$/, function(m){ return m[1] + ' days'; }],
+      [/^(\d+)일째$/, function(m){ return m[1] + (m[1]==='1' ? ' day' : ' days'); }],
       [/^목표 ([\d,]+)kcal$/, function(m){ return 'Goal ' + m[1] + 'kcal'; }],
       [/^(.+) (\d+)kcal 기록했어요\.$/, function(m){ return tr(m[1]) + ' ' + m[2] + 'kcal logged.'; }],
       [/^(.+)을\(를\) 150kcal\(대략치\)로 기록했어요\.$/, function(m){ return m[1] + ' logged at about 150kcal (rough estimate).'; }],
