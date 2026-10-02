@@ -53,7 +53,9 @@ a{color:inherit}
 .topnav{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:8px 0;margin-bottom:22px}
 .topnav .brand{display:flex;align-items:center;gap:9px;font-size:1.7rem;font-weight:700;text-decoration:none;color:var(--hero-dark-ink)}
 .topnav .brand span{color:var(--hero-dark-accent)}
-.topnav .navlinks{display:flex;gap:18px}
+.topnav .navlinks{display:flex;gap:18px;align-items:center}
+.langbtn{border:1px solid var(--hero-dark-muted);background:transparent;color:var(--hero-dark-ink);border-radius:999px;padding:4px 12px;font:inherit;font-size:.85rem;font-weight:600;cursor:pointer}
+.langbtn:hover{border-color:var(--hero-dark-ink)}
 .topnav .navlinks a{font-size:.92rem;color:var(--hero-dark-muted);text-decoration:none}
 .topnav .navlinks a:hover{color:var(--hero-dark-ink)}
 
@@ -117,6 +119,7 @@ footer .stats{margin-top:4px;font-size:.75rem}
       <div class="navlinks">
         <a href="#apps">앱</a>
         <a href="#how">사용법</a>
+        <button type="button" class="langbtn" id="langBtn" aria-label="Switch language">English</button>
       </div>
     </nav>
 
@@ -307,12 +310,104 @@ footer .stats{margin-top:4px;font-size:.75rem}
     if(!res.ok) throw new Error('rpc_failed');
     return res.json();
   }
-  const fmt = n => Number(n || 0).toLocaleString('ko-KR');
+  // ---------- language (ko / en) ----------
+  const LANG_KEY = 'sohwak-lang';
+  const EN = {
+    '소확': 'Sohwak', '앱': 'Apps',
+    '사용법': 'How to use',
+    '소확앱 · 소소하지만 확실한 앱': 'SohwakApp · Small but certain apps',
+    '매일 지킬 수 있는 작은 습관으로': 'With small habits you can keep every day,',
+    '나를 만들어요.': 'I build who I want to be.',
+    '거창한 결심 대신, 오늘 지킬 수 있는 만큼만. 10쪽 읽기, 팔 들기 50개, 11시에 눕기처럼 매일 실천할 수 있는 작은 습관을 기록해요. 동그라미가 하나씩 쌓이면, 그게 바로 내가 됩니다.':
+      'Instead of grand resolutions, just what you can keep today. Track small habits you can do every day — reading 10 pages, 50 arm raises, lying down at 11 PM. When the circles pile up one by one, that is who you become.',
+    '습관 앱 7개': '7 habit apps', '무료': 'Free', '로그인 없음': 'No login',
+    '🔗 친구에게 앱 초대하기': '🔗 Invite a friend',
+    '회원가입 없음': 'No sign-up', '광고 없음': 'No ads', '기록은 내 폰에만': 'Records stay on my phone',
+    '열기': 'Open', '다운로드': 'Download',
+    '항아리 가계부': 'Jar Budget',
+    '간식·커피·배달처럼 새는 돈 하나만 주간 항아리로 관리해요. 참은 것도 저금처럼 쌓여요.': 'Manage just one leaky expense — snacks, coffee, delivery — with a weekly jar. What you hold back piles up like savings.',
+    '공복 타이머': 'Fasting Timer',
+    '16:8 같은 공복 시간을 원형 타이머로 지키고, 매일 기록을 쌓아 연속 달성을 확인해요.': 'Keep fasting windows like 16:8 with a ring timer, log every day, and watch your streak grow.',
+    '매일 최소 운동': 'Daily Minimum Workout',
+    '팔 들기 50개, 러닝머신 20분처럼 무리 없는 최소 운동을 매일 체크하고, 달력에 연속 기록을 쌓아요.': 'Check off an easy minimum workout every day — 50 arm raises, 20 minutes on the treadmill — and stack streaks on the calendar.',
+    '한 쪽 독서': 'One-Page Reading',
+    '하루 최소 쪽수만 정하고 매일 조금씩. 책장, 밑줄 모음, 완독 목표와 독서 달력까지.': 'Set a minimum number of pages and read a little each day. Bookshelf, highlights, finishing goals and a reading calendar.',
+    '잘 자요': 'Sleep Well',
+    '밤 11시 취침, 아침 6시 기상처럼 목표를 정하고 잠을 기록해요. 취침 알림 문구와 수면 달력까지.': 'Set goals like bed at 11 PM and up at 6 AM, and log your sleep. Bedtime reminders and a sleep calendar included.',
+    '간식만 참아봐요': 'Just Skip the Snacks',
+    '간식 먹었을 때 톡 눌러서 대략 칼로리로 기록해요. 목표 안에서 지킨 날, 무간식일을 달력으로 모아 보고 치팅 데이도 계획해서 쓸 수 있어요.': 'Tap when you eat a snack and log rough calories. See days within your goal and snack-free days on a calendar, and plan cheat days too.',
+    '2027 수능완성 단어장': '2027 CSAT Finish Vocab',
+    '노션에 정리해 둔 단어를 그날그날 복습해요. 최근 7일에 넣은 단어(20개)만 골라 빠르게 복습할 수도 있어요.': 'Review the words you keep in Notion day by day. You can also quickly review just the words added in the last 7 days.',
+    '다음 앱 준비 중': 'Next app coming soon',
+    '필요한 게 생기면 또 만들어서 여기에 올릴게요.': 'When I need something new, I will build it and post it here.',
+    '이렇게 쓰세요': 'How to use',
+    '1. 휴대폰 크롬이나 사파리로 열기': '1. Open in Chrome or Safari on your phone',
+    '앱을 누르면 바로 시작돼요. 설치나 가입은 없어요.': 'Tap an app and it starts right away. No install, no sign-up.',
+    '2. 홈 화면에 추가하기': '2. Add to your home screen',
+    "아이폰: 사파리 하단 공유 버튼(□↑) → '홈 화면에 추가'. 안드로이드: 크롬 오른쪽 위 ⋮ 메뉴 → '홈 화면에 추가'. 앱처럼 아이콘이 생겨서 다음부터 바로 열 수 있어요.": "iPhone: Safari share button (□↑) → 'Add to Home Screen'. Android: Chrome ⋮ menu (top right) → 'Add to Home screen'. An app-like icon appears so you can open it right away next time.",
+    '3. 가끔 백업하기': '3. Back up once in a while',
+    "기록은 그 휴대폰 브라우저에만 저장돼요. 항아리 가계부, 매일 최소 운동, 한 쪽 독서, 잘 자요, 간식만 참아봐요는 설정에서 백업 파일을 받아 둘 수 있어요. 앱을 열고 맨 아래 '설정 · 백업'을 누른 뒤 '백업 파일 받기' 버튼을 누르면 날짜가 적힌 파일이 휴대폰 다운로드 폴더에 저장돼요. 나중에 폰을 바꾸거나 브라우저 데이터가 지워졌을 때, 같은 자리의 '백업 불러오기'로 그 파일을 골라주면 기록이 그대로 돌아와요.": "Records are stored only in that phone's browser. Jar Budget, Daily Minimum Workout, One-Page Reading, Sleep Well and Just Skip the Snacks let you save a backup file in settings. Open the app, tap 'Settings · Backup' at the bottom, then 'Download backup file' — a dated file is saved to your phone's download folder. If you change phones or browser data gets cleared, pick that file with 'Restore backup' in the same place and your records come right back.",
+    '내 기록은 안전한가요?': 'Are my records safe?',
+    '모든 기록은 내 기기의 브라우저 안에만 저장되고, 어디로도 보내지지 않아요. 만든 사람도 볼 수 없어요. 대신 브라우저의 사이트 데이터를 지우거나 시크릿 모드로 쓰면 기록이 사라지니 주의해 주세요.': 'All records are stored only inside your device\'s browser and are never sent anywhere. Even the creator cannot see them. Note that clearing the browser\'s site data or using private mode will erase them.',
+    '휴대폰과 PC 기록이 이어지나요?': 'Do phone and PC records sync?',
+    '자동으로는 이어지지 않아요. 기기마다 따로 저장돼요. 항아리 가계부는 백업 파일로 옮길 수 있어요.': 'Not automatically — each device stores its own. You can move Jar Budget with a backup file.',
+    '© 2026 심수정 · All rights reserved.': '© 2026 Sim Sujeong · All rights reserved.',
+    '소확앱 · 내가 필요해서 만든 작은 앱들': 'SohwakApp · Small apps I made because I needed them'
+  };
+  const EN_ATTR = {
+    '소확앱 소개': 'About SohwakApp', '모든 앱의 약속': 'Promises of every app',
+    '항아리 가계부만 다운로드': 'Download Jar Budget only', '공복 타이머만 다운로드': 'Download Fasting Timer only',
+    '매일 최소 운동만 다운로드': 'Download Daily Minimum Workout only', '한 쪽 독서만 다운로드': 'Download One-Page Reading only',
+    '잘 자요만 다운로드': 'Download Sleep Well only', '간식만 참아봐요만 다운로드': 'Download Just Skip the Snacks only',
+    '2027 수능완성 단어장만 다운로드': 'Download 2027 CSAT Finish Vocab only', '이 앱만 HTML로 다운로드': 'Download this app only as HTML'
+  };
+  const origText = new WeakMap(), origAttr = new WeakMap();
+  let lang = 'ko';
+  try{ lang = localStorage.getItem(LANG_KEY) === 'en' ? 'en' : 'ko'; }catch(e){}
+  function applyLang(){
+    const en = lang === 'en';
+    document.documentElement.lang = en ? 'en' : 'ko';
+    document.title = en ? 'SohwakApp · Small but certain apps' : '소확앱 · 소소하지만 확실한 앱';
+    const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+    const nodes = []; while(walker.nextNode()) nodes.push(walker.currentNode);
+    nodes.forEach(n => {
+      if(n.parentNode && /^(SCRIPT|STYLE)$/.test(n.parentNode.nodeName)) return;
+      if(n.parentNode && n.parentNode.id === 'langBtn') return;
+      if(!origText.has(n)) origText.set(n, n.nodeValue);
+      const src = origText.get(n), key = src.trim();
+      const isBrandApp = key === '앱' && n.parentNode && n.parentNode.parentNode && n.parentNode.parentNode.classList && n.parentNode.parentNode.classList.contains('brand');
+      const val = isBrandApp ? 'App' : EN[key];
+      if(val){ n.nodeValue = en ? src.replace(key, val) : src; }
+    });
+    document.querySelectorAll('[aria-label],[title]').forEach(el => {
+      if(el.id === 'langBtn') return;
+      ['aria-label','title'].forEach(a => {
+        if(!el.hasAttribute(a)) return;
+        if(!origAttr.has(el)) origAttr.set(el, {});
+        const store = origAttr.get(el);
+        if(store[a] === undefined) store[a] = el.getAttribute(a);
+        if(EN_ATTR[store[a]]) el.setAttribute(a, en ? EN_ATTR[store[a]] : store[a]);
+      });
+    });
+    const b = document.getElementById('langBtn');
+    b.textContent = en ? '한국어' : 'English';
+    b.setAttribute('aria-label', en ? '한국어로 보기' : 'Switch to English');
+    refreshStats();
+  }
+  document.getElementById('langBtn').addEventListener('click', () => {
+    lang = lang === 'en' ? 'ko' : 'en';
+    try{ localStorage.setItem(LANG_KEY, lang); }catch(e){}
+    applyLang();
+  });
+
+  const fmt = n => Number(n || 0).toLocaleString(lang === 'en' ? 'en-US' : 'ko-KR');
   async function refreshStats(){
     try{
       const rows = await sbRpc('testbase_get_counters');
       const byId = Object.fromEntries(rows.map(r => [r.id, r.count]));
-      document.getElementById('siteStats').textContent = `누적 방문 ${fmt(byId.visits)} · 누적 다운로드 ${fmt(byId.downloads)}`;
+      document.getElementById('siteStats').textContent = lang === 'en'
+        ? `Total visits ${fmt(byId.visits)} · Total downloads ${fmt(byId.downloads)}`
+        : `누적 방문 ${fmt(byId.visits)} · 누적 다운로드 ${fmt(byId.downloads)}`;
     }catch(e){ document.getElementById('siteStats').textContent = ''; }
   }
   async function bumpVisit(){
@@ -324,19 +419,21 @@ footer .stats{margin-top:4px;font-size:.75rem}
     refreshStats();
   }
   bumpVisit();
+  applyLang();
 
   const inviteBtn = document.getElementById('inviteBtn');
   inviteBtn.addEventListener('click', async () => {
     const url = location.origin + location.pathname;
-    const text = '무료로 쓸 수 있는 작은 습관 앱 모음이에요. 로그인 없이 바로 써볼 수 있어요 🍀';
+    const en = lang === 'en';
+    const text = en ? 'A free collection of small habit apps. Try them right away, no login needed 🍀' : '무료로 쓸 수 있는 작은 습관 앱 모음이에요. 로그인 없이 바로 써볼 수 있어요 🍀';
     if(navigator.share){
-      try{ await navigator.share({title:'소확앱', text, url}); return; }
+      try{ await navigator.share({title: en ? 'SohwakApp' : '소확앱', text, url}); return; }
       catch(e){ if(e && e.name==='AbortError') return; }
     }
     const prev = inviteBtn.textContent;
     try{
       await navigator.clipboard.writeText(`${text}\n${url}`);
-      inviteBtn.textContent = '✅ 링크를 복사했어요';
+      inviteBtn.textContent = en ? '✅ Link copied' : '✅ 링크를 복사했어요';
     }catch(e){
       inviteBtn.textContent = url;
     }
@@ -352,7 +449,7 @@ footer .stats{margin-top:4px;font-size:.75rem}
       downloadFile(new Blob([blob], {type:'text/html'}), btn.dataset.name);
       bumpDownload();
     }catch(e){
-      alert('다운로드 중 문제가 생겼어요. 잠시 후 다시 시도해 주세요.');
+      alert(lang === 'en' ? 'Something went wrong with the download. Please try again in a moment.' : '다운로드 중 문제가 생겼어요. 잠시 후 다시 시도해 주세요.');
     }finally{
       btn.disabled = false; btn.textContent = prev;
     }
