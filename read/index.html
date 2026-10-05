@@ -147,27 +147,7 @@ textarea.field{resize:vertical;min-height:64px}
     <p class="copyright" style="margin:0">© 2026 수쌤 · All rights reserved.</p>
     <span style="display:flex;gap:12px;align-items:center"><button type="button" id="langBtn" style="border:1px solid var(--line);background:transparent;color:var(--muted);border-radius:999px;cursor:pointer;font-size:.78rem;padding:2px 10px;white-space:nowrap">English</button><button type="button" id="resetBtn" style="border:0;background:transparent;color:var(--muted);text-decoration:underline;cursor:pointer;font-size:.78rem;padding:2px;white-space:nowrap">다시 시작하기</button></span>
   </div>
-  <div class="setup" id="setup" hidden>
-    <h2 class="d">한 쪽 독서 시작하기</h2>
-    <p class="small muted" style="margin:0 0 12px">바쁜 날에도 읽을 수 있을 만큼만 정하세요. 한 쪽이라도 매일 읽는 게 이겨요.</p>
-    <div class="form">
-      <label>하루 최소 몇 쪽?
-        <input id="uDaily" class="field" type="number" inputmode="numeric" min="1" value="10">
-      </label>
-      <label>올해 몇 권 읽을까요?
-        <input id="uYearly" class="field" type="number" inputmode="numeric" min="1" value="12">
-      </label>
-      <div style="font-weight:600;margin-top:4px">지금 읽는 책 (나중에 넣어도 돼요)</div>
-      <label>제목<input id="uTitle" class="field" type="text" maxlength="60"></label>
-      <div class="two">
-        <label>저자<input id="uAuthor" class="field" type="text" maxlength="40"></label>
-        <label>전체 쪽수<input id="uTotal" class="field" type="number" inputmode="numeric" min="1"></label>
-      </div>
-      <button class="btn primary" id="uStart">시작하기</button>
-    </div>
-  </div>
-
-  <div id="app" hidden>
+  <div id="app">
     <h1>한 쪽 독서</h1>
     <nav class="tabs" id="tabs" aria-label="화면"></nav>
     <div id="notices"></div>
@@ -190,8 +170,8 @@ textarea.field{resize:vertical;min-height:64px}
   const KEY = 'one-page-reading-v1';
   const PASSES = 2, BACKDAYS = 7;
   const COVERS = ['#3F5E8C','#8C3F5E','#2F6B4F','#8A6D3B','#5B4A8C','#A0522D','#2E6B7A','#6B6B2E'];
-  const st = {setup:false, goal:{daily:10, yearly:12}, books:[], log:{}, rest:{}, notes:[], lastBackup:0,
-    tab:'today', day:null, notesForm:false, noteBook:null, ocrBusy:false, shelf:'reading', calMonth:null, editBook:null, addOpen:false, storageOk:true};
+  const st = {setup:false, goal:{monthly:1, yearly:12}, goalOpen:false, time:{}, timer:0, books:[], notes:[], lastBackup:0,
+    tab:'today', day:null, notesForm:false, noteBook:null, ocrBusy:false, shelf:'want', editBook:null, addOpen:false, storageOk:true};
   let toastTimer = null, undoFn = null, resetArmed = false, resetTimer = null;
 
   const $ = id => document.getElementById(id);
@@ -211,76 +191,50 @@ textarea.field{resize:vertical;min-height:64px}
 
   // ---------- storage ----------
   function save(){
-    try{ localStorage.setItem(KEY, JSON.stringify({v:1, setup:st.setup, goal:st.goal, books:st.books, log:st.log, rest:st.rest, notes:st.notes, lastBackup:st.lastBackup})); st.storageOk = true; }
+    try{ localStorage.setItem(KEY, JSON.stringify({v:1, setup:st.setup, goal:st.goal, time:st.time, timer:st.timer, books:st.books, notes:st.notes, lastBackup:st.lastBackup})); st.storageOk = true; }
     catch(e){ st.storageOk = false; toast('이 브라우저에 저장하지 못했어요. 백업 파일을 받아 두세요.'); }
   }
   function load(){
     try{
       localStorage.setItem(KEY+'-t','1'); localStorage.removeItem(KEY+'-t');
       const d = JSON.parse(localStorage.getItem(KEY)||'null');
-      if(d){ Object.assign(st, {setup:!!d.setup, goal:d.goal||st.goal, books:d.books||[], log:d.log||{}, rest:d.rest||{}, notes:d.notes||[], lastBackup:d.lastBackup||0}); }
+      if(d){ Object.assign(st, {setup:!!d.setup, goal:{monthly:int(d.goal&&d.goal.monthly)||1, yearly:int(d.goal&&d.goal.yearly)||12}, books:(d.books||[]).map(b => b.status==='reading' ? Object.assign(b,{status:'want'}) : b), notes:d.notes||[], time:d.time||{}, timer:Number(d.timer)||0, lastBackup:d.lastBackup||0}); }
     }catch(e){ st.storageOk = false; }
   }
 
-  // ---------- day logic ----------
-  const pagesOn = d => (st.log[d] && st.log[d].p) || 0;
-  function status(d){ if(st.rest[d]) return 'rest'; const p = pagesOn(d); return p >= st.goal.daily ? 'done' : p > 0 ? 'part' : 'none'; }
-  function streak(){
-    let n = 0, d = today();
-    if(!['done','rest'].includes(status(d))) d = addDays(d,-1);
-    while(['done','rest'].includes(status(d))){ if(status(d)==='done') n++; d = addDays(d,-1); }
-    return n;
-  }
-  const passesUsed = mk => Object.keys(st.rest).filter(k => k.startsWith(mk)).length;
-
   // ---------- actions ----------
-  function addPages(bookId, n){
-    const b = book(bookId); if(!b || !n) return;
-    const d = st.day, L = st.log[d] || (st.log[d] = {p:0, b:{}});
-    const prevCur = b.cur, prevP = L.p, prevB = L.b[bookId]||0, prevStatus = b.status, wasDone = status(d)==='done';
-    let add = n;
-    if(b.total) add = Math.min(add, b.total - b.cur);
-    if(add < 0) add = Math.max(add, -(L.b[bookId]||0), -b.cur);
-    if(!add){ toast(b.total && b.cur>=b.total ? '이미 마지막 쪽이에요.' : '바꿀 쪽수가 없어요.'); return; }
-    b.cur += add; L.p = Math.max(0, L.p + add); L.b[bookId] = Math.max(0, prevB + add);
-    if(b.status==='want') b.status = 'reading';
-    if(!b.start) b.start = d;
-    if(L.p >= st.goal.daily && st.rest[d]) delete st.rest[d];
-    save();
-    undoFn = () => { b.cur = prevCur; L.p = prevP; L.b[bookId] = prevB; b.status = prevStatus; save(); render(); };
-    const finishedNow = b.total && b.cur >= b.total;
-    if(finishedNow){ st.editBook = b.id; st.tab = 'shelf'; st.shelf = 'reading'; toast(`마지막 쪽까지 읽었어요! 별점과 한 줄 평을 남겨 볼까요?`); }
-    else if(status(d)==='done' && !wasDone){ const s = streak(); toast(s>1 ? `오늘 몫 완료! ${s}일째 읽고 있어요 📖` : '오늘 몫 완료! 📖'); try{ navigator.vibrate && navigator.vibrate([60,40,60]); }catch(e){} }
-    else toast(`${add>0?'+':''}${add}쪽 기록했어요.`, true);
-    render();
+  // reading timer: start/stop, seconds accumulated per day (split at midnight)
+  const fmtDur = sec => { sec = Math.floor(sec); const h = Math.floor(sec/3600), m = Math.floor(sec%3600/60); return h ? `${h}시간 ${m}분` : m ? `${m}분` : `${sec}초`; };
+  const fmtClock = sec => { sec = Math.max(0, Math.floor(sec)); return `${pad(Math.floor(sec/3600))}:${pad(Math.floor(sec%3600/60))}:${pad(sec%60)}`; };
+  const timeToday = () => (st.time[today()]||0) + (st.timer ? Math.max(0, (Date.now()-st.timer)/1000) : 0);
+  function timerToggle(){
+    if(!st.timer){ st.timer = Date.now(); save(); render(); toast('읽기를 시작했어요. 다 읽으면 끝내기를 눌러요 ⏱️'); return; }
+    let a = st.timer; const b = Date.now(); st.timer = 0;
+    if(b - a < 5000){ save(); render(); toast('5초보다 짧아서 기록하지 않았어요.'); return; }
+    while(a < b){ const d = new Date(a), next = new Date(d.getFullYear(), d.getMonth(), d.getDate()+1).getTime(), e = Math.min(b, next), k = ymd(d); st.time[k] = (st.time[k]||0) + (e-a)/1000; a = e; }
+    for(const k in st.time) st.time[k] = Math.round(st.time[k]);
+    save(); render(); toast(`오늘 ${fmtDur(st.time[today()]||0)} 읽었어요 📖`);
   }
-  function setPage(bookId, page){
-    const b = book(bookId); if(!b) return;
-    let p = int(page); if(b.total) p = Math.min(p, b.total);
-    if(p === b.cur){ toast('지금 쪽수와 같아요.'); return; }
-    if(p < b.cur && !confirm(L(`${b.cur}쪽 → ${p}쪽으로 줄일까요? 오늘 기록에서도 빠져요.`))) return;
-    addPages(bookId, p - b.cur);
-  }
+  setInterval(() => { const el = document.getElementById('timerNow'); if(el && st.timer) el.textContent = fmtClock((Date.now()-st.timer)/1000); }, 1000);
+  const doneIn = prefix => st.books.filter(b => b.status==='done' && (b.end||'').startsWith(prefix)).length;
   function finishBook(id, rating, review){
     const b = book(id); if(!b) return;
     b.status = 'done'; b.end = b.end || today(); b.rating = rating||0; b.review = (review||'').trim().slice(0,140);
-    if(b.total && b.cur < b.total) b.cur = b.total;
-    st.editBook = null; save(); render();
-    const n = st.books.filter(x => x.status==='done' && (x.end||'').startsWith(today().slice(0,4))).length;
-    toast(`완독 축하해요! 올해 ${n}권째예요 🎉`);
+    st.editBook = null; st.shelf = 'done'; save(); render();
+    toast(`완독했어요! 이번 달 ${doneIn(today().slice(0,7))}권, 올해 ${doneIn(today().slice(0,4))}권 📚`);
   }
   function addBook(f){
     const title = f.title.trim(); if(!title){ toast('제목을 적어 주세요.'); return false; }
-    st.books.push({id:uid(), title:title.slice(0,60), author:(f.author||'').trim().slice(0,40), total:int(f.total), cur:int(f.cur), status:f.status||'reading', start:f.status==='reading'?today():'', end:'', rating:0, review:'', added:today()});
+    const done = f.status==='done';
+    st.books.push({id:uid(), title:title.slice(0,60), author:(f.author||'').trim().slice(0,40), status:done?'done':'want', end:done?today():'', rating:0, review:'', added:today()});
     save(); return true;
   }
   function removeBook(id){
     const b = book(id); if(!b) return;
-    if(!confirm(L(`'${b.title}'을(를) 책장에서 뺄까요? 이 책의 구절도 함께 지워져요. 날짜별 읽은 쪽수 기록은 남아요.`))) return;
+    if(!confirm(L(`'${b.title}'을(를) 책장에서 뺄까요? 이 책의 구절도 함께 지워져요.`))) return;
     st.notes.filter(n => n.bookId===id && n.photo).forEach(n => delPhoto(n.id));
     st.books = st.books.filter(x => x.id!==id); st.notes = st.notes.filter(n => n.bookId!==id); st.editBook = null; save(); render(); toast('책장에서 뺐어요.');
-  }
-  // ---------- voice input (Web Speech API) ----------
+  }  // ---------- voice input (Web Speech API) ----------
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition || null;
   let rec = null, recTarget = null, recBase = '', recFinal = '';
   function stopMic(){ if(rec){ try{ rec.stop(); }catch(e){} } }
@@ -457,13 +411,7 @@ textarea.field{resize:vertical;min-height:64px}
     if(!book(bookId)){ toast('책을 골라 주세요.'); return false; }
     st.notes.unshift({id:uid(), bookId, page:int(page), text:text.slice(0,400), thought:(thought||'').trim().slice(0,200), d:today(), photo:false});
     save(); return true;
-  }  function useRest(){
-    const d = st.day, mk = d.slice(0,7);
-    if(st.rest[d]){ delete st.rest[d]; save(); render(); toast('쉬는 날을 취소했어요.'); return; }
-    if(passesUsed(mk) >= PASSES){ toast(`이번 달 쉬는 날 카드 ${PASSES}장을 다 썼어요.`); return; }
-    st.rest[d] = true; save(); render(); toast('오늘은 쉬어요. 연속 기록은 이어져요 🌙');
   }
-
   // ---------- backup ----------
   function saveFile(name, text){
     try{ const url = URL.createObjectURL(new Blob([text],{type:'application/json'})); const a = document.createElement('a'); a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(url),4000); return true; }
@@ -473,22 +421,21 @@ textarea.field{resize:vertical;min-height:64px}
   async function backup(){
     const photos = {};
     for(const n of st.notes) if(n.photo){ try{ const b = await getPhoto(n.id); if(b) photos[n.id] = await toDataUrl(b); }catch(e){} }
-    if(saveFile('한쪽독서-백업-'+today()+'.json', JSON.stringify({app:'one-page-reading', v:1, goal:st.goal, books:st.books, log:st.log, rest:st.rest, notes:st.notes, photos}))){ st.lastBackup = Date.now(); save(); render(); toast(Object.keys(photos).length ? `사진 ${Object.keys(photos).length}장까지 함께 백업했어요.` : '백업 파일을 받았어요.'); }
+    if(saveFile('한쪽독서-백업-'+today()+'.json', JSON.stringify({app:'one-page-reading', v:1, goal:st.goal, time:st.time, books:st.books, notes:st.notes, photos}))){ st.lastBackup = Date.now(); save(); render(); toast(Object.keys(photos).length ? `사진 ${Object.keys(photos).length}장까지 함께 백업했어요.` : '백업 파일을 받았어요.'); }
   }
   function restore(file){
     if(!file) return; const r = new FileReader();
     r.onload = () => { try{
       const d = JSON.parse(r.result); if(!d || d.app!=='one-page-reading' || !Array.isArray(d.books)) throw 0;
       let added = 0;
-      for(const b of d.books) if(b && b.id && typeof b.title==='string' && !book(b.id)){ st.books.push(b); added++; }
+      for(const b of d.books) if(b && b.id && typeof b.title==='string' && !book(b.id)){ if(b.status==='reading') b.status = 'want'; st.books.push(b); added++; }
       for(const n of (d.notes||[])) if(n && n.id && !st.notes.some(x=>x.id===n.id)){
         if(n.photo && d.photos && typeof d.photos[n.id]==='string' && d.photos[n.id].startsWith('data:image/')){
           fetch(d.photos[n.id]).then(r=>r.blob()).then(b=>putPhoto(n.id, b)).then(()=>render()).catch(()=>{});
         } else n.photo = false;
         st.notes.push(n); added++; }
-      for(const [k,v] of Object.entries(d.log||{})) if(/^\d{4}-\d{2}-\d{2}$/.test(k) && v && (!st.log[k] || (v.p||0) > (st.log[k].p||0))){ st.log[k] = {p:int(v.p), b:v.b||{}}; added++; }
-      for(const k of Object.keys(d.rest||{})) if(/^\d{4}-\d{2}-\d{2}$/.test(k)) st.rest[k] = true;
-      if(!st.setup && d.goal){ st.goal = d.goal; st.setup = true; }
+      for(const [k,v] of Object.entries(d.time||{})) if(/^\d{4}-\d{2}-\d{2}$/.test(k) && Number(v) > (st.time[k]||0)){ st.time[k] = Math.floor(Number(v)); added++; }
+      if(!st.setup && d.goal){ st.goal = {monthly:int(d.goal.monthly)||1, yearly:int(d.goal.yearly)||12}; st.setup = true; }
       save(); render(); toast(added ? `${added}개 항목을 되살렸어요.` : '새로 더할 기록이 없어요.');
     }catch(e){ toast('한 쪽 독서 백업 파일이 아니에요.'); } };
     r.readAsText(file);
@@ -497,36 +444,22 @@ textarea.field{resize:vertical;min-height:64px}
 
   // ---------- render ----------
   function render(){
-    $('setup').hidden = st.setup; $('app').hidden = !st.setup;
-    if(!st.setup) return;
-    const T = [['today','오늘'],['shelf','책장'],['notes','구절'],['stats','기록']];
+    const T = [['today','메인'],['shelf','책장'],['notes','구절'],['stats','기록']];
     $('tabs').innerHTML = T.map(([k,l]) => `<button type="button" data-tab="${k}" aria-pressed="${st.tab===k}">${l}</button>`).join('');
     for(const [k] of T) $('v-'+k).hidden = st.tab!==k;
     // notices
-    const days = st.lastBackup ? Math.floor((Date.now()-st.lastBackup)/86400000) : null, cnt = Object.keys(st.log).length;
+    const days = st.lastBackup ? Math.floor((Date.now()-st.lastBackup)/86400000) : null, cnt = st.books.length + st.notes.length;
     let notes = '';
     if(!st.storageOk) notes += `<div class="warnbox">이 브라우저는 기록을 저장하지 못하고 있어요. 시크릿 모드라면 일반 창으로 열어 주세요.</div>`;
-    if(cnt >= 7 && (days===null || days >= 14)) notes += `<div class="warnbox">${days===null?'아직 백업한 적이 없어요.':`마지막 백업이 ${days}일 전이에요.`} 기록이 이 폰에만 있어요.<div class="btnrow"><button class="btn primary" data-act="backup">지금 백업하기</button></div></div>`;
+    if(cnt >= 5 && (days===null || days >= 14)) notes += `<div class="warnbox">${days===null?'아직 백업한 적이 없어요.':`마지막 백업이 ${days}일 전이에요.`} 기록이 이 폰에만 있어요.<div class="btnrow"><button class="btn primary" data-act="backup">지금 백업하기</button></div></div>`;
     $('notices').innerHTML = notes;
     if(st.tab==='today') renderToday(); else if(st.tab==='shelf') renderShelf(); else if(st.tab==='notes') renderNotes(); else renderStats();
     $('mode').textContent = st.storageOk ? '기록과 사진은 이 기기의 브라우저에만 저장돼요. 로그인은 필요 없어요.' : '지금은 저장이 되지 않는 상태예요.';
     hydrate();
   }
 
-  function bookCard(b, withLog){
-    const pct = b.total ? Math.min(b.cur/b.total,1)*100 : 0, todayP = (st.log[st.day]?.b||{})[b.id]||0;
-    return `<div class="book">${coverHtml(b)}<div>
-      <div class="btitle">${esc(b.title)}</div><div class="bauthor">${esc(b.author||'')}</div>
-      ${b.total ? `<div class="bar"><i style="width:${pct}%"></i></div><div class="bmeta"><span>${b.cur} / ${b.total}쪽</span><span>${Math.round(pct)}%${todayP?` · 이날 +${todayP}쪽`:''}</span></div>`
-        : `<div class="bmeta"><span>${b.cur}쪽까지</span><span>${todayP?`이날 +${todayP}쪽`:''}</span></div>`}
-      ${withLog ? `
-        <div class="pageinput"><input class="field" type="number" inputmode="numeric" min="0" id="pi-${b.id}" placeholder="몇 쪽까지 읽었나요?" aria-label="${esc(b.title)} 읽은 쪽">
-          <button class="b fill" data-setpg="${b.id}">기록</button></div>
-        <button class="notebtn" data-note="${b.id}">✍️ 인상 깊은 구절 남기기</button>` : ''}
-    </div></div>`;
-  }
   function noteForm(){
-    const opts = st.books.filter(x => x.status!=='want'), sel = book(st.noteBook) && book(st.noteBook).status!=='want' ? st.noteBook : opts[0].id, cur = book(sel).cur;
+    const opts = st.books, sel = book(st.noteBook) ? st.noteBook : opts[0].id;
     return `<div class="form" style="margin-top:10px">
       <label>어떤 책?<select class="field" id="nBook">${opts.map(x=>`<option value="${x.id}" ${x.id===sel?'selected':''}>${esc(x.title)}</option>`).join('')}</select></label>
       <div class="photobtns">
@@ -539,7 +472,7 @@ textarea.field{resize:vertical;min-height:64px}
       <div class="micwrap"><input class="field" id="nThought" maxlength="200" placeholder="내 생각 한 줄 (선택)">
         ${SR ? `<button type="button" class="mic" data-mic="nThought" aria-label="생각을 말로 입력" style="width:32px;height:32px;top:3px;font-size:.95rem">🎤</button>` : ''}</div>
       <div class="miclive" id="micLive-nThought" aria-live="polite"></div>
-      <div class="two"><input class="field" id="nPage" type="number" inputmode="numeric" value="${cur||''}" placeholder="쪽"><button class="btn primary" data-savenote="1">구절 저장</button></div></div>`;
+      <div class="two"><input class="field" id="nPage" type="number" inputmode="numeric" placeholder="쪽 (선택)"><button class="btn primary" data-savenote="1">구절 저장</button></div></div>`;
   }  const noteCard = (n, spot) => { const b = book(n.bookId);
     return `<div class="quote ${spot?'spot':''}">
       ${n.photo ? `<button class="qphoto" data-view="${n.id}" aria-label="사진 크게 보기"><img data-photo="${n.id}" alt="구절 사진"></button>` : ''}
@@ -547,45 +480,40 @@ textarea.field{resize:vertical;min-height:64px}
       <div class="src"><span>${b?esc(b.title):'지운 책'}${n.page?` · ${n.page}쪽`:''}${spot?'':' · '+n.d.slice(5).replace('-','/')}</span>
       ${spot ? (n.text?`<span><button class="del" data-mkcard="${n.id}" aria-label="이미지로 만들기">🖼️</button></span>`:'') : `<span>${n.text?`<button class="del" data-mkcard="${n.id}" aria-label="이미지로 만들기">🖼️</button><button class="del" data-copy="${n.id}" aria-label="복사">⧉</button>`:''}<button class="del" data-rmnote="${n.id}" aria-label="지우기">×</button></span>`}</div></div>`; };
 
+  const barBox = (label, n, goal, sub) => {
+    const pct = goal ? Math.min(n/goal,1)*100 : 0;
+    return `<div class="panel" style="margin-bottom:10px"><div class="small muted">${label}</div>
+      <div class="d" style="font-size:1.6rem">${n} / ${goal}권</div>
+      <div class="yearbar" role="progressbar" aria-label="${label}" aria-valuemin="0" aria-valuemax="${goal}" aria-valuenow="${n}"><i style="width:${pct}%"></i></div>
+      <div class="small muted" style="margin-top:6px">${n>=goal ? '목표 달성! 🎉' : `${goal-n}권 남았어요. (${Math.round(pct)}%)`}${sub||''}</div></div>`;
+  };
   function renderToday(){
-    const t = today(); if(!st.day || st.day > t) st.day = t;
-    const d = st.day, p = pagesOn(d), g = st.goal.daily, rested = !!st.rest[d], isToday = d===t;
-    const frac = Math.min(p/g,1), s = streak(), R = 40, C = 2*Math.PI*R;
-    const col = rested ? 'var(--rest)' : p>=g ? 'var(--done)' : 'var(--accent)';
-    const msg = rested ? '쉬는 날이에요. 내일 다시 펼치면 돼요.'
-      : p>=g ? (p>=g*2 ? '오늘은 두 배로 읽었어요!' : '오늘 몫 완료! 더 읽으면 보너스예요.')
-      : p===0 ? (isToday ? `오늘 최소 ${g}쪽만 읽으면 돼요.` : '이날은 기록이 없어요. 읽었다면 채워 주세요.')
-      : `${g-p}쪽 남았어요.`;
-    const reading = st.books.filter(b => b.status==='reading');
-    const mk = d.slice(0,7), left = PASSES - passesUsed(mk);
-    const hl = st.notes.length ? st.notes[hash(t) % st.notes.length] : null, hb = hl ? book(hl.bookId) : null;
+    const t = today(), mk = t.slice(0,7), y = t.slice(0,4), m = Number(t.slice(5,7));
+    const hl = st.notes.length ? st.notes[hash(t) % st.notes.length] : null;
+    const doneM = st.books.filter(b => b.status==='done' && (b.end||'').startsWith(mk));
     $('v-today').innerHTML = `
-      <div class="hero">
-        <div style="position:relative">
-          <svg viewBox="0 0 100 100" role="img" aria-label="${dayLabel(d)} ${p}쪽 읽음, 목표 ${g}쪽">
-            <circle cx="50" cy="50" r="${R}" fill="none" stroke="var(--line)" stroke-width="11"/>
-            <circle id="ring" cx="50" cy="50" r="${R}" fill="none" stroke="${col}" stroke-width="11" stroke-linecap="round" stroke-dasharray="${C}" stroke-dashoffset="${C*(1-(rested?1:frac))}" transform="rotate(-90 50 50)"/>
-          </svg>
-          <div class="d" style="position:absolute;inset:0;display:grid;place-items:center;font-size:1.3rem">${rested?'🌙':p+'쪽'}</div>
-        </div>
-        <div>
-          <div class="daynav"><button data-nav="-1" aria-label="전날" ${d<=addDays(t,-BACKDAYS)?'disabled':''}>‹</button><span>${isToday?'오늘':dayLabel(d)}</span><button data-nav="1" aria-label="다음날" ${isToday?'disabled':''}>›</button></div>
-          <div class="big d">${rested?'쉬는 날':p>=g?'완료!':`${p} / ${g}쪽`}</div>
-          <p class="msg">${msg}</p>
-          ${s ? `<span class="streak">📖 ${s}일 연속</span>` : ''}
-        </div>
-      </div>
       <section>
-        <h2 class="d">읽는 중${reading.length>1?` · ${reading.length}권`:''}</h2>
-        ${reading.length ? reading.map(b => bookCard(b, true)).join('') + `<div class="btnrow"><button class="btn ghost" data-act="addbook">+ 다른 책도 같이 읽기</button></div>` : `<div class="empty">읽는 책이 없어요.<div class="btnrow" style="justify-content:center"><button class="btn primary" data-act="addbook">+ 책 추가</button></div></div>`}
-        ${p>=g || rested ? '' : `<div class="restrow"><span class="muted">정말 못 읽는 날엔 쉬어도 돼요. 이번 달 쉬는 날 카드 ${Math.max(left,0)}장</span><button class="btn rest" data-act="rest" ${left<=0?'disabled':''}>🌙 쉬는 날</button></div>`}
-        ${rested ? `<div class="restrow"><span class="muted">쉬는 날로 표시했어요.</span><button class="btn rest" data-act="rest">취소</button></div>` : ''}
+        <div class="panel" style="margin-bottom:10px;text-align:center">
+          <div class="small muted">오늘 읽은 시간</div>
+          <div class="d" style="font-size:1.6rem">${fmtDur(timeToday())}</div>
+          ${st.timer ? `<div class="d" id="timerNow" style="font-size:2rem;margin:6px 0" aria-live="off">${fmtClock((Date.now()-st.timer)/1000)}</div>` : ''}
+          <button class="btn ${st.timer?'rest':'primary'}" data-act="timer" style="margin-top:6px">${st.timer ? '■ 다 읽었어요 (끝내기)' : '▶ 읽기 시작'}</button>
+        </div>
+        ${barBox(`${m}월 목표`, doneM.length, st.goal.monthly)}
+        ${barBox(`${y}년 목표`, doneIn(y), st.goal.yearly)}
+        ${st.goalOpen ? `<div class="panel form">
+          <div style="font-weight:600">이번 달, 올해 책을 몇 권 읽을까요?</div>
+          <div class="two"><label>이번 달<input class="field" id="gMonthly" type="number" inputmode="numeric" min="1" value="${st.goal.monthly}"></label>
+            <label>올해<input class="field" id="gYearly" type="number" inputmode="numeric" min="1" value="${st.goal.yearly}"></label></div>
+          <div class="two"><button class="btn ghost" data-act="closegoal">취소</button><button class="btn primary" data-act="savegoal">목표 저장</button></div></div>`
+          : `<div class="btnrow"><button class="btn primary" data-act="opengoal">🎯 목표 설정</button><button class="btn ghost" data-act="addbook">+ 책 추가</button></div>`}
       </section>
+      ${doneM.length ? `<section><h2 class="d">이번 달 다 읽은 책</h2>${doneM.map(b => `<div class="book">${coverHtml(b)}<div><div class="btitle">${esc(b.title)}</div><div class="bauthor">${esc(b.author||'')}</div></div></div>`).join('')}</section>` : ''}
       ${hl ? `<section><h2 class="d">오늘 다시 보는 구절</h2>${noteCard(hl, true)}</section>` : ''}`;
   }
 
   function renderShelf(){
-    const S = [['reading','읽는 중'],['want','읽고 싶은'],['done','다 읽음']];
+    const S = [['want','읽고 싶은'],['done','다 읽음']];
     const list = st.books.filter(b => b.status===st.shelf).sort((a,b)=> (b.end||b.added||'').localeCompare(a.end||a.added||''));
     const eb = st.editBook ? book(st.editBook) : null;
     $('v-shelf').innerHTML = `<section>
@@ -595,24 +523,20 @@ textarea.field{resize:vertical;min-height:64px}
       ${st.addOpen ? addForm() : ''}
       ${list.length ? list.map(b => `<div class="book">${coverHtml(b)}<div>
           <div class="btitle">${esc(b.title)}</div><div class="bauthor">${esc(b.author||'')}</div>
-          ${b.status==='done' ? `<div class="small" style="margin-top:4px">${'★'.repeat(b.rating||0)}<span class="muted">${'★'.repeat(5-(b.rating||0))}</span> <span class="muted">${b.end?b.end.slice(5).replace('-','/')+' 완독':''}</span></div>${b.review?`<div class="small serif" style="margin-top:4px">“${esc(b.review)}”</div>`:''}`
-            : b.total ? `<div class="bar"><i style="width:${Math.min(b.cur/b.total,1)*100}%"></i></div><div class="bmeta"><span>${b.cur} / ${b.total}쪽</span></div>` : ''}
+          ${b.status==='done' ? `<div class="small" style="margin-top:4px">${'★'.repeat(b.rating||0)}<span class="muted">${'★'.repeat(5-(b.rating||0))}</span> <span class="muted">${b.end?b.end.slice(5).replace('-','/')+' 완독':''}</span></div>${b.review?`<div class="small serif" style="margin-top:4px">“${esc(b.review)}”</div>`:''}` : ''}
           <div class="brow">
-            ${b.status==='want' ? `<button class="b fill" data-status="${b.id}" data-to="reading">읽기 시작</button>` : ''}
-            ${b.status==='reading' ? `<button class="b soft" data-finish="${b.id}">다 읽었어요</button><button class="b" data-status="${b.id}" data-to="want">잠시 멈춤</button>` : ''}
-            ${b.status==='done' ? `<button class="b" data-finish="${b.id}">평 고치기</button>` : ''}
+            ${b.status==='want' ? `<button class="b soft" data-finish="${b.id}">다 읽었어요</button>` : `<button class="b" data-finish="${b.id}">평 고치기</button>`}
             <span class="small muted">구절 ${st.notes.filter(n=>n.bookId===b.id).length}</span>
             <button class="del" data-rmbook="${b.id}" aria-label="${esc(b.title)} 빼기" style="margin-left:auto">×</button>
           </div></div></div>`).join('')
-        : `<div class="empty">${({reading:'읽는 중인 책이 없어요.',want:'읽고 싶은 책을 모아 두세요.',done:'아직 완독한 책이 없어요. 곧 생길 거예요!'})[st.shelf]}</div>`}
+        : `<div class="empty">${({want:'읽고 싶은 책을 모아 두세요.',done:'아직 완독한 책이 없어요. 곧 생길 거예요!'})[st.shelf]}</div>`}
     </section>`;
   }
   function addForm(){
     return `<div class="panel form" style="margin:8px 0">
       <label>제목<input class="field" id="aTitle" maxlength="60"></label>
-      <div class="two"><label>저자<input class="field" id="aAuthor" maxlength="40"></label><label>전체 쪽수<input class="field" id="aTotal" type="number" inputmode="numeric" min="1"></label></div>
-      <div class="two"><label>지금 몇 쪽?<input class="field" id="aCur" type="number" inputmode="numeric" min="0" value="0"></label>
-        <label>상태<select class="field" id="aStatus"><option value="reading">읽는 중</option><option value="want">읽고 싶은</option></select></label></div>
+      <div class="two"><label>저자<input class="field" id="aAuthor" maxlength="40"></label>
+        <label>상태<select class="field" id="aStatus"><option value="want">읽고 싶은</option><option value="done">다 읽음</option></select></label></div>
       <div class="two"><button class="btn ghost" data-act="canceladd">취소</button><button class="btn primary" data-act="saveadd">책장에 넣기</button></div></div>`;
   }
   function finishForm(b){
@@ -623,80 +547,55 @@ textarea.field{resize:vertical;min-height:64px}
       <input class="field serif" id="fReview" maxlength="140" value="${esc(b.review||'')}" placeholder="이 책을 한 줄로 말하면?" style="margin-top:6px">
       <div class="two" style="margin-top:8px"><button class="btn ghost" data-act="cancelfinish">나중에</button><button class="btn primary" data-savefinish="${b.id}">완독으로 저장</button></div></div>`;
   }
-
   function renderNotes(){
-    const list = st.notes, canAdd = st.books.some(x => x.status!=='want');
+    const list = st.notes, canAdd = st.books.length > 0;
     $('v-notes').innerHTML = `<section>
       <p class="small muted" style="margin:0">책을 읽다 마음에 남은 구절을 글, 사진, 말로 모아요.</p>
       ${canAdd ? (st.notesForm ? `<div class="panel" style="margin-top:8px">${noteForm()}<div class="btnrow"><button class="btn ghost" data-act="closenoteform">닫기</button></div></div>`
-        : `<div class="btnrow"><button class="btn primary" data-act="opennoteform">✍️ 인상 깊은 구절 남기기</button></div>`) : ''}
+        : `<div class="btnrow"><button class="btn primary" data-act="opennoteform">✍️ 인상 깊은 구절 남기기</button></div>`) : `<div class="empty" style="margin-top:8px">책장에 책을 먼저 넣어 주세요.</div>`}
       ${list.length ? list.map(n => noteCard(n, false)).join('') : `<div class="empty" style="margin-top:8px">아직 모은 구절이 없어요.</div>`}
     </section>`;
   }
 
   function renderStats(){
-    const t = today(), y = t.slice(0,4), s = streak();
-    const doneYear = st.books.filter(b => b.status==='done' && (b.end||'').startsWith(y)).length;
-    const monthP = Object.entries(st.log).filter(([k]) => k.startsWith(t.slice(0,7))).reduce((a,[,v])=>a+(v.p||0),0);
-    const totalP = Object.values(st.log).reduce((a,v)=>a+(v.p||0),0);
-    let best = 0, run = 0; const keys = [...new Set([...Object.keys(st.log), ...Object.keys(st.rest)])].sort();
-    if(keys.length){ let k = keys[0]; while(k <= t){ const s2 = status(k); if(s2==='done'){ run++; best = Math.max(best,run); } else if(s2!=='rest') run = 0; k = addDays(k,1); } }
-    const cm = st.calMonth || t.slice(0,7), [cy,cmo] = cm.split('-').map(Number);
-    const first = new Date(cy, cmo-1, 1), lastDay = new Date(cy, cmo, 0).getDate(), lead = (first.getDay()+6)%7;
-    let cells = ['월','화','수','목','금','토','일'].map(w=>`<div class="wd">${w}</div>`).join('') + '<div></div>'.repeat(lead);
-    for(let i=1;i<=lastDay;i++){ const k = `${cm}-${pad(i)}`, s2 = status(k), pick = k<=t && k>=addDays(t,-BACKDAYS);
-      cells += `<button class="cell ${s2} ${k===t?'now':''} ${pick?'pick':''}" ${pick?`data-day="${k}"`:'tabindex="-1"'} aria-label="${i}일 ${pagesOn(k)}쪽">${i}</button>`; }
+    const t = today(), y = t.slice(0,4), thisM = Number(t.slice(5,7));
+    const counts = Array.from({length:12}, (_, i) => doneIn(`${y}-${pad(i+1)}`));
+    const mx = Math.max(st.goal.monthly, ...counts, 1);
+    const totalSec = Object.values(st.time).reduce((a,v)=>a+v,0) + (st.timer ? (Date.now()-st.timer)/1000 : 0);
+    const days14 = Array.from({length:14}, (_, i) => { const k = addDays(t, i-13); return [k, st.time[k]||0]; }), mxs = Math.max(60, ...days14.map(x=>x[1]));
     $('v-stats').innerHTML = `
       <section><div class="panel">
-        <div class="small muted">${y}년 완독 목표</div>
-        <div class="d" style="font-size:1.6rem">${doneYear} / ${st.goal.yearly}권</div>
-        <div class="yearbar"><i style="width:${Math.min(doneYear/st.goal.yearly,1)*100}%"></i></div>
+        <div class="small muted">${y}년 달별 완독</div>
+        ${counts.map((c,i) => `<div style="display:flex;align-items:center;gap:8px;margin-top:6px;${i+1>thisM?'opacity:.45':''}"><span class="small muted" style="width:2.4em">${i+1}월</span>
+          <div class="yearbar" style="flex:1;margin:0;height:10px"><i style="width:${c/mx*100}%"></i></div><span class="small" style="width:3em;text-align:right">${c}권</span></div>`).join('')}
+      </div></section>
+      <section><div class="panel">
+        <div class="small muted">읽은 시간 (최근 14일)</div>
+        <div class="d" style="font-size:1.4rem">누적 ${fmtDur(totalSec)}</div>
+        ${days14.map(([k,v]) => `<div style="display:flex;align-items:center;gap:8px;margin-top:6px"><span class="small muted" style="width:3.4em">${k.slice(5).replace('-','/')}</span>
+          <div class="yearbar" style="flex:1;margin:0;height:10px"><i style="width:${v/mxs*100}%"></i></div><span class="small" style="width:5.5em;text-align:right">${v ? fmtDur(v) : '-'}</span></div>`).join('')}
       </div></section>
       <section><div class="stats">
-        <div class="stat"><div class="small muted">연속</div><div class="v d">${s}일</div></div>
-        <div class="stat"><div class="small muted">최고 연속</div><div class="v d">${best}일</div></div>
-        <div class="stat"><div class="small muted">이번 달</div><div class="v d">${monthP}쪽</div></div>
-        <div class="stat" style="grid-column:1/-1"><div class="small muted">지금까지 읽은 쪽</div><div class="v d">${totalP.toLocaleString('ko-KR')}쪽 · 구절 ${st.notes.length}개</div></div>
-      </div></section>
-      <section><div class="cal">
-        <div class="calhead"><button data-cal="-1" aria-label="이전 달">‹</button><b>${cy}년 ${cmo}월</b><button data-cal="1" aria-label="다음 달" ${cm>=t.slice(0,7)?'disabled':''}>›</button></div>
-        <div class="grid">${cells}</div>
-        <div class="legend"><span><i style="background:var(--done)"></i>목표 달성</span><span><i style="background:var(--done-soft)"></i>조금 읽음</span><span><i style="background:var(--rest-soft)"></i>쉬는 날</span><span>최근 ${BACKDAYS}일은 눌러서 고칠 수 있어요</span></div>
+        <div class="stat"><div class="small muted">지금까지 다 읽은 책</div><div class="v d">${st.books.filter(b=>b.status==='done').length}권</div></div>
+        <div class="stat"><div class="small muted">모은 구절</div><div class="v d">${st.notes.length}개</div></div>
       </div></section>
       <section><div class="panel form">
-        <div style="font-weight:600">목표 · 백업</div>
-        <div class="two"><label>하루 최소 쪽<input class="field" id="gDaily" type="number" inputmode="numeric" min="1" value="${st.goal.daily}"></label>
-          <label>올해 목표 권수<input class="field" id="gYearly" type="number" inputmode="numeric" min="1" value="${st.goal.yearly}"></label></div>
-        <button class="btn primary" data-act="savegoal">목표 저장</button>
-+
-
+        <div style="font-weight:600">백업</div>
+        <p class="small muted" style="margin:0">기록은 이 휴대폰 브라우저에만 있어요. 가끔 백업 파일을 받아 두세요.</p>
         <div class="btnrow" style="margin-top:0"><button class="btn primary" data-act="backup">백업 파일 받기</button>
           <label class="btn ghost" style="display:inline-block">백업 불러오기<input id="restoreInput" class="filepick" type="file" accept=".json,application/json"></label></div>
       </div></section>`;
   }
-
   // ---------- events ----------
-  $('uStart').addEventListener('click', () => {
-    const dly = int($('uDaily').value), yr = int($('uYearly').value);
-    if(!dly || !yr){ toast('하루 쪽수와 올해 권수를 1 이상으로 적어 주세요.'); return; }
-    st.goal = {daily:dly, yearly:yr}; st.setup = true;
-    if($('uTitle').value.trim()) addBook({title:$('uTitle').value, author:$('uAuthor').value, total:$('uTotal').value, cur:0, status:'reading'});
-    save(); render(); window.scrollTo(0,0);
-  });
-  $('tabs').addEventListener('click', e => { const b = e.target.closest('[data-tab]'); if(!b) return; st.tab = b.dataset.tab; stopMic(); st.notesForm = false; if(st.tab==='today') st.day = today(); render(); window.scrollTo(0,0); });
+  $('tabs').addEventListener('click', e => { const b = e.target.closest('[data-tab]'); if(!b) return; st.tab = b.dataset.tab; stopMic(); st.notesForm = false; render(); window.scrollTo(0,0); });
   $('notices').addEventListener('click', e => { if(e.target.closest('[data-act="backup"]')) backup(); });
   document.querySelector('main').addEventListener('click', e => {
     const q = sel => e.target.closest(sel);
     let b;
-    if(b = q('[data-nav]')){ st.day = addDays(st.day, Number(b.dataset.nav)); render(); return; }
-    if(b = q('[data-pg]')){ addPages(b.dataset.pg, Number(b.dataset.n)); return; }
-    if(b = q('[data-setpg]')){ const v = $('pi-'+b.dataset.setpg).value; if(v==='') { toast('몇 쪽까지 읽었는지 적어 주세요.'); return; } setPage(b.dataset.setpg, v); return; }
-    if(b = q('[data-note]')){ st.noteBook = b.dataset.note; st.notesForm = true; st.tab = 'notes'; render(); window.scrollTo(0,0); return; }
     if(b = q('[data-savenote]')){ stopMic(); if(addNote($('nBook').value, $('nPage').value, $('nText').value, $('nThought').value)){ st.notesForm = false; render(); toast('구절을 저장했어요 ✍️'); } return; }    if(b = q('[data-mic]')){ startMic(b.dataset.mic); return; }
     if(b = q('[data-mkcard]')){ stopMic(); openCard(b.dataset.mkcard); return; }
     if(b = q('[data-view]')){ photoUrl(b.dataset.view).then(u => { if(u){ $('viewerImg').src = u; $('viewer').hidden = false; } }); return; }
     if(b = q('[data-shelf]')){ st.shelf = b.dataset.shelf; render(); return; }
-    if(b = q('[data-status]')){ const bk = book(b.dataset.status); bk.status = b.dataset.to; if(bk.status==='reading' && !bk.start) bk.start = today(); save(); render(); toast(bk.status==='reading'?'읽는 중으로 옮겼어요.':'읽고 싶은 책으로 옮겼어요.'); return; }
     if(b = q('[data-finish]')){ st.editBook = b.dataset.finish; render(); window.scrollTo(0,0); return; }
     if(b = q('[data-star]')){ const r = Number(b.dataset.star); const box = $('stars'); box.dataset.r = r; box.querySelectorAll('button').forEach((x,i)=>x.classList.toggle('on', i<r)); return; }
     if(b = q('[data-savefinish]')){ finishBook(b.dataset.savefinish, Number($('stars').dataset.r), $('fReview').value); return; }
@@ -707,15 +606,15 @@ textarea.field{resize:vertical;min-height:64px}
       toast('구절을 지웠어요.', true); return; }
     if(b = q('[data-copy]')){ const n = st.notes.find(x=>x.id===b.dataset.copy), bk = n && book(n.bookId); const txt = `“${n.text}”\n— ${bk?bk.title:''}${bk&&bk.author?', '+bk.author:''}${n.page?` (${n.page}쪽)`:''}`;
       (navigator.clipboard ? navigator.clipboard.writeText(txt) : Promise.reject()).then(()=>toast('문장을 복사했어요.')).catch(()=>toast('복사가 안 돼요. 길게 눌러 복사해 주세요.')); return; }
-    if(b = q('[data-cal]')){ const [y,m] = (st.calMonth||today().slice(0,7)).split('-').map(Number); st.calMonth = ymd(new Date(y, m-1+Number(b.dataset.cal), 1)).slice(0,7); render(); return; }
-    if(b = q('[data-day]')){ st.day = b.dataset.day; st.tab = 'today'; render(); window.scrollTo(0,0); return; }
     if(b = q('[data-act]')){ const a = b.dataset.act;
-      if(a==='rest') useRest();
-      else if(a==='addbook'){ st.tab = 'shelf'; st.addOpen = true; render(); $('aTitle').focus(); }
+      if(a==='timer') timerToggle();
+      else if(a==='addbook'){ st.tab = 'shelf'; st.addOpen = true; render(); window.scrollTo(0,0); $('aTitle').focus(); }
       else if(a==='canceladd'){ st.addOpen = false; render(); }
-      else if(a==='saveadd'){ const status = $('aStatus').value; if(addBook({title:$('aTitle').value, author:$('aAuthor').value, total:$('aTotal').value, cur:$('aCur').value, status})){ st.addOpen = false; st.shelf = status; render(); toast('책장에 넣었어요.'); } }
+      else if(a==='saveadd'){ const status = $('aStatus').value; if(addBook({title:$('aTitle').value, author:$('aAuthor').value, status})){ st.addOpen = false; st.shelf = status; render(); toast('책장에 넣었어요.'); } }
       else if(a==='cancelfinish'){ st.editBook = null; render(); }
-      else if(a==='savegoal'){ const dly = int($('gDaily').value), yr = int($('gYearly').value); if(!dly||!yr){ toast('1 이상으로 적어 주세요.'); return; } st.goal = {daily:dly, yearly:yr}; save(); render(); toast('목표를 바꿨어요.'); }
+      else if(a==='opengoal'){ st.goalOpen = true; render(); }
+      else if(a==='closegoal'){ st.goalOpen = false; render(); }
+      else if(a==='savegoal'){ const mo = int($('gMonthly').value), yr = int($('gYearly').value); if(!mo||!yr){ toast('1 이상으로 적어 주세요.'); return; } st.goal = {monthly:mo, yearly:yr}; st.setup = true; st.goalOpen = false; save(); render(); toast('목표를 바꿨어요.'); }
       else if(a==='backup') backup();
       else if(a==='opennoteform'){ st.notesForm = true; render(); }
       else if(a==='closenoteform'){ st.notesForm = false; render(); }
@@ -732,7 +631,7 @@ textarea.field{resize:vertical;min-height:64px}
       location.reload();
     }
   });
-  document.querySelector('main').addEventListener('change', e => { if(e.target.id==='restoreInput'){ restore(e.target.files[0]); e.target.value = ''; } else if(e.target.id==='nBook'){ const bk = book(e.target.value); if(bk && $('nPage')) $('nPage').value = bk.cur||''; } else if(e.target.hasAttribute('data-photoin')){ const f = e.target.files[0]; e.target.value = ''; pickPhoto(f); } });
+  document.querySelector('main').addEventListener('change', e => { if(e.target.id==='restoreInput'){ restore(e.target.files[0]); e.target.value = ''; } else if(e.target.hasAttribute('data-photoin')){ const f = e.target.files[0]; e.target.value = ''; pickPhoto(f); } });
   $('viewer').addEventListener('click', () => { $('viewer').hidden = true; });
   $('cardModal').addEventListener('click', e => {
     if(e.target.id==='cardModal'){ closeCard(); return; }
@@ -741,10 +640,7 @@ textarea.field{resize:vertical;min-height:64px}
   });
   $('cardModal').addEventListener('change', e => { if(e.target.id==='cardThought'){ card.thought = e.target.checked; refreshCard(); } });
   document.addEventListener('keydown', e => { if(e.key==='Escape'){ if(!$('cardModal').hidden) closeCard(); if(!$('viewer').hidden) $('viewer').hidden = true; } });
-  document.querySelector('main').addEventListener('keydown', e => { if(e.key==='Enter' && e.target.id && e.target.id.startsWith('pi-')){ e.preventDefault(); const id = e.target.id.slice(3); if(e.target.value!=='') setPage(id, e.target.value); } });
   $('toastUndo').addEventListener('click', () => { if(undoFn){ undoFn(); undoFn = null; } $('toast').hidden = true; });
-  document.addEventListener('visibilitychange', () => { if(document.visibilityState==='visible' && st.tab==='today'){ const t = today(); if(st.day > t || (st.day !== t && !document.activeElement)) st.day = t; render(); } });
-
   load(); render();
 })();
 </script>
@@ -821,6 +717,13 @@ textarea.field{resize:vertical;min-height:64px}
       '지금 백업하기':'Back up now', '아직 백업한 적이 없어요.':'You have never backed up.',
       '기록과 사진은 이 기기의 브라우저에만 저장돼요. 로그인은 필요 없어요.':'Records and photos are stored only in this device\'s browser. No login needed.', '지금은 저장이 되지 않는 상태예요.':'Nothing is being saved right now.',
       '몇 쪽까지 읽었나요?':'Which page did you reach?', '✕ 구절 적기 닫기':'✕ Close quote form', '✍️ 인상 깊은 구절 남기기':'✍️ Save a memorable quote',
+      '오늘 읽은 시간':'Reading time today', '▶ 읽기 시작':'▶ Start reading', '■ 다 읽었어요 (끝내기)':'■ Done reading (stop)', '🎯 목표 설정':'🎯 Set goals',
+      '이번 달, 올해 책을 몇 권 읽을까요?':'How many books will you read this month and this year?', '이번 달':'This month', '올해':'This year', '목표 저장':'Save goals',
+      '목표 달성! 🎉':'Goal reached! 🎉', '이번 달 다 읽은 책':'Books finished this month', '메인':'Home', '쪽 (선택)':'Page (optional)',
+      '책장에 책을 먼저 넣어 주세요.':'Add a book to your shelf first.', '읽은 시간 (최근 14일)':'Reading time (last 14 days)', '지금까지 다 읽은 책':'Books finished so far', '모은 구절':'Quotes collected', '백업':'Backup',
+      '읽기를 시작했어요. 다 읽으면 끝내기를 눌러요 ⏱️':'Reading started. Tap stop when you\'re done ⏱️', '5초보다 짧아서 기록하지 않았어요.':'Too short (under 5 seconds), so not recorded.',
+      '목표를 바꿨어요.':'Goals updated.', '1 이상으로 적어 주세요.':'Please enter 1 or more.',
+      '읽고 싶은 책을 모아 두세요.':'Collect books you want to read.',
       '어떤 책?':'Which book?',
       '인상 깊은 구절 (사진을 찍으면 글자로 바뀌어 여기에 적혀요)':'A memorable quote (a photo is turned into text and typed here)',
       '+ 다른 책도 같이 읽기':'+ Read another book too',
@@ -879,7 +782,20 @@ textarea.field{resize:vertical;min-height:64px}
       [/^정말 못 읽는 날엔 쉬어도 돼요\. 이번 달 쉬는 날 카드 (\d+)장$/, function(m){ return 'You can rest on days you truly can\'t read. Rest-day cards this month: ' + m[1]; }],
       [/^읽는 중 · (\d+)권$/, function(m){ return 'Reading · ' + m[1]; }],
       [/^📷 글자 읽는 중 (\d+)%$/, function(m){ return '📷 Reading text ' + m[1] + '%'; }],
-      [/^구절 (\d+)$/, function(m){ return 'Quotes ' + m[1]; }],
+      [/^(\d+)월 목표$/, function(m){ return MON[m[1]-1] + ' goal'; }],
+      [/^(\d{4})년 목표$/, function(m){ return m[1] + ' goal'; }],
+      [/^(\d+) \/ (\d+)권$/, function(m){ return m[1] + ' / ' + m[2] + (m[2]==='1' ? ' book' : ' books'); }],
+      [/^(\d+)권 남았어요\. \((\d+)%\)$/, function(m){ return m[1] + (m[1]==='1' ? ' book' : ' books') + ' to go. (' + m[2] + '%)'; }],
+      [/^(\d{4})년 달별 완독$/, function(m){ return 'Books finished by month, ' + m[1]; }],
+      [/^(\d+)월$/, function(m){ return MON[m[1]-1]; }],
+      [/^(\d+)권$/, function(m){ return m[1] + (m[1]==='1' ? ' book' : ' books'); }],
+      [/^(\d+)개$/, function(m){ return m[1] + (m[1]==='1' ? ' quote' : ' quotes'); }],
+      [/^(\d+)시간 (\d+)분$/, function(m){ return m[1] + 'h ' + m[2] + 'm'; }],
+      [/^(\d+)분$/, function(m){ return m[1] + ' min'; }],
+      [/^(\d+)초$/, function(m){ return m[1] + ' sec'; }],
+      [/^누적 (.+)$/, function(m){ return 'Total ' + tr(m[1]); }],
+      [/^오늘 (.+) 읽었어요 📖$/, function(m){ return 'You read for ' + tr(m[1]) + ' today 📖'; }],
+      [/^완독했어요! 이번 달 (\d+)권, 올해 (\d+)권 📚$/, function(m){ return 'Finished! ' + m[1] + ' this month, ' + m[2] + ' this year 📚'; }],      [/^구절 (\d+)$/, function(m){ return 'Quotes ' + m[1]; }],
       [/^(.+) 빼기$/, function(m){ return 'Remove ' + tr(m[1]); }],
       [/^(\d+)점$/, function(m){ return m[1] + ' stars'; }],
       [/^(\d+)일 (\d+)쪽$/, function(m){ return 'Day ' + m[1] + ': ' + m[2] + ' pages'; }],
