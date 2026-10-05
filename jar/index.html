@@ -53,7 +53,7 @@ button,input,select,textarea{font:inherit;color:inherit}
 .seg button{border:1.5px solid var(--line);background:transparent;border-radius:10px;padding:7px 0;cursor:pointer;font-weight:600;font-size:.9rem}
 .seg button[aria-pressed="true"][data-cat="food"]{background:var(--food);border-color:var(--food);color:#fff}
 .seg button[aria-pressed="true"][data-cat="snack"]{background:var(--snack);border-color:var(--snack);color:#fff}
-.seg button[aria-pressed="true"][data-cat="life"],.seg button[aria-pressed="true"][data-cat="fun"]{background:var(--ink);border-color:var(--ink);color:var(--bg)}
+.seg button[aria-pressed="true"][data-cat="life"],.seg button[aria-pressed="true"][data-cat="fun"],.seg button[aria-pressed="true"][data-cat="edu"]{background:var(--ink);border-color:var(--ink);color:var(--bg)}
 .chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
 .chip{border:1px solid var(--line);background:transparent;border-radius:999px;padding:4px 10px;cursor:pointer;font-size:.82rem}
 .chip[aria-pressed="true"]{border-color:var(--ink);background:var(--bg);font-weight:600}
@@ -86,7 +86,7 @@ button,input,select,textarea{font:inherit;color:inherit}
 .list li{display:grid;grid-template-columns:8px 1fr auto auto;gap:10px;align-items:center;padding:9px 10px;border-bottom:1px solid var(--line)}
 .list li:last-child{border-bottom:0}
 .dot{width:8px;height:8px;border-radius:50%}
-.dot.food{background:var(--food)} .dot.snack{background:var(--snack)} .dot.life,.dot.fun{background:var(--muted)} .dot.saved{background:var(--saved)}
+.dot.food{background:var(--food)} .dot.snack{background:var(--snack)} .dot.life,.dot.fun,.dot.edu{background:var(--muted)} .dot.saved{background:var(--saved)}
 .list .t{min-width:0}
 .list .t b{display:block;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .list .amt{font-family:"Do Hyeon",sans-serif;font-size:1rem}
@@ -250,7 +250,7 @@ details.panel summary{cursor:pointer;font-weight:600}
 
 <script>
 (function(){
-  const HERO_OPTS = [['food','식비'],['snack','간식'],['life','생활'],['fun','여가']];
+  const HERO_OPTS = [['food','식비'],['snack','간식'],['life','생활'],['fun','여가'],['edu','교육']];
   const newDevice = () => 'd' + Date.now().toString(36) + Math.random().toString(36).slice(2,8);
   const DEFAULTS = {setup:false, name:'', heroCat:'snack', foodBudget:600000, snackWeekly:30000,
     share:'private', showMoney:false, lastBackup:0, device:''};
@@ -274,14 +274,15 @@ details.panel summary{cursor:pointer;font-weight:600}
   const md = s => { const d = parse(s); return (d.getMonth()+1)+'/'+d.getDate(); };
   function weekStart(s){ const d = parse(s); d.setDate(d.getDate()-((d.getDay()+6)%7)); return ymd(d); }
   const allEntries = () => Object.values(state.months).flat();
-  const HERO = () => (['food','snack','life','fun'].includes(state.settings.heroCat) ? state.settings.heroCat : 'snack');
+  const HERO = () => (['food','snack','life','fun','edu'].includes(state.settings.heroCat) ? state.settings.heroCat : 'snack');
   const isFocusSpend = e => e.cat===HERO() && !e.skip;
   function cats(){
     return {
       food:  {label:'식비', subs:['장보기','외식','배달','구내식당']},
       snack: {label:'간식', subs:['카페·음료','빵·디저트','과자·편의점','아이스크림']},
       life:  {label:'생활', subs:['생필품','쇼핑','교통','기타']},
-      fun:   {label:'여가', subs:['문화','취미','선물','기타']}
+      fun:   {label:'여가', subs:['문화','취미','선물','기타']},
+      edu:   {label:'교육', subs:['학원·과외','교재·도서','강의·구독','기타']}
     };
   }
   const F = () => cats()[HERO()].label;
