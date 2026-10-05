@@ -171,7 +171,7 @@ textarea.field{resize:vertical;min-height:64px}
   const PASSES = 2, BACKDAYS = 7;
   const COVERS = ['#3F5E8C','#8C3F5E','#2F6B4F','#8A6D3B','#5B4A8C','#A0522D','#2E6B7A','#6B6B2E'];
   const st = {setup:false, goal:{monthly:1, yearly:12}, goalOpen:false, time:{}, timer:0, books:[], notes:[], lastBackup:0,
-    tab:'today', day:null, notesForm:false, noteBook:null, ocrBusy:false, shelf:'want', editBook:null, addOpen:false, storageOk:true};
+    tab:'today', day:null, notesForm:false, noteBook:null, ocrBusy:false, shelf:'reading', editBook:null, addOpen:false, storageOk:true};
   let toastTimer = null, undoFn = null, resetArmed = false, resetTimer = null;
 
   const $ = id => document.getElementById(id);
@@ -198,7 +198,7 @@ textarea.field{resize:vertical;min-height:64px}
     try{
       localStorage.setItem(KEY+'-t','1'); localStorage.removeItem(KEY+'-t');
       const d = JSON.parse(localStorage.getItem(KEY)||'null');
-      if(d){ Object.assign(st, {setup:!!d.setup, goal:{monthly:int(d.goal&&d.goal.monthly)||1, yearly:int(d.goal&&d.goal.yearly)||12}, books:(d.books||[]).map(b => b.status==='reading' ? Object.assign(b,{status:'want'}) : b), notes:d.notes||[], time:d.time||{}, timer:Number(d.timer)||0, lastBackup:d.lastBackup||0}); }
+      if(d){ Object.assign(st, {setup:!!d.setup, goal:{monthly:int(d.goal&&d.goal.monthly)||1, yearly:int(d.goal&&d.goal.yearly)||12}, books:d.books||[], notes:d.notes||[], time:d.time||{}, timer:Number(d.timer)||0, lastBackup:d.lastBackup||0}); }
     }catch(e){ st.storageOk = false; }
   }
 
@@ -225,8 +225,8 @@ textarea.field{resize:vertical;min-height:64px}
   }
   function addBook(f){
     const title = f.title.trim(); if(!title){ toast('제목을 적어 주세요.'); return false; }
-    const done = f.status==='done';
-    st.books.push({id:uid(), title:title.slice(0,60), author:(f.author||'').trim().slice(0,40), status:done?'done':'want', end:done?today():'', rating:0, review:'', added:today()});
+    const stt = ['reading','done'].includes(f.status) ? f.status : 'want', done = stt==='done';
+    st.books.push({id:uid(), title:title.slice(0,60), author:(f.author||'').trim().slice(0,40), status:stt, end:done?today():'', rating:0, review:'', added:today()});
     save(); return true;
   }
   function removeBook(id){
@@ -454,7 +454,7 @@ textarea.field{resize:vertical;min-height:64px}
     r.onload = () => { try{
       const d = JSON.parse(r.result); if(!d || d.app!=='one-page-reading' || !Array.isArray(d.books)) throw 0;
       let added = 0;
-      for(const b of d.books) if(b && b.id && typeof b.title==='string' && !book(b.id)){ if(b.status==='reading') b.status = 'want'; st.books.push(b); added++; }
+      for(const b of d.books) if(b && b.id && typeof b.title==='string' && !book(b.id)){ st.books.push(b); added++; }
       for(const n of (d.notes||[])) if(n && n.id && !st.notes.some(x=>x.id===n.id)){
         if(n.photo && d.photos && typeof d.photos[n.id]==='string' && d.photos[n.id].startsWith('data:image/')){
           fetch(d.photos[n.id]).then(r=>r.blob()).then(b=>putPhoto(n.id, b)).then(()=>render()).catch(()=>{});
@@ -547,7 +547,7 @@ textarea.field{resize:vertical;min-height:64px}
   function renderToday(){
     const t = today(), mk = t.slice(0,7), y = t.slice(0,4), m = Number(t.slice(5,7));
     const hl = st.notes.length ? st.notes[hash(t) % st.notes.length] : null;
-    const doneM = st.books.filter(b => b.status==='done' && (b.end||'').startsWith(mk));
+    const reading = st.books.filter(b => b.status==='reading'), doneM = st.books.filter(b => b.status==='done' && (b.end||'').startsWith(mk));
     $('v-today').innerHTML = `
       <section>
         <div class="panel" style="margin-bottom:10px;text-align:center">
@@ -565,12 +565,13 @@ textarea.field{resize:vertical;min-height:64px}
           <div class="two"><button class="btn ghost" data-act="closegoal">취소</button><button class="btn primary" data-act="savegoal">목표 저장</button></div></div>`
           : `<div class="btnrow"><button class="btn primary" data-act="opengoal">🎯 목표 설정</button><button class="btn ghost" data-act="addbook">+ 책 추가</button></div>`}
       </section>
+      ${reading.length ? `<section><h2 class="d">지금 읽는 책</h2>${reading.map(b => `<div class="book">${coverHtml(b)}<div><div class="btitle">${esc(b.title)}</div><div class="bauthor">${esc(b.author||'')}</div><div class="brow"><button class="b soft" data-finish="${b.id}">다 읽었어요</button><button class="b" data-note="${b.id}">✍️ 구절 남기기</button></div></div></div>`).join('')}</section>` : `<section><h2 class="d">지금 읽는 책</h2><div class="empty">읽는 중인 책이 없어요. 책장에서 "읽기 시작"을 눌러요.</div></section>`}
       ${doneM.length ? `<section><h2 class="d">이번 달 다 읽은 책</h2>${doneM.map(b => `<div class="book">${coverHtml(b)}<div><div class="btitle">${esc(b.title)}</div><div class="bauthor">${esc(b.author||'')}</div></div></div>`).join('')}</section>` : ''}
       ${hl ? `<section><h2 class="d">오늘 다시 보는 구절</h2>${noteCard(hl, true)}</section>` : ''}`;
   }
 
   function renderShelf(){
-    const S = [['want','읽고 싶은'],['done','다 읽음']];
+    const S = [['reading','읽는 중'],['want','읽고 싶은'],['done','다 읽음']];
     const list = st.books.filter(b => b.status===st.shelf).sort((a,b)=> (b.end||b.added||'').localeCompare(a.end||a.added||''));
     const eb = st.editBook ? book(st.editBook) : null;
     $('v-shelf').innerHTML = `<section>
@@ -582,18 +583,18 @@ textarea.field{resize:vertical;min-height:64px}
           <div class="btitle">${esc(b.title)}</div><div class="bauthor">${esc(b.author||'')}</div>
           ${b.status==='done' ? `<div class="small" style="margin-top:4px">${'★'.repeat(b.rating||0)}<span class="muted">${'★'.repeat(5-(b.rating||0))}</span> <span class="muted">${b.end?b.end.slice(5).replace('-','/')+' 완독':''}</span></div>${b.review?`<div class="small serif" style="margin-top:4px">“${esc(b.review)}”</div>`:''}` : ''}
           <div class="brow">
-            ${b.status==='want' ? `<button class="b soft" data-finish="${b.id}">다 읽었어요</button>` : `<button class="b" data-finish="${b.id}">평 고치기</button>`}
+            ${b.status==='want' ? `<button class="b fill" data-status="${b.id}" data-to="reading">읽기 시작</button>` : b.status==='reading' ? `<button class="b soft" data-finish="${b.id}">다 읽었어요</button><button class="b" data-status="${b.id}" data-to="want">잠시 멈춤</button>` : `<button class="b" data-finish="${b.id}">평 고치기</button>`}
             <span class="small muted">구절 ${st.notes.filter(n=>n.bookId===b.id).length}</span>
             <button class="del" data-rmbook="${b.id}" aria-label="${esc(b.title)} 빼기" style="margin-left:auto">×</button>
           </div></div></div>`).join('')
-        : `<div class="empty">${({want:'읽고 싶은 책을 모아 두세요.',done:'아직 완독한 책이 없어요. 곧 생길 거예요!'})[st.shelf]}</div>`}
+        : `<div class="empty">${({reading:'읽는 중인 책이 없어요. 읽고 싶은 책에서 "읽기 시작"을 눌러요.',want:'읽고 싶은 책을 모아 두세요.',done:'아직 완독한 책이 없어요. 곧 생길 거예요!'})[st.shelf]}</div>`}
     </section>`;
   }
   function addForm(){
     return `<div class="panel form" style="margin:8px 0">
       <label>제목<input class="field" id="aTitle" maxlength="60"></label>
       <div class="two"><label>저자<input class="field" id="aAuthor" maxlength="40"></label>
-        <label>상태<select class="field" id="aStatus"><option value="want">읽고 싶은</option><option value="done">다 읽음</option></select></label></div>
+        <label>상태<select class="field" id="aStatus"><option value="reading">읽는 중</option><option value="want">읽고 싶은</option><option value="done">다 읽음</option></select></label></div>
       <div class="two"><button class="btn ghost" data-act="canceladd">취소</button><button class="btn primary" data-act="saveadd">책장에 넣기</button></div></div>`;
   }
   function finishForm(b){
@@ -654,7 +655,9 @@ textarea.field{resize:vertical;min-height:64px}
     if(b = q('[data-mkcard]')){ stopMic(); openCard(b.dataset.mkcard); return; }
     if(b = q('[data-view]')){ photoUrl(b.dataset.view).then(u => { if(u){ $('viewerImg').src = u; $('viewer').hidden = false; } }); return; }
     if(b = q('[data-shelf]')){ st.shelf = b.dataset.shelf; render(); return; }
-    if(b = q('[data-finish]')){ st.editBook = b.dataset.finish; render(); window.scrollTo(0,0); return; }
+    if(b = q('[data-status]')){ const bk = book(b.dataset.status); bk.status = b.dataset.to; save(); st.shelf = bk.status; render(); toast(bk.status==='reading' ? '읽는 중으로 옮겼어요.' : '읽고 싶은 책으로 옮겼어요.'); return; }
+    if(b = q('[data-note]')){ st.noteBook = b.dataset.note; st.notesForm = true; st.tab = 'notes'; render(); window.scrollTo(0,0); return; }
+    if(b = q('[data-finish]')){ st.editBook = b.dataset.finish; st.tab = 'shelf'; st.shelf = book(st.editBook).status; render(); window.scrollTo(0,0); return; }
     if(b = q('[data-star]')){ const r = Number(b.dataset.star); const box = $('stars'); box.dataset.r = r; box.querySelectorAll('button').forEach((x,i)=>x.classList.toggle('on', i<r)); return; }
     if(b = q('[data-savefinish]')){ finishBook(b.dataset.savefinish, Number($('stars').dataset.r), $('fReview').value); return; }
     if(b = q('[data-rmbook]')){ removeBook(b.dataset.rmbook); return; }
