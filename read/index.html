@@ -144,7 +144,7 @@ textarea.field{resize:vertical;min-height:64px}
 <body>
 <main>
   <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin:0 0 14px">
-    <p class="copyright" style="margin:0">© 2026 수쌤 · All rights reserved.</p>
+    <p class="copyright" style="margin:0">© 2026 심수정 · All rights reserved.</p>
     <span style="display:flex;gap:12px;align-items:center"><button type="button" id="langBtn" style="border:1px solid var(--line);background:transparent;color:var(--muted);border-radius:999px;cursor:pointer;font-size:.78rem;padding:2px 10px;white-space:nowrap">English</button><button type="button" id="resetBtn" style="border:0;background:transparent;color:var(--muted);text-decoration:underline;cursor:pointer;font-size:.78rem;padding:2px;white-space:nowrap">다시 시작하기</button></span>
   </div>
   <div id="app">
@@ -388,28 +388,28 @@ textarea.field{resize:vertical;min-height:64px}
     if(!ocrLib) ocrLib = new Promise((res, rej) => { const s = document.createElement('script'); s.src = 'https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js'; s.onload = res; s.onerror = () => { ocrLib = null; rej(new Error('ocr')); }; document.head.appendChild(s); });
     return ocrLib;
   }
-  async function pickPhoto(file){
+  async function pickPhoto(file, target, max){
+    target = target || 'nText'; max = max || 400;
     if(!file || !file.type.startsWith('image/')){ toast('사진 파일을 골라 주세요.'); return; }
     if(st.ocrBusy){ toast('아직 글자를 읽는 중이에요.'); return; }
     st.ocrBusy = true;
-    const live = () => $('micLive-nText'), say = m => { if(live()) live().textContent = m; };
+    const live = () => $('micLive-'+target), say = m => { if(live()) live().textContent = m; };
     try{
       say('📷 사진에서 글자를 읽는 중이에요… 처음엔 1분쯤 걸려요.');
       const blob = await shrink(file, 2000); if(!blob) throw new Error('img');
       await loadOcr();
       const r = await window.Tesseract.recognize(blob, 'kor+eng', { logger: m => { if(m.status==='recognizing text') say(`📷 글자 읽는 중 ${Math.round(m.progress*100)}%`); } });
       const txt = (r.data.text||'').replace(/\s*\n\s*/g,' ').replace(/ {2,}/g,' ').trim();
-      const ta = $('nText'); say('');
+      const ta = $(target); say('');
       if(!txt){ toast('글자를 찾지 못했어요. 글자가 크게 나오게 다시 찍어 주세요.'); }
-      else if(ta){ ta.value = ((ta.value ? ta.value.trim()+' ' : '') + txt).slice(0,400); ta.focus(); toast('글자로 바꿨어요. 틀린 곳을 고쳐 저장하세요.'); }
+      else if(ta){ ta.value = ((ta.value ? ta.value.trim()+' ' : '') + txt).slice(0,max); ta.focus(); toast('글자로 바꿨어요. 틀린 곳을 고쳐 주세요.'); }
     }catch(e){ say(''); toast('글자 인식에 실패했어요. 인터넷 연결을 확인하거나 직접 적어 주세요.'); }
     st.ocrBusy = false;
   }
   function addNote(bookId, page, text, thought){
     text = (text||'').trim();
     if(!text){ toast('문장을 적거나 사진을 찍어 주세요.'); return false; }
-    if(!book(bookId)){ toast('책을 골라 주세요.'); return false; }
-    st.notes.unshift({id:uid(), bookId, page:int(page), text:text.slice(0,400), thought:(thought||'').trim().slice(0,200), d:today(), photo:false});
+    st.notes.unshift({id:uid(), bookId: book(bookId) ? bookId : '', page:int(page), text:text.slice(0,400), thought:(thought||'').trim().slice(0,200), d:today(), photo:false});
     save(); return true;
   }
   // ---------- backup ----------
@@ -459,9 +459,9 @@ textarea.field{resize:vertical;min-height:64px}
   }
 
   function noteForm(){
-    const opts = st.books, sel = book(st.noteBook) ? st.noteBook : opts[0].id;
+    const sel = book(st.noteBook) ? st.noteBook : '';
     return `<div class="form" style="margin-top:10px">
-      <label>어떤 책?<select class="field" id="nBook">${opts.map(x=>`<option value="${x.id}" ${x.id===sel?'selected':''}>${esc(x.title)}</option>`).join('')}</select></label>
+      <label>어떤 책? (선택)<select class="field" id="nBook"><option value="">책 없이 저장</option>${st.books.map(x=>`<option value="${x.id}" ${x.id===sel?'selected':''}>${esc(x.title)}</option>`).join('')}</select></label>
       <div class="photobtns">
         <label class="pbtn">📷 사진 찍기<input type="file" accept="image/*" capture="environment" data-photoin></label>
         <label class="pbtn">🖼️ 앨범에서<input type="file" accept="image/*" data-photoin></label>
@@ -473,13 +473,44 @@ textarea.field{resize:vertical;min-height:64px}
         ${SR ? `<button type="button" class="mic" data-mic="nThought" aria-label="생각을 말로 입력" style="width:32px;height:32px;top:3px;font-size:.95rem">🎤</button>` : ''}</div>
       <div class="miclive" id="micLive-nThought" aria-live="polite"></div>
       <div class="two"><input class="field" id="nPage" type="number" inputmode="numeric" placeholder="쪽 (선택)"><button class="btn primary" data-savenote="1">구절 저장</button></div></div>`;
-  }  const noteCard = (n, spot) => { const b = book(n.bookId);
+  }
+  const noteCard = (n, spot) => { const b = book(n.bookId), where = [b ? esc(b.title) : '', n.page ? `${n.page}쪽` : '', spot ? '' : n.d.slice(5).replace('-','/')].filter(Boolean).join(' · ');
     return `<div class="quote ${spot?'spot':''}">
       ${n.photo ? `<button class="qphoto" data-view="${n.id}" aria-label="사진 크게 보기"><img data-photo="${n.id}" alt="구절 사진"></button>` : ''}
       ${n.text ? `<p class="q serif">${esc(n.text)}</p>` : ''}${n.thought?`<p class="t">${esc(n.thought)}</p>`:''}
-      <div class="src"><span>${b?esc(b.title):'지운 책'}${n.page?` · ${n.page}쪽`:''}${spot?'':' · '+n.d.slice(5).replace('-','/')}</span>
-      ${spot ? (n.text?`<span><button class="del" data-mkcard="${n.id}" aria-label="이미지로 만들기">🖼️</button></span>`:'') : `<span>${n.text?`<button class="del" data-mkcard="${n.id}" aria-label="이미지로 만들기">🖼️</button><button class="del" data-copy="${n.id}" aria-label="복사">⧉</button>`:''}<button class="del" data-rmnote="${n.id}" aria-label="지우기">×</button></span>`}</div></div>`; };
+      <div class="src"><span>${where}</span>
+      ${spot ? '' : `<button class="del" data-rmnote="${n.id}" aria-label="지우기">×</button>`}</div>
+      ${n.text ? `<div class="brow" style="margin-top:8px"><button class="b fill" data-mkcard="${n.id}">📸 인스타 이미지 만들기</button><button class="b" data-copy="${n.id}">복사</button></div>` : ''}</div>`; };
 
+  function blogPanel(){
+    return `<div class="panel form" style="margin-top:12px">
+      <div style="font-weight:600">📝 오늘 읽은 걸로 블로그 글 쓰기</div>
+      <p class="small muted" style="margin:0">오늘 읽은 부분을 사진으로 찍어 올리면 글자로 바꿔서, 블로그에 바로 올릴 수 있는 글로 정리해 줘요. 마음대로 고쳐 쓰세요.</p>
+      <label>어떤 책? (선택)<select class="field" id="bBook"><option value="">책 없이</option>${st.books.map(x=>`<option value="${x.id}">${esc(x.title)}</option>`).join('')}</select></label>
+      <div class="photobtns">
+        <label class="pbtn">📷 사진 찍기<input type="file" accept="image/*" capture="environment" data-blogphoto></label>
+        <label class="pbtn">🖼️ 앨범에서<input type="file" accept="image/*" data-blogphoto></label>
+      </div>
+      <textarea class="field serif" id="bText" maxlength="2000" rows="5" placeholder="읽은 부분 (사진을 올리면 글자로 바뀌어 여기에 적혀요. 여러 장도 계속 더해져요)"></textarea>
+      <div class="miclive" id="micLive-bText" aria-live="polite"></div>
+      <textarea class="field" id="bThought" maxlength="600" rows="3" placeholder="오늘 느낀 점 (선택)"></textarea>
+      <button class="btn primary" data-act="makeblog">블로그 글 만들기</button>
+      <div id="blogOut"></div></div>`;
+  }
+  function makeBlog(){
+    const text = $('bText').value.trim(), th = $('bThought').value.trim(), b = book($('bBook').value), t = new Date(), sec = st.time[today()] || 0;
+    if(!text && !th){ toast('읽은 부분 사진을 올리거나 느낀 점을 적어 주세요.'); return; }
+    const dl = `${t.getFullYear()}년 ${t.getMonth()+1}월 ${t.getDate()}일`, quote = text.split(/(?<=[.!?。])\s+/).map(x => x.trim()).filter(Boolean);
+    const lines = [b ? `[독서기록] ${b.title}${b.author?' - '+b.author:''} (${t.getMonth()+1}/${t.getDate()})` : `[독서기록] ${t.getMonth()+1}월 ${t.getDate()}일 오늘의 독서`, '',
+      `📅 ${dl}`, b ? `📚 책: 《${b.title}》${b.author?' / '+b.author:''}` : '', sec ? `⏱️ 오늘 읽은 시간: ${fmtDur(sec)}` : '', '',
+      '## 오늘 읽은 부분', ...(quote.length ? quote.map(x => '> ' + x) : ['(읽은 부분을 적어 보세요)']), '',
+      '## 내 생각', th || '(오늘 이 부분에서 떠오른 생각을 이어서 적어 보세요.)', '',
+      '## 오늘의 한 줄', quote.length ? `“${quote[0]}”` : '', '',
+      `#독서기록 #한쪽독서 #책스타그램 #독서${b ? ' #' + b.title.replace(/\s+/g,'') : ''}`].filter((x,i,a) => x !== '' || a[i-1] !== '');
+    $('blogOut').innerHTML = `<textarea class="field" id="blogText" rows="14">${esc(lines.join('\n'))}</textarea>
+      <div class="btnrow"><button class="btn primary" data-act="copyblog">글 복사하기</button></div>`;
+    $('blogOut').scrollIntoView({behavior:'smooth', block:'nearest'});
+  }
   const barBox = (label, n, goal, sub) => {
     const pct = goal ? Math.min(n/goal,1)*100 : 0;
     return `<div class="panel" style="margin-bottom:10px"><div class="small muted">${label}</div>
@@ -548,11 +579,12 @@ textarea.field{resize:vertical;min-height:64px}
       <div class="two" style="margin-top:8px"><button class="btn ghost" data-act="cancelfinish">나중에</button><button class="btn primary" data-savefinish="${b.id}">완독으로 저장</button></div></div>`;
   }
   function renderNotes(){
-    const list = st.notes, canAdd = st.books.length > 0;
+    const list = st.notes, canAdd = true;
     $('v-notes').innerHTML = `<section>
-      <p class="small muted" style="margin:0">책을 읽다 마음에 남은 구절을 글, 사진, 말로 모아요.</p>
+      <p class="small muted" style="margin:0">책을 읽다 마음에 남은 구절을 글, 사진, 말로 모아요. 인스타 이미지로도 만들 수 있어요.</p>
       ${canAdd ? (st.notesForm ? `<div class="panel" style="margin-top:8px">${noteForm()}<div class="btnrow"><button class="btn ghost" data-act="closenoteform">닫기</button></div></div>`
-        : `<div class="btnrow"><button class="btn primary" data-act="opennoteform">✍️ 인상 깊은 구절 남기기</button></div>`) : `<div class="empty" style="margin-top:8px">책장에 책을 먼저 넣어 주세요.</div>`}
+        : `<div class="btnrow"><button class="btn primary" data-act="opennoteform">✍️ 인상 깊은 구절 남기기</button></div>`) : ''}
+      ${blogPanel()}
       ${list.length ? list.map(n => noteCard(n, false)).join('') : `<div class="empty" style="margin-top:8px">아직 모은 구절이 없어요.</div>`}
     </section>`;
   }
@@ -608,6 +640,8 @@ textarea.field{resize:vertical;min-height:64px}
       (navigator.clipboard ? navigator.clipboard.writeText(txt) : Promise.reject()).then(()=>toast('문장을 복사했어요.')).catch(()=>toast('복사가 안 돼요. 길게 눌러 복사해 주세요.')); return; }
     if(b = q('[data-act]')){ const a = b.dataset.act;
       if(a==='timer') timerToggle();
+      else if(a==='makeblog') makeBlog();
+      else if(a==='copyblog'){ const t = $('blogText').value; (navigator.clipboard ? navigator.clipboard.writeText(t) : Promise.reject()).then(()=>toast('글을 복사했어요. 블로그에 붙여 넣으세요.')).catch(()=>{ $('blogText').select(); toast('길게 눌러 복사해 주세요.'); }); }
       else if(a==='addbook'){ st.tab = 'shelf'; st.addOpen = true; render(); window.scrollTo(0,0); $('aTitle').focus(); }
       else if(a==='canceladd'){ st.addOpen = false; render(); }
       else if(a==='saveadd'){ const status = $('aStatus').value; if(addBook({title:$('aTitle').value, author:$('aAuthor').value, status})){ st.addOpen = false; st.shelf = status; render(); toast('책장에 넣었어요.'); } }
@@ -631,7 +665,7 @@ textarea.field{resize:vertical;min-height:64px}
       location.reload();
     }
   });
-  document.querySelector('main').addEventListener('change', e => { if(e.target.id==='restoreInput'){ restore(e.target.files[0]); e.target.value = ''; } else if(e.target.hasAttribute('data-photoin')){ const f = e.target.files[0]; e.target.value = ''; pickPhoto(f); } });
+  document.querySelector('main').addEventListener('change', e => { if(e.target.id==='restoreInput'){ restore(e.target.files[0]); e.target.value = ''; } else if(e.target.hasAttribute('data-photoin')){ const f = e.target.files[0]; e.target.value = ''; pickPhoto(f); } else if(e.target.hasAttribute('data-blogphoto')){ const f = e.target.files[0]; e.target.value = ''; pickPhoto(f, 'bText', 2000); } });
   $('viewer').addEventListener('click', () => { $('viewer').hidden = true; });
   $('cardModal').addEventListener('click', e => {
     if(e.target.id==='cardModal'){ closeCard(); return; }
@@ -662,7 +696,7 @@ textarea.field{resize:vertical;min-height:64px}
   var WD = {'일':'Sun','월':'Mon','화':'Tue','수':'Wed','목':'Thu','금':'Fri','토':'Sat'};
   var D = {
     '다시 시작하기':'Start over', '정말요? 다시 누르면 전부 지워져요':'Sure? Tap again to erase everything',
-    '← 소확앱 다른 앱 보기':'← See other SohwakApp apps', '되돌리기':'Undo', '© 2026 수쌤 · All rights reserved.':'© 2026 Susaem · All rights reserved.',
+    '← 소확앱 다른 앱 보기':'← See other SohwakApp apps', '되돌리기':'Undo', '© 2026 심수정 · All rights reserved.':'© 2026 Shim Sujeong · All rights reserved.',
     '일':'Sun','월':'Mon','화':'Tue','수':'Wed','목':'Thu','금':'Fri','토':'Sat', '오늘':'Today', '저장':'Save', '취소':'Cancel', '닫기':'Close',
     '백업':'Backup', '백업 파일 받기':'Download backup file', '백업 불러오기':'Restore backup',
     '이전 달':'Previous month', '다음 달':'Next month', '지우기':'Delete', '삭제':'Delete', '빼기':'Remove', '이모지':'Emoji',
@@ -724,6 +758,16 @@ textarea.field{resize:vertical;min-height:64px}
       '읽기를 시작했어요. 다 읽으면 끝내기를 눌러요 ⏱️':'Reading started. Tap stop when you\'re done ⏱️', '5초보다 짧아서 기록하지 않았어요.':'Too short (under 5 seconds), so not recorded.',
       '목표를 바꿨어요.':'Goals updated.', '1 이상으로 적어 주세요.':'Please enter 1 or more.',
       '읽고 싶은 책을 모아 두세요.':'Collect books you want to read.',
+'어떤 책? (선택)':'Which book? (optional)', '책 없이 저장':'Save without a book', '책 없이':'Without a book',
+      '📸 인스타 이미지 만들기':'📸 Make Instagram image', '복사':'Copy', '인스타 이미지로도 만들 수 있어요.':'You can also turn them into Instagram images.',
+      '책을 읽다 마음에 남은 구절을 글, 사진, 말로 모아요. 인스타 이미지로도 만들 수 있어요.':'Collect quotes that stay with you as text, photos or voice. You can also turn them into Instagram images.',
+      '📝 오늘 읽은 걸로 블로그 글 쓰기':'📝 Write a blog post from today\'s reading',
+      '오늘 읽은 부분을 사진으로 찍어 올리면 글자로 바꿔서, 블로그에 바로 올릴 수 있는 글로 정리해 줘요. 마음대로 고쳐 쓰세요.':'Take a photo of what you read today. It is turned into text and arranged into a post you can put on your blog. Edit it however you like.',
+      '읽은 부분 (사진을 올리면 글자로 바뀌어 여기에 적혀요. 여러 장도 계속 더해져요)':'What you read (a photo is turned into text and added here; more photos keep adding)',
+      '오늘 느낀 점 (선택)':'What I felt today (optional)', '블로그 글 만들기':'Make blog post', '글 복사하기':'Copy post',
+      '읽은 부분 사진을 올리거나 느낀 점을 적어 주세요.':'Add a photo of what you read, or write your thoughts.',
+      '글을 복사했어요. 블로그에 붙여 넣으세요.':'Copied. Paste it into your blog.', '길게 눌러 복사해 주세요.':'Press and hold to copy.',
+      '글자로 바꿨어요. 틀린 곳을 고쳐 주세요.':'Turned into text. Please fix any mistakes.',
       '어떤 책?':'Which book?',
       '인상 깊은 구절 (사진을 찍으면 글자로 바뀌어 여기에 적혀요)':'A memorable quote (a photo is turned into text and typed here)',
       '+ 다른 책도 같이 읽기':'+ Read another book too',
