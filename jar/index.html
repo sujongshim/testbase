@@ -64,6 +64,10 @@ button,input,select,textarea{font:inherit;color:inherit}
 .actions{display:grid;grid-template-columns:1fr auto;gap:6px;margin-top:10px}
 .btn{border:0;border-radius:10px;padding:10px 14px;font-weight:600;cursor:pointer;font-size:.92rem}
 .btn.primary{background:var(--ink);color:var(--bg)}
+.photobtns{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:6px}
+.pbtn{display:flex;align-items:center;justify-content:center;gap:6px;border:1.5px dashed var(--snack);color:var(--snack);background:transparent;border-radius:10px;padding:10px 6px;font-weight:600;font-size:.88rem;cursor:pointer}
+.pbtn input{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
+.rcptlive{font-size:.8rem;color:var(--muted);min-height:1.2em;margin:0 0 8px}
 .btn.skip{background:var(--saved-soft);color:var(--saved)}
 .btn.ghost{background:var(--bg)}
 .btn[hidden]{display:none}
@@ -165,6 +169,11 @@ details.panel summary{cursor:pointer;font-weight:600}
     <section aria-labelledby="addTitle">
       <h2 id="addTitle" class="display">기록하기</h2>
       <div class="panel">
+        <div class="photobtns">
+          <label class="pbtn">📷 영수증 찍기<input type="file" accept="image/*" capture="environment" data-rcpt></label>
+          <label class="pbtn">🖼️ 사진 올리기<input type="file" accept="image/*" data-rcpt></label>
+        </div>
+        <p class="rcptlive" id="rcptLive" aria-live="polite">영수증이나 결제 화면 사진을 올리면 금액·날짜·분류를 읽어서 자동으로 기록해요.</p>
         <label class="amount">
           <input id="amt" type="text" inputmode="numeric" placeholder="0" aria-label="금액" autocomplete="off">
           <span>원</span>
@@ -474,13 +483,99 @@ details.panel summary{cursor:pointer;font-weight:600}
     save(); $('amt').value=''; $('memo').value=''; render();
     toast(skip ? won(amt)+'을 항아리 대신 저금했어요.' : '기록했어요.');
   }
+  // ---------- receipt photo -> automatic expense ----------
+  let lastAuto = null, ocrWorker = null, ocrBusy = false, ocrSay = () => {};
+  function loadOcr(){
+    if(window.Tesseract) return Promise.resolve();
+    return new Promise((res, rej) => { const sc = document.createElement('script'); sc.src = 'https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js'; sc.onload = res; sc.onerror = () => rej(new Error('ocr')); document.head.appendChild(sc); });
+  }
+  async function getWorker(){
+    if(!ocrWorker) ocrWorker = (async () => { await loadOcr(); const w = await window.Tesseract.createWorker('kor+eng', 1, { logger: m => { if(m.status==='recognizing text') ocrSay('📷 글자 읽는 중 ' + Math.round(m.progress*100) + '%'); } });
+      await w.setParameters({ tessedit_pageseg_mode: '6', preserve_interword_spaces: '1' }); return w; })().catch(e => { ocrWorker = null; throw e; });
+    return ocrWorker;
+  }
+  // grayscale + denoise + adaptive black/white so shadows and uneven light don't matter
+  async function ocrPrep(file, target){
+    let bm; try{ bm = await createImageBitmap(file); }catch(e){ bm = await new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = rej; i.src = URL.createObjectURL(file); }); }
+    const sw = bm.width || bm.naturalWidth, sh = bm.height || bm.naturalHeight, k = target / Math.max(sw, sh), W = Math.round(sw*k), H = Math.round(sh*k);
+    const c = document.createElement('canvas'); c.width = W; c.height = H; const g = c.getContext('2d'); g.imageSmoothingQuality = 'high'; g.drawImage(bm, 0, 0, W, H);
+    const id = g.getImageData(0, 0, W, H), d = id.data, gray = new Float32Array(W*H), bl = new Float32Array(W*H);
+    for(let i = 0, j = 0; i < d.length; i += 4, j++) gray[j] = .299*d[i] + .587*d[i+1] + .114*d[i+2];
+    for(let y = 0; y < H; y++) for(let x = 0; x < W; x++){ let sum = 0, n = 0;
+      for(let dy = -1; dy <= 1; dy++){ const yy = y+dy; if(yy < 0 || yy >= H) continue; for(let dx = -1; dx <= 1; dx++){ const xx = x+dx; if(xx < 0 || xx >= W) continue; sum += gray[yy*W+xx]; n++; } }
+      bl[y*W+x] = sum/n; }
+    const iw = W+1, ii = new Float64Array(iw*(H+1));
+    for(let y = 0; y < H; y++){ let row = 0; for(let x = 0; x < W; x++){ row += bl[y*W+x]; ii[(y+1)*iw+x+1] = ii[y*iw+x+1] + row; } }
+    const r = Math.max(15, Math.round(Math.min(W, H)/30));
+    for(let y = 0; y < H; y++){ const y0 = Math.max(0, y-r), y1 = Math.min(H, y+r+1);
+      for(let x = 0; x < W; x++){ const x0 = Math.max(0, x-r), x1 = Math.min(W, x+r+1);
+        const mean = (ii[y1*iw+x1] - ii[y0*iw+x1] - ii[y1*iw+x0] + ii[y0*iw+x0]) / ((x1-x0)*(y1-y0));
+        const v = bl[y*W+x] < mean*0.88 ? 0 : 255, o = (y*W+x)*4; d[o] = d[o+1] = d[o+2] = v; d[o+3] = 255; } }
+    g.putImageData(id, 0, 0);
+    return await new Promise(res => c.toBlob(res, 'image/png'));
+  }
+  const RCPT_RULES = [
+    [/편의점|\bCU\b|GS\s?25|세븐일레븐|이마트\s?24|미니스톱|씨유/i, 'snack', '과자·편의점'],
+    [/아이스크림|배스킨|베스킨|나뚜루|하겐다즈/, 'snack', '아이스크림'],
+    [/베이커리|제과|빵|파리바게|뚜레쥬르|디저트|케이크|도넛|마카롱/, 'snack', '빵·디저트'],
+    [/스타벅스|커피|카페|coffee|cafe|이디야|투썸|메가\s?(mgc|커피)|컴포즈|빽다방|할리스|엔제리너스|폴\s?바셋|음료/i, 'snack', '카페·음료'],
+    [/배달의\s?민족|배민|요기요|쿠팡\s?이츠|배달/, 'food', '배달'],
+    [/구내식당|급식/, 'food', '구내식당'],
+    [/이마트|홈플러스|롯데마트|하나로|마트|슈퍼|정육|청과/, 'food', '장보기'],
+    [/식당|김밥|분식|치킨|피자|국밥|고기|횟집|한식|중식|일식|버거|맥도날드|롯데리아|서브웨이|파스타|반점|면옥|칼국수|찌개/, 'food', '외식'],
+    [/학원|과외|교습|아카데미|교육원/, 'edu', '학원·과외'],
+    [/서점|문고|교보|영풍|알라딘|예스24|도서/, 'edu', '교재·도서'],
+    [/강의|인강|클래스/, 'edu', '강의·구독'],
+    [/영화|CGV|메가박스|롯데시네마|공연|전시|노래방|PC방/i, 'fun', '문화'],
+    [/택시|버스|지하철|주유|티머니|코레일|철도|KTX/i, 'life', '교통'],
+    [/약국|다이소|올리브영|문구/, 'life', '생필품']
+  ];
+  function parseReceipt(raw){
+    const lines = String(raw||'').split(/\n/).map(l => l.trim()).filter(Boolean);
+    const numsOf = l => (String(l||'').match(/\d{1,3}(?:[,.]\d{3})+|\d{3,9}/g) || []).map(x => Number(x.replace(/[,.]/g,''))).filter(n => n >= 100 && n <= 10000000);
+    const KEY = /합\s*계|총\s*(액|금액|결제)|결제\s*(금액|요청)|받을\s*금액|승인\s*금액|청구\s*금액|카드\s*결제|TOTAL|AMOUNT/i, EXCL = /부가세|VAT|과세|면세|공급가|거스름|받은\s*금액|포인트|할인|전화|사업자|승인\s*번호|카드\s*번호/i;
+    let amt = 0;
+    lines.forEach((l, i) => { if(KEY.test(l) && !EXCL.test(l)){ const ns = numsOf(l); const n2 = ns.length ? ns : numsOf(lines[i+1]); if(n2.length) amt = Math.max(amt, Math.max(...n2)); } });
+    if(!amt){ const all = lines.filter(l => !EXCL.test(l)).flatMap(l => (l.match(/\d{1,3}(?:,\d{3})+/g) || []).map(x => Number(x.replace(/,/g,'')))).filter(n => n >= 100 && n <= 10000000); if(all.length) amt = Math.max(...all); }
+    let d = today(); const t0 = today();
+    const m = raw.match(/(20\d{2})\s*[-./년]\s*(\d{1,2})\s*[-./월]\s*(\d{1,2})/);
+    if(m){ const y = +m[1], mo = +m[2], dd = +m[3], dt = new Date(y, mo-1, dd); if(dt.getMonth() === mo-1 && dt.getDate() === dd){ const iso = y + '-' + String(mo).padStart(2,'0') + '-' + String(dd).padStart(2,'0'); const age = (parse(t0) - dt) / 86400000; if(iso <= t0 && age <= 400) d = iso; } }
+    let memo = ''; const SKIP = /영수증|신용|매출|전표|사업자|대표|전화|TEL|주소|POS|고객|감사|카드|승인|일시|합계|금액/i;
+    for(const l of lines.slice(0, 7)){ const c = l.replace(/[^가-힣A-Za-z0-9 ·&]/g,'').trim(); if(/[가-힣A-Za-z]{2,}/.test(c) && !SKIP.test(c) && c.replace(/\D/g,'').length < c.length/2){ memo = c.slice(0, 20); break; } }
+    const head = lines.slice(0, 14).join(' ') + ' ' + memo; let cat = '', sub = '';
+    for(const [re, c, sb] of RCPT_RULES) if(re.test(head)){ cat = c; sub = sb; break; }
+    return {amt, d, memo, cat, sub};
+  }
+  async function receiptFromPhoto(file){
+    const say = m => { const el = $('rcptLive'); if(el) el.textContent = m; }; ocrSay = say;
+    if(!file || !file.type.startsWith('image/')){ toast('사진 파일을 골라 주세요.'); return; }
+    if(ocrBusy){ toast('아직 영수증을 읽는 중이에요.'); return; }
+    ocrBusy = true;
+    try{
+      say('📷 영수증을 읽는 중이에요… 처음엔 1분쯤 걸려요.');
+      const blob = await ocrPrep(file, 2200); if(!blob) throw new Error('img');
+      const w = await getWorker(); let r = await w.recognize(blob);
+      if((r.data.confidence || 0) < 55){ await w.setParameters({ tessedit_pageseg_mode: '3' }); const r2 = await w.recognize(blob); await w.setParameters({ tessedit_pageseg_mode: '6' }); if((r2.data.confidence || 0) > (r.data.confidence || 0)) r = r2; }
+      const p = parseReceipt(r.data.text || ''), C = cats();
+      say('');
+      if(p.memo) $('memo').value = p.memo;
+      $('date').value = p.d;
+      if(p.cat){ state.form.cat = p.cat; state.form.sub = p.sub; render(); }
+      if(!p.amt){ say('금액을 찾지 못했어요. 금액만 직접 적고 "지출 기록하기"를 눌러 주세요.'); toast('금액을 찾지 못했어요.'); $('amt').focus(); return; }
+      const cat = p.cat || state.form.cat, sub = p.cat ? p.sub : state.form.sub, e = {id:uid(), d:p.d, amt:p.amt, cat, sub, memo:p.memo, skip:false}, key = monthKey(p.d);
+      state.months[key] = [...(state.months[key]||[]), e];
+      save(); lastAuto = {key, id:e.id}; $('amt').value = ''; $('memo').value = ''; render();
+      say(''); toast((p.memo || sub) + ' ' + won(p.amt) + ' · ' + (C[cat] ? C[cat].label : '') + ' 자동으로 기록했어요', true);
+    }catch(err){ say(''); toast('영수증을 읽지 못했어요. 인터넷 연결을 확인하거나 직접 적어 주세요.'); }
+    finally{ ocrBusy = false; }
+  }
   function removeEntry(id){
     for(const key of Object.keys(state.months)){
       const i = state.months[key].findIndex(x=>x.id===id);
-      if(i>-1){ lastDeleted = {key, entry:state.months[key][i]}; state.months[key] = state.months[key].filter(x=>x.id!==id); save(); render(); toast('지웠어요.', true); return; }
+      if(i>-1){ lastAuto = null; lastDeleted = {key, entry:state.months[key][i]}; state.months[key] = state.months[key].filter(x=>x.id!==id); save(); render(); toast('지웠어요.', true); return; }
     }
   }
-  function undo(){ if(!lastDeleted) return; const {key, entry} = lastDeleted; lastDeleted = null; state.months[key] = [...(state.months[key]||[]), entry]; save(); render(); hideToast(); }
+  function undo(){ if(lastAuto){ const {key, id} = lastAuto; lastAuto = null; state.months[key] = (state.months[key]||[]).filter(x => x.id!==id); save(); render(); hideToast(); return; } if(!lastDeleted) return; const {key, entry} = lastDeleted; lastDeleted = null; state.months[key] = [...(state.months[key]||[]), entry]; save(); render(); hideToast(); }
   function saveSettings(){
     const f = toNum($('sFood').value), s = toNum($('sSnack').value);
     if(!f || !s){ toast('두 한도 모두 0보다 큰 금액으로 적어 주세요.'); return; }
@@ -495,7 +590,7 @@ details.panel summary{cursor:pointer;font-weight:600}
     state.form = {cat:HERO(), sub:cats()[HERO()].subs[0]};
     save(); render(); window.scrollTo(0,0);
   }
-  function toast(msg, withUndo){ $('toastMsg').textContent = msg; $('toastUndo').hidden = !withUndo; $('toast').hidden = false; clearTimeout(toastTimer); toastTimer = setTimeout(hideToast, withUndo ? 5000 : 2800); }
+  function toast(msg, withUndo){ if(!withUndo) lastAuto = null; $('toastMsg').textContent = msg; $('toastUndo').hidden = !withUndo; $('toast').hidden = false; clearTimeout(toastTimer); toastTimer = setTimeout(hideToast, withUndo ? 7000 : 2800); }
   function hideToast(){ $('toast').hidden = true; }
 
   // ---------- render ----------
@@ -710,6 +805,7 @@ details.panel summary{cursor:pointer;font-weight:600}
   $('notices').addEventListener('click', e => { if(e.target.closest('[data-act="backup"]')) backup(); });
   $('addBtn').addEventListener('click', () => addEntry(false));
   $('skipBtn').addEventListener('click', () => addEntry(true));
+  document.addEventListener('change', e => { if(e.target.hasAttribute && e.target.hasAttribute('data-rcpt')){ const f = e.target.files[0]; e.target.value = ''; receiptFromPhoto(f); } });
   $('toastUndo').addEventListener('click', undo);
   $('saveSet').addEventListener('click', saveSettings);
   $('backupBtn').addEventListener('click', backup);
