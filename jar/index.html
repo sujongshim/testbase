@@ -515,7 +515,7 @@ details.panel summary{cursor:pointer;font-weight:600}
     return await new Promise(res => c.toBlob(res, 'image/png'));
   }
   const RCPT_RULES = [
-    [/편의점|\bCU\b|GS\s?25|세븐일레븐|이마트\s?24|미니스톱|씨유/i, 'snack', '과자·편의점'],
+    [/편의점|삼각김밥|\bCU\b|GS\s?25|세븐일레븐|이마트\s?24|미니스톱|씨유/i, 'snack', '과자·편의점'],
     [/아이스크림|배스킨|베스킨|나뚜루|하겐다즈/, 'snack', '아이스크림'],
     [/베이커리|제과|빵|파리바게|뚜레쥬르|디저트|케이크|도넛|마카롱/, 'snack', '빵·디저트'],
     [/스타벅스|커피|카페|coffee|cafe|이디야|투썸|메가\s?(mgc|커피)|컴포즈|빽다방|할리스|엔제리너스|폴\s?바셋|음료/i, 'snack', '카페·음료'],
@@ -541,10 +541,24 @@ details.panel summary{cursor:pointer;font-weight:600}
     const m = raw.match(/(20\d{2})\s*[-./년]\s*(\d{1,2})\s*[-./월]\s*(\d{1,2})/);
     if(m){ const y = +m[1], mo = +m[2], dd = +m[3], dt = new Date(y, mo-1, dd); if(dt.getMonth() === mo-1 && dt.getDate() === dd){ const iso = y + '-' + String(mo).padStart(2,'0') + '-' + String(dd).padStart(2,'0'); const age = (parse(t0) - dt) / 86400000; if(iso <= t0 && age <= 400) d = iso; } }
     let memo = ''; const SKIP = /영수증|신용|매출|전표|사업자|대표|전화|TEL|주소|POS|고객|감사|카드|승인|일시|합계|금액/i;
-    for(const l of lines.slice(0, 7)){ const c = l.replace(/[^가-힣A-Za-z0-9 ·&]/g,'').trim(); if(/[가-힣A-Za-z]{2,}/.test(c) && !SKIP.test(c) && c.replace(/\D/g,'').length < c.length/2){ memo = c.slice(0, 20); break; } }
-    const head = lines.slice(0, 14).join(' ') + ' ' + memo; let cat = '', sub = '';
+    for(const l of lines.slice(0, 4)){ if(/\s\d{1,3}(?:[,.]\d{3})+\s*원?\s*$|\s\d{3,7}\s*원?\s*$/.test(l)) continue; const c = l.replace(/[^가-힣A-Za-z0-9 ·&]/g,'').trim(); if(/[가-힣A-Za-z]{2,}/.test(c) && !SKIP.test(c) && c.replace(/\D/g,'').length < c.length/2){ memo = c.slice(0, 20); break; } }
+    const head = lines.slice(0, 3).join(' ') + ' ' + memo; let cat = '', sub = '';
     for(const [re, c, sb] of RCPT_RULES) if(re.test(head)){ cat = c; sub = sb; break; }
-    return {amt, d, memo, cat, sub};
+    // line items: "name [qty] price" lines above the total
+    const STOP = /합\s*계|총\s*(액|금액)|결제\s*금액|받을\s*금액|청구\s*금액/, HEAD = /품\s*명|상품명|메뉴|단\s*가|수\s*량/, NOTITEM = /영수증|신용|매출|전표|사업자|대표|전화|TEL|주소|POS|고객|감사|카드|승인|일시|일자|부가세|VAT|과세|면세|공급가|거스름|포인트|할인|번호|NO\.?|20\d{2}\s*[-./년]/i;
+    let from = 1; lines.forEach((l, i) => { if(HEAD.test(l) && i < 14) from = i + 1; });
+    let to = lines.findIndex((l, i) => i >= from && STOP.test(l)); if(to < 0) to = lines.length;
+    const items = [];
+    for(const l of lines.slice(from, to)){
+      if(NOTITEM.test(l)) continue;
+      const mm = l.match(/^(.*?[가-힣A-Za-z].*?)\s+(?:(\d{1,2})\s+)?(\d{1,3}(?:[,.]\d{3})+|\d{3,7})\s*원?\s*$/);
+      if(!mm) continue;
+      const name = mm[1].replace(/^[\s\d.*#\-]+/, '').replace(/[\s\d,.]+$/, '').replace(/[^가-힣A-Za-z0-9 ·&()+\/]/g, '').trim();
+      const price = Number(mm[3].replace(/[,.]/g, '')), qty = Number(mm[2] || 1);
+      if(!/[가-힣A-Za-z]{2,}/.test(name) || price < 100 || price > 10000000) continue;
+      items.push({name: (name + (qty > 1 ? ' ×' + qty : '')).slice(0, 30), amt: price});
+    }
+    return {amt, d, memo, cat, sub, items};
   }
   async function receiptFromPhoto(file){
     const say = m => { const el = $('rcptLive'); if(el) el.textContent = m; }; ocrSay = say;
@@ -561,11 +575,16 @@ details.panel summary{cursor:pointer;font-weight:600}
       if(p.memo) $('memo').value = p.memo;
       $('date').value = p.d;
       if(p.cat){ state.form.cat = p.cat; state.form.sub = p.sub; render(); }
+      if(!p.amt && p.items.length) p.amt = p.items.reduce((a, it) => a + it.amt, 0);
       if(!p.amt){ say('금액을 찾지 못했어요. 금액만 직접 적고 "지출 기록하기"를 눌러 주세요.'); toast('금액을 찾지 못했어요.'); $('amt').focus(); return; }
-      const cat = p.cat || state.form.cat, sub = p.cat ? p.sub : state.form.sub, e = {id:uid(), d:p.d, amt:p.amt, cat, sub, memo:p.memo, skip:false}, key = monthKey(p.d);
-      state.months[key] = [...(state.months[key]||[]), e];
-      save(); lastAuto = {key, id:e.id}; $('amt').value = ''; $('memo').value = ''; render();
-      say(''); toast((p.memo || sub) + ' ' + won(p.amt) + ' · ' + (C[cat] ? C[cat].label : '') + ' 자동으로 기록했어요', true);
+      const baseCat = p.cat || state.form.cat, baseSub = p.cat ? p.sub : state.form.sub, key = monthKey(p.d);
+      const rows = p.items.length ? p.items.map(it => { let c = baseCat, sb = baseSub; for(const [re, c2, s2] of RCPT_RULES) if(re.test(it.name)){ c = c2; sb = s2; break; } return {id:uid(), d:p.d, amt:it.amt, cat:c, sub:sb, memo:it.name, skip:false}; })
+        : [{id:uid(), d:p.d, amt:p.amt, cat:baseCat, sub:baseSub, memo:p.memo, skip:false}];
+      state.months[key] = [...(state.months[key]||[]), ...rows];
+      save(); lastAuto = {key, ids:rows.map(r => r.id)}; $('amt').value = ''; $('memo').value = ''; render();
+      const sum = rows.reduce((a, r) => a + r.amt, 0), diff = p.items.length && Math.abs(sum - p.amt) > Math.max(100, p.amt * 0.02);
+      say(diff ? '품목 합계(' + won(sum) + ')가 영수증 합계(' + won(p.amt) + ')와 달라요. 빠진 품목이 없는지 확인해 주세요.' : '');
+      toast(rows.length > 1 ? (p.memo ? p.memo + ' ' : '') + '품목 ' + rows.length + '개, ' + won(sum) + ' 자동으로 기록했어요' : (rows[0].memo || rows[0].sub) + ' ' + won(rows[0].amt) + ' · ' + (C[rows[0].cat] ? C[rows[0].cat].label : '') + ' 자동으로 기록했어요', true);
     }catch(err){ say(''); toast('영수증을 읽지 못했어요. 인터넷 연결을 확인하거나 직접 적어 주세요.'); }
     finally{ ocrBusy = false; }
   }
@@ -575,7 +594,7 @@ details.panel summary{cursor:pointer;font-weight:600}
       if(i>-1){ lastAuto = null; lastDeleted = {key, entry:state.months[key][i]}; state.months[key] = state.months[key].filter(x=>x.id!==id); save(); render(); toast('지웠어요.', true); return; }
     }
   }
-  function undo(){ if(lastAuto){ const {key, id} = lastAuto; lastAuto = null; state.months[key] = (state.months[key]||[]).filter(x => x.id!==id); save(); render(); hideToast(); return; } if(!lastDeleted) return; const {key, entry} = lastDeleted; lastDeleted = null; state.months[key] = [...(state.months[key]||[]), entry]; save(); render(); hideToast(); }
+  function undo(){ if(lastAuto){ const {key, ids} = lastAuto; lastAuto = null; state.months[key] = (state.months[key]||[]).filter(x => !ids.includes(x.id)); save(); render(); hideToast(); return; } if(!lastDeleted) return; const {key, entry} = lastDeleted; lastDeleted = null; state.months[key] = [...(state.months[key]||[]), entry]; save(); render(); hideToast(); }
   function saveSettings(){
     const f = toNum($('sFood').value), s = toNum($('sSnack').value);
     if(!f || !s){ toast('두 한도 모두 0보다 큰 금액으로 적어 주세요.'); return; }
