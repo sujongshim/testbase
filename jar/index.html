@@ -87,8 +87,13 @@ button,input,select,textarea{font:inherit;color:inherit}
 
 .filters{display:flex;gap:6px;margin-bottom:8px}
 .list{list-style:none;margin:0;padding:0;background:var(--surface);border-radius:14px;overflow:hidden}
-.list li{display:grid;grid-template-columns:8px 1fr auto auto;gap:10px;align-items:center;padding:9px 10px;border-bottom:1px solid var(--line)}
+.list li{display:grid;grid-template-columns:8px 1fr auto auto auto;gap:6px;align-items:center;padding:9px 10px;border-bottom:1px solid var(--line)}
 .list li:last-child{border-bottom:0}
+.list li.editrow{display:block}
+.editrow .erow{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:6px}
+.editrow .erow.one{grid-template-columns:1fr}
+.editbtn{border:0;background:transparent;color:var(--muted);cursor:pointer;font-size:1rem;padding:4px 6px;border-radius:8px}
+.list .t.tap{cursor:pointer}
 .dot{width:8px;height:8px;border-radius:50%}
 .dot.food{background:var(--food)} .dot.snack{background:var(--snack)} .dot.life,.dot.fun,.dot.edu{background:var(--muted)} .dot.saved{background:var(--saved)}
 .list .t{min-width:0}
@@ -782,10 +787,20 @@ details.panel summary{cursor:pointer;font-weight:600}
       let html = '', lastDay = '';
       shown.forEach(e => {
         if(e.d!==lastDay){ lastDay = e.d; const d = parse(e.d); html += `<li class="day">${d.getMonth()+1}월 ${d.getDate()}일 ${'일월화수목금토'[d.getDay()]}요일</li>`; }
+        if(state.editId===e.id){
+          const subs = (C[e.cat] ? C[e.cat].subs : []);
+          html += `<li class="editrow"><div style="font-weight:600;font-size:.9rem">기록 고치기</div>
+            <div class="erow one"><input class="field" id="eMemo" maxlength="40" value="${esc(e.memo||'')}" placeholder="무엇을?" aria-label="내용"></div>
+            <div class="erow"><input class="field" id="eAmt" type="text" inputmode="numeric" value="${e.amt}" aria-label="금액"><input class="field" id="eDate" type="date" value="${esc(e.d)}" aria-label="날짜"></div>
+            <div class="erow"><select class="field" id="eCat" aria-label="분류">${Object.entries(C).map(([k,c]) => `<option value="${k}" ${k===e.cat?'selected':''}>${esc(c.label)}</option>`).join('')}</select>
+              <select class="field" id="eSub" aria-label="세부 분류">${subs.map(x => `<option value="${esc(x)}" ${x===e.sub?'selected':''}>${esc(x)}</option>`).join('')}</select></div>
+            <div class="erow"><button class="btn ghost" data-editcancel="1">취소</button><button class="btn primary" data-editsave="${esc(e.id)}">저장</button></div></li>`;
+          return;
+        }
         html += `<li><span class="dot ${e.skip?'saved':e.cat}"></span>
-          <span class="t"><b>${esc(e.memo||e.sub||C[e.cat]?.label)}</b><span class="small muted">${esc(C[e.cat]?.label||'')}${e.sub?' · '+esc(e.sub):''}${e.skip?' · 참음':''}</span></span>
+          <span class="t tap" data-edit="${esc(e.id)}" role="button" tabindex="0" aria-label="기록 고치기"><b>${esc(e.memo||e.sub||C[e.cat]?.label)}</b><span class="small muted">${esc(C[e.cat]?.label||'')}${e.sub?' · '+esc(e.sub):''}${e.skip?' · 참음':''}</span></span>
           <span class="amt ${e.skip?'saved':''}">${e.skip?'+':''}${won(e.amt)}</span>
-          <button class="del" data-del="${esc(e.id)}" aria-label="기록 지우기">×</button></li>`;
+          <button class="editbtn" data-edit="${esc(e.id)}" aria-label="기록 고치기">✎</button><button class="del" data-del="${esc(e.id)}" aria-label="기록 지우기">×</button></li>`;
       });
       $('list').innerHTML = html;
     }
@@ -813,7 +828,24 @@ details.panel summary{cursor:pointer;font-weight:600}
     if(hits[0]){ $('memo').value = m; $('amt').value = hits[0].amt.toLocaleString('ko-KR'); state.form.sub = hits[0].sub; render(); $('amt').focus(); } });
   $('chartTabs').addEventListener('click', e => { const b = e.target.closest('[data-tab]'); if(!b) return; state.chartTab = b.dataset.tab; render(); });
   $('filters').addEventListener('click', e => { const b = e.target.closest('[data-filter]'); if(!b) return; state.filter = b.dataset.filter; render(); });
-  $('list').addEventListener('click', e => { const b = e.target.closest('[data-del]'); if(b) removeEntry(b.dataset.del); });
+  function saveEdit(id){
+    const amt = toNum($('eAmt').value); if(!amt){ toast('금액을 적어 주세요.'); return; }
+    const d = $('eDate').value || today(); let found = null;
+    for(const key of Object.keys(state.months)){ const i = state.months[key].findIndex(x => x.id===id); if(i>-1){ found = {key, entry:state.months[key][i]}; state.months[key] = state.months[key].filter(x => x.id!==id); break; } }
+    if(!found){ state.editId = null; render(); return; }
+    const e = Object.assign({}, found.entry, {memo:$('eMemo').value.trim(), amt, d, cat:$('eCat').value, sub:$('eSub').value});
+    const nk = monthKey(d); state.months[nk] = [...(state.months[nk]||[]), e];
+    state.editId = null; lastAuto = null; save(); render(); toast('고쳤어요.');
+  }
+  $('list').addEventListener('click', e => {
+    let b;
+    if(b = e.target.closest('[data-del]')){ removeEntry(b.dataset.del); return; }
+    if(b = e.target.closest('[data-edit]')){ state.editId = b.dataset.edit; render(); const m = $('eMemo'); if(m) m.focus(); return; }
+    if(b = e.target.closest('[data-editsave]')){ saveEdit(b.dataset.editsave); return; }
+    if(e.target.closest('[data-editcancel]')){ state.editId = null; render(); }
+  });
+  $('list').addEventListener('change', e => { if(e.target.id==='eCat'){ const C = cats(); $('eSub').innerHTML = C[e.target.value].subs.map(x => '<option value="' + esc(x) + '">' + esc(x) + '</option>').join(''); } });
+  $('list').addEventListener('keydown', e => { if(e.key==='Enter' && e.target.closest('.editrow') && e.target.tagName==='INPUT'){ e.preventDefault(); const b = document.querySelector('[data-editsave]'); if(b) saveEdit(b.dataset.editsave); } else if(e.key==='Enter' && e.target.matches('[data-edit]')){ state.editId = e.target.dataset.edit; render(); } });
   $('board').addEventListener('click', e => { const b = e.target.closest('[data-fdel]'); if(!b) return; delete state.friends[b.dataset.fdel]; save(); render(); toast('친구 보드에서 뺐어요.'); });
   $('share').addEventListener('click', e => {
     const b = e.target.closest('[data-share]'); if(b){ state.settings.share = b.dataset.share; save(); render(); return; }
