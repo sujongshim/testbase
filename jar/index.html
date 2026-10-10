@@ -11,15 +11,15 @@
 <style>
 :root{
   --bg:#F1F3F6; --surface:#FFFFFF; --ink:#1B2230; --muted:#5E6878; --line:#DCE1E8;
-  --food:#1F6F6B; --snack:#C2386B; --snack-soft:#F7DCE6; --saved:#2F7D45; --saved-soft:#DCEFE1; --warn:#B4541B; --focus:#2F5FD0;
+  --food:#1F6F6B; --snack:#C2386B; --snack-soft:#F7DCE6; --purple:#8E3B9E; --saved:#2F7D45; --saved-soft:#DCEFE1; --warn:#B4541B; --focus:#2F5FD0;
   box-sizing:border-box; padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
 }
 @media (prefers-color-scheme:dark){ :root:not([data-theme="light"]){
   --bg:#12161D; --surface:#1B212B; --ink:#E8ECF2; --muted:#9AA4B4; --line:#2C3441;
-  --food:#5FC2B9; --snack:#F07AA3; --snack-soft:#43222F; --saved:#6FCB8A; --saved-soft:#1F3A27; --warn:#F0A060; --focus:#8AA8FF; } }
+  --food:#5FC2B9; --purple:#D08CE0; --snack:#F07AA3; --snack-soft:#43222F; --saved:#6FCB8A; --saved-soft:#1F3A27; --warn:#F0A060; --focus:#8AA8FF; } }
 :root[data-theme="dark"]{
   --bg:#12161D; --surface:#1B212B; --ink:#E8ECF2; --muted:#9AA4B4; --line:#2C3441;
-  --food:#5FC2B9; --snack:#F07AA3; --snack-soft:#43222F; --saved:#6FCB8A; --saved-soft:#1F3A27; --warn:#F0A060; --focus:#8AA8FF; }
+  --food:#5FC2B9; --purple:#D08CE0; --snack:#F07AA3; --snack-soft:#43222F; --saved:#6FCB8A; --saved-soft:#1F3A27; --warn:#F0A060; --focus:#8AA8FF; }
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
 *,*::before,*::after{box-sizing:inherit}
 .copyright{text-align:center;font-size:.78rem;color:var(--muted);margin:0 0 14px}
@@ -75,7 +75,7 @@ button,input,select,textarea{font:inherit;color:inherit}
 .stats{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .stat{background:var(--surface);border-radius:12px;padding:10px 12px}
 .stat .v{font-size:1.3rem;line-height:1.2;margin-top:2px}
-.stat.food .v{color:var(--food)} .stat.snack .v{color:var(--snack)} .stat.saved .v{color:var(--saved)}
+.stat.food .v{color:var(--food)} .stat.snack .v{color:var(--snack)} .stat.saved .v{color:var(--saved)} .stat.total .v{color:var(--purple)}
 .bar{height:8px;border-radius:99px;background:var(--line);margin-top:8px;overflow:hidden}
 .bar i{display:block;height:100%;border-radius:99px;background:var(--food)}
 .bar i.over{background:var(--warn)}
@@ -725,13 +725,14 @@ details.panel summary{cursor:pointer;font-weight:600}
     const sum = fn => spend.filter(fn).reduce((a,e)=>a+e.amt,0);
     const total = sum(()=>true), food = sum(e=>e.cat==='food'), foc = sum(e=>e.cat==='snack');
     const eat = food+foc, fb = s.foodBudget, eatPct = fb ? Math.min(eat/fb,1)*100 : 0, dom = parse(t).getDate();
+    const weekEnd = ymd(new Date(parse(ws).getTime() + 6*86400000)), weekFood = all.filter(e => !e.skip && e.cat==='food' && e.d>=ws && e.d<=weekEnd).reduce((a,e)=>a+e.amt,0);
     const todaySpend = spend.filter(e => e.d===t).reduce((a,e)=>a+e.amt,0);
     const foodMonths = Object.values(state.months).map(m => m.filter(e => !e.skip && e.cat==='food').reduce((a,e)=>a+e.amt,0)).filter(v => v > 0);
     const avgFood = foodMonths.length ? foodMonths.reduce((a,v)=>a+v,0) / foodMonths.length : 0;
     $('stats').innerHTML = `
       <div class="stat"><div class="small muted">오늘 총 지출</div><div class="v display">${won(todaySpend)}</div></div>
-      <div class="stat"><div class="small muted">이번 달 전체 지출</div><div class="v display">${won(total)}</div></div>
-      <div class="stat food"><div class="small muted">식비</div><div class="v display">${won(food)}</div></div>
+      <div class="stat total"><div class="small muted">이번 달 전체 지출</div><div class="v display">${won(total)}</div></div>
+      <div class="stat food"><div class="small muted">이번 주 식비</div><div class="v display">${won(weekFood)}</div></div>
       <div class="stat"><div class="small muted">한 달 평균 식비${foodMonths.length > 1 ? ` (${foodMonths.length}개월)` : ''}</div><div class="v display">${won(avgFood)}</div></div>
       <div class="stat saved" style="grid-column:1/-1"><div class="small muted">참아서 모은 돈</div><div class="v display">${won(savedMonth)}</div></div>`;
 
