@@ -11,15 +11,15 @@
 <style>
 :root{
   --bg:#F1F3F6; --surface:#FFFFFF; --ink:#1B2230; --muted:#5E6878; --line:#DCE1E8;
-  --food:#1F6F6B; --snack:#C2386B; --snack-soft:#F7DCE6; --purple:#8E3B9E; --saved:#2F7D45; --saved-soft:#DCEFE1; --warn:#B4541B; --focus:#2F5FD0;
+  --food:#1F6F6B; --snack:#C2386B; --snack-soft:#F7DCE6; --saved:#2F7D45; --saved-soft:#DCEFE1; --warn:#B4541B; --focus:#2F5FD0;
   box-sizing:border-box; padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
 }
 @media (prefers-color-scheme:dark){ :root:not([data-theme="light"]){
   --bg:#12161D; --surface:#1B212B; --ink:#E8ECF2; --muted:#9AA4B4; --line:#2C3441;
-  --food:#5FC2B9; --purple:#D08CE0; --snack:#F07AA3; --snack-soft:#43222F; --saved:#6FCB8A; --saved-soft:#1F3A27; --warn:#F0A060; --focus:#8AA8FF; } }
+  --food:#5FC2B9; --snack:#F07AA3; --snack-soft:#43222F; --saved:#6FCB8A; --saved-soft:#1F3A27; --warn:#F0A060; --focus:#8AA8FF; } }
 :root[data-theme="dark"]{
   --bg:#12161D; --surface:#1B212B; --ink:#E8ECF2; --muted:#9AA4B4; --line:#2C3441;
-  --food:#5FC2B9; --purple:#D08CE0; --snack:#F07AA3; --snack-soft:#43222F; --saved:#6FCB8A; --saved-soft:#1F3A27; --warn:#F0A060; --focus:#8AA8FF; }
+  --food:#5FC2B9; --snack:#F07AA3; --snack-soft:#43222F; --saved:#6FCB8A; --saved-soft:#1F3A27; --warn:#F0A060; --focus:#8AA8FF; }
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
 *,*::before,*::after{box-sizing:inherit}
 .copyright{text-align:center;font-size:.78rem;color:var(--muted);margin:0 0 14px}
@@ -75,7 +75,7 @@ button,input,select,textarea{font:inherit;color:inherit}
 .stats{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .stat{background:var(--surface);border-radius:12px;padding:10px 12px}
 .stat .v{font-size:1.3rem;line-height:1.2;margin-top:2px}
-.stat.food .v{color:var(--food)} .stat.snack .v{color:var(--snack)} .stat.saved .v{color:var(--saved)} .stat.total .v{color:var(--purple)}
+.stat.food .v{color:var(--food)} .stat.snack .v{color:var(--snack)} .stat.saved .v{color:var(--saved)} .stat.total .v{color:var(--snack)}
 .bar{height:8px;border-radius:99px;background:var(--line);margin-top:8px;overflow:hidden}
 .bar i{display:block;height:100%;border-radius:99px;background:var(--food)}
 .bar i.over{background:var(--warn)}
